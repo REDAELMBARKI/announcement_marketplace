@@ -1,0 +1,27 @@
+# Block crawlers from admin, auth, and sensitive pages
+User-agent: *
+Disallow: /admin_dashboard
+Disallow: /add_charity
+Disallow: /data_reports
+Disallow: /view_users
+Disallow: /admin_inventory
+Disallow: /admin_donations
+Disallow: /manage_charity
+Disallow: /login
+Disallow: /sign_up
+Disallow: /charity_dashboard
+Disallow: /view_inventory
+Disallow: /view_donations
+Disallow: /distribution_records
+Disallow: /approve_donations
+Disallow: /user_dashboard
+Disallow: /my_donations
+Disallow: /my_impact
+Disallow: /my_profile
+
+# Allow search engines to index all other public pages
+User-agent: *
+Disallow:
+
+# Sitemap location to improve SEO crawling
+Sitemap: https://www.letusdonate.uk/sitemap.xml
