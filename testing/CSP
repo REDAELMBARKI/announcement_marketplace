@@ -1,0 +1,27 @@
+{/* Content Security Policy (CSP) Header Not Set
+
+This page does not have a Content Security Policy (CSP) header set. 
+A CSP helps to mitigate cross-site scripting (XSS) and data injection attacks by specifying which dynamic resources are allowed to load. Without a CSP, the application is more vulnerable to these types of attacks.
+
+Solution:
+To fix this issue, we set a Content Security Policy header in our server configuration. 
+
+ headers: {
+      "Content-Security-Policy": `
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: http://localhost:8000/storage/;
+        connect-src 'self' http://localhost:8000;
+        font-src 'self';
+      `.replace(/\n/g, ' '), 
+    },
+
+Zap identified that the application lacked a Content Security Policy (CSP) header, leaving it vulnerable to XSS and other injection attacks. 
+To fix this, CSP headers were added to the React frontend via vite.config.js and to the PHP backend through middleware.
+The headers restrict allowed sources for scripts, styles, images, fonts, and API requests to trusted domains only.
+After implementing this change, ZAP confirmed that the CSP issue was resolved, ensuring improved security for both frontend and backend content.
+
+The zap test went from: 10 to 9 after this test
+
+*/}

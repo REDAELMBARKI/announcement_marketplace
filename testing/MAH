@@ -1,0 +1,37 @@
+{/* Missing Anti-Clickjacking Header
+
+ZAP flagged that the application did not set the X-Frame-Options header, 
+leaving it vulnerable to clickjacking attacks. Without this header, attackers 
+can embed the site in a malicious iframe to trick users into performing unintended actions.
+
+We created a middleware in the PHP backend that adds 
+the X-Frame-Options header to all HTTP responses. The header instructs browsers 
+not to allow the page to be displayed in frames from other domains.
+
+// app/Http/Middleware/PreventClickjacking.php
+namespace App\Http\Middleware;
+
+use Closure;
+
+class PreventClickjacking
+{
+    public function handle($request, Closure $next)
+    {
+        $response = $next($request);
+        $response->headers->set('X-Frame-Options', 'DENY');
+        return $response;
+    }
+}
+
+// Register middleware globally in app/Http/Kernel.php
+protected $middleware = [
+    // other middleware...
+    \App\Http\Middleware\PreventClickjacking::class,
+];
+
+After implementing this middleware, all pages include the X-Frame-Options: DENY header, 
+preventing the site from being embedded in iframes on external sites and mitigating 
+the risk of clickjacking attacks.
+
+The zap test went from: 9 to 1 alert after this fix 
+*/}
