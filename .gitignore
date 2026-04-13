@@ -25,14 +25,41 @@ vendor/
 # --------------------------
 # Database files (SQLite)
 # --------------------------
-backend/database/*.db       # main DB files
-backend/database/*.db-shm   # shared memory
-backend/database/*.db-wal   # write-ahead log
-database/*.db               # shared DB folder outside backend
-
-# Optional: ignore SQLite temp files if they appear
+# Use ** so nested dirs (e.g. database/sqlite/*.db) are ignored, not only top-level *.db
+backend/database/**/*.db
+backend/database/**/*.db-shm
+backend/database/**/*.db-wal
+database/*.db
+*.sqbpro
 *.sqlite
 *.sqlite3
+
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# --------------------------
+# Vite / frontend caches (can grow large)
+# --------------------------
+.vite/
+.cache/
+
+# --------------------------
+# Laravel public build artifacts (also in backend/.gitignore)
+# --------------------------
+backend/public/build/
+backend/public/hot/
+backend/public/storage/
+
+# Accidental duplicate storage tree (should not be versioned)
+backend/storage 2/
+
+# --------------------------
+# Local QA / screenshots (often large binaries)
+# --------------------------
+testing/
+
 
 # --------------------------
 # OS / Editor / IDE files
