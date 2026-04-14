@@ -16,6 +16,9 @@ class Donation extends Model
         'donation_status',
         'donation_date',
         'pickup_address',
+        'pickup_city',
+        'pickup_district',
+        'handover_method',
     ];
 
     public function donor()

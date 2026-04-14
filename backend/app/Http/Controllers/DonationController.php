@@ -32,17 +32,45 @@ class DonationController extends Controller
             'charity_ID'      => ['required', 'integer', 'exists:Charity,charity_ID'],
             'item_name'       => ['required', 'string', 'max:255'],
             'category'        => ['required', 'string', 'max:255'],
-            'size'            => ['required', 'string', 'max:10'],
+            'listing_type'    => ['nullable', 'string', 'in:sale,donation'],
+            'size'            => ['nullable', 'string', 'max:255'],
+            'sizes'           => ['nullable'],
+            'colors'          => ['nullable'],
+            'gender'          => ['nullable', 'string', 'max:40'],
+            'recommended_age' => ['nullable', 'string', 'max:40'],
+            'brand'           => ['nullable', 'string', 'max:120'],
+            'material'        => ['nullable', 'string', 'max:120'],
+            'season'          => ['nullable', 'string', 'max:60'],
+            'quantity'        => ['nullable', 'integer', 'min:1'],
             'condition'       => ['required', 'string'],
             'description'     => ['nullable', 'string'],
+            'price'           => ['nullable', 'numeric', 'min:0'],
+            'currency'        => ['nullable', 'string', 'max:10'],
+            'negotiable'      => ['nullable', 'boolean'],
             'image'           => ['nullable', 'image', 'max:4096'],
+            'photos'          => ['nullable', 'array', 'max:8'],
+            'photos.*'        => ['image', 'max:4096'],
+            'primary_photo_index' => ['nullable', 'integer', 'min:0', 'max:7'],
             'pickup_address'  => ['nullable', 'string', 'max:255'],
+            'pickup_city'     => ['nullable', 'string', 'max:120'],
+            'pickup_district' => ['nullable', 'string', 'max:120'],
+            'handover_method' => ['nullable', 'string', 'max:60'],
         ]);
 
         //image upload
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('donation_images', 'public');
+        }
+
+        $galleryPaths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $galleryPaths[] = $photo->store('donation_images', 'public');
+            }
+        }
+        if (empty($galleryPaths) && $imagePath) {
+            $galleryPaths[] = $imagePath;
         }
 
         //create donation
@@ -52,15 +80,38 @@ class DonationController extends Controller
             'donation_status' => 'Pending',
             'donation_date'   => now(),
             'pickup_address'  => $validated['pickup_address'] ?? null,
+            'pickup_city'     => $validated['pickup_city'] ?? null,
+            'pickup_district' => $validated['pickup_district'] ?? null,
+            'handover_method' => $validated['handover_method'] ?? null,
         ]);
+
+        $sizes = $this->parseListField($request->input('sizes'));
+        $colors = $this->parseListField($request->input('colors'));
+        $resolvedSize = $validated['size'] ?? ($sizes[0] ?? null);
+        $isDonationListing = ($validated['listing_type'] ?? 'donation') === 'donation';
+        $price = $isDonationListing ? null : ($validated['price'] ?? null);
 
         //create donation item
         $item = DonationItem::create([
             'donation_ID'      => $donation->donation_ID,
             'item_name'        => $validated['item_name'],
+            'listing_type'     => $validated['listing_type'] ?? 'donation',
+            'item_price'       => $price,
+            'item_currency'    => $validated['currency'] ?? 'MAD',
+            'price_negotiable' => $validated['negotiable'] ?? false,
             'item_category'    => $validated['category'],
-            'item_size'        => $validated['size'],
+            'item_size'        => $resolvedSize,
             'item_condition'   => $validated['condition'],
+            'item_gender'      => $validated['gender'] ?? null,
+            'recommended_age'  => $validated['recommended_age'] ?? null,
+            'item_brand'       => $validated['brand'] ?? null,
+            'item_material'    => $validated['material'] ?? null,
+            'item_season'      => $validated['season'] ?? null,
+            'item_quantity'    => $validated['quantity'] ?? 1,
+            'item_sizes'       => !empty($sizes) ? json_encode($sizes) : null,
+            'item_colors'      => !empty($colors) ? json_encode($colors) : null,
+            'item_gallery'     => !empty($galleryPaths) ? json_encode($galleryPaths) : null,
+            'primary_photo_index' => $validated['primary_photo_index'] ?? 0,
             'item_description' => $validated['description'] ?? null,
             'item_image'       => $imagePath,
         ]);
@@ -72,6 +123,19 @@ class DonationController extends Controller
             'donation' => $donation,
             'item'     => $item,
         ], 201);
+    }
+
+    private function parseListField($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_filter(array_map('trim', $value), fn ($entry) => $entry !== ''));
+        }
+
+        if (is_string($value) && $value !== '') {
+            return array_values(array_filter(array_map('trim', explode(',', $value)), fn ($entry) => $entry !== ''));
+        }
+
+        return [];
     }
 
      //Get all donations for a charity

@@ -65,6 +65,9 @@ const My_Impact = lazy(() => import("./assets/components/User/My_Impact.jsx"));
 const My_Profile = lazy(
   () => import("./assets/components/User/My_Profile.jsx"),
 );
+const Add_Announcement = lazy(
+  () => import("./assets/components/User/Add_Announcement.jsx"),
+);
 
 // Footer content pages
 const Terms_Conditions = lazy(
@@ -104,6 +107,7 @@ export default function Layout() {
     "/view_users",
     "/data_reports",
     "/my_profile",
+    "/add_announcement",
     "/add_charity",
     "/admin_inventory",
     "/admin_donations",
@@ -158,6 +162,7 @@ export default function Layout() {
           <Route path="/my_donations" element={<My_Donations />} />
           <Route path="/my_impact" element={<My_Impact />} />
           <Route path="/my_profile" element={<My_Profile />} />
+          <Route path="/add_announcement" element={<Add_Announcement />} />
 
           {/* Footer items */}
           <Route path="/terms_conditions" element={<Terms_Conditions />} />

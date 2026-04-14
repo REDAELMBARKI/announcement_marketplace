@@ -4,12 +4,24 @@
   font-family: "Iansui", cursive;
   font-weight: 400;
   font-style: normal;
-  color-scheme: light dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  --bgPrimary: #f8f9fb;
+  --bgSecondary: #ffffff;
+  --textPrimary: #1f2937;
+  --textSecondary: #6b7280;
+  --border: #d1d5db;
+  --primary: #2563eb;
+  --primaryHover: #1d4ed8;
+  --success: #2e7d32;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --infoBg: #e8f1ff;
+  --infoText: #1e40af;
   --cb-bg: light-dark(#fffefc, #2c2c2c);
   --cb-border: light-dark(#ccc, #444);
   --cb-text: light-dark(#333, #ddd);
@@ -23,8 +35,8 @@
 }
 
 body {
-  background-color: light-dark(#ffffff, #1d1d1d);
-  color: light-dark (rgba(255, 255, 255, 0.87), rgba(0, 0, 0, 0.87));
+  background-color: var(--bgPrimary);
+  color: var(--textPrimary);
 }
 
 * {

@@ -86,6 +86,8 @@ Route::get('/donations/{id}', [DonationController::class, 'show']);
 Route::post('/donations', [DonationController::class, 'store']);
 Route::get('/donations/user/{donorId}', [DonationController::class, 'getUserDonations']);
 Route::post('/donations/{donationId}/status', [DonationController::class, 'updateStatus']);
+Route::post('/announcements', [DonationController::class, 'store']);
+Route::get('/announcements/user/{donorId}', [DonationController::class, 'getUserDonations']);
 
 // Donation items
 Route::get('/donation-items', [DonationItemController::class, 'index']);

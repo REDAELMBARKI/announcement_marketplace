@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Caches & test output (can get large)
+.vite
+coverage
+.eslintcache
+*.tsbuildinfo
+.turbo
+.parcel-cache
+storybook-static
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

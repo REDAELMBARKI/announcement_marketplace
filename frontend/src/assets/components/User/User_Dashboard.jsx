@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import "../../../css/user.css";
-import "../../../css/modal.css";
 
 export default function User_Dashboard() {
   const navigate = useNavigate();
@@ -11,14 +10,6 @@ export default function User_Dashboard() {
   const [donations, setDonations] = useState([]);
   const [charities, setCharities] = useState([]);
   const [loadingCharities, setLoadingCharities] = useState(true);
-
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalImage, setModalImage] = useState(null);
-
-  const [status, setStatus] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -66,68 +57,6 @@ export default function User_Dashboard() {
   const getCharityName = (id) => {
     const c = charities.find((x) => x.charity_ID === id);
     return c ? c.charity_name : "Unknown";
-  };
-  const handleChange = (e) => {
-    const selected = e.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      setPreview(URL.createObjectURL(selected));
-    }
-  };
-
-  const handleDeleteFile = () => {
-    setFile(null);
-    setPreview(null);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user?.donor?.donor_ID) return;
-
-    const formData = new FormData();
-    const fields = new FormData(e.target);
-
-    formData.append("item_name", fields.get("item_name"));
-    formData.append("category", fields.get("category"));
-    formData.append("size", fields.get("size"));
-    formData.append("quantity", fields.get("quantity"));
-    formData.append("condition", fields.get("condition"));
-    formData.append("description", fields.get("description"));
-    formData.append("pickup_address", fields.get("pickup_address"));
-    formData.append("charity_ID", fields.get("charity_ID"));
-    formData.append("donor_ID", user.donor.donor_ID);
-
-    if (file) formData.append("image", file);
-
-    try {
-      const res = await fetch("http://localhost:8000/api/donations", {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (data.status === "success") {
-        setStatus({ type: "success", message: data.message });
-        e.target.reset();
-        setFile(null);
-        setPreview(null);
-
-        // Reload donations
-        fetch(`http://localhost:8000/api/donations/user/${user.donor.donor_ID}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.status === "success") setDonations(data.donations);
-          });
-      } else {
-        setStatus({ type: "error", message: data.message });
-      }
-    } catch (err) {
-      setStatus({ type: "error", message: "Network error." });
-    }
-
-    setTimeout(() => setStatus(null), 6000);
   };
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -196,109 +125,25 @@ export default function User_Dashboard() {
           </div>
         </div>
 
-        {/* RIGHT — DONATION FORM */}
+        {/* RIGHT — ANNOUNCEMENT ENTRY */}
         <div className="dashboard-right">
-          <form className="new-donation" onSubmit={handleSubmit}>
-            <h3>Make a New Donation</h3>
-
-            {status && (
-              <div className={`form-message ${status.type}`}>
-                {status.message}
-              </div>
-            )}
-
-            <input
-              type="text"
-              name="item_name"
-              placeholder="Item Name"
-              required
-            />
-
-            <select name="category" required>
-              <option value="">Category</option>
-              <option value="womens">Women's</option>
-              <option value="mens">Men's</option>
-              <option value="girls">Girl's</option>
-              <option value="boys">Boy's</option>
-            </select>
-
-            <select name="size" required>
-              <option value="">Size</option>
-              <option value="XS">XS</option>
-              <option value="S">S</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="XL">XL</option>
-              <option value="XXL">XXL</option>
-            </select>
-
-            <select name="condition" required>
-              <option value="">Condition</option>
-              <option value="new">New</option>
-              <option value="like-new">Like New</option>
-              <option value="used-good">Used - Good</option>
-              <option value="used-fair">Used - Fair</option>
-            </select>
-
-            <textarea
-              name="description"
-              className="description"
-              placeholder="Description"
-              required
-            ></textarea>
-
-            <div className="file-upload">
-              <label htmlFor="image">Upload Image (optional):</label>
-              <input
-                type="file"
-                id="image"
-                accept="image/*"
-                onChange={handleChange}
-              />
-
-              {preview && (
-                <div className="image-preview">
-                  <img
-                    src={preview}
-                    className="thumbnail"
-                    onClick={() => {
-                      setModalImage(preview);
-                      setModalOpen(true);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={handleDeleteFile}
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <input
-              type="text"
-              name="pickup_address"
-              placeholder="Pickup Address"
-              required
-            />
-
+          <div className="new-donation">
+            <h3>Kids Marketplace</h3>
+            <p>
+              Add a new kids product announcement to sell or donate clothing,
+              shoes, and accessories.
+            </p>
             {loadingCharities ? (
               <p>Loading charities...</p>
             ) : (
-              <select name="charity_ID" required>
-                <option value="">Select Charity</option>
-                {charities.map((c) => (
-                  <option key={c.charity_ID} value={c.charity_ID}>
-                    {c.charity_name}
-                  </option>
-                ))}
-              </select>
+              <p>
+                {charities.length} charities available for donation routing.
+              </p>
             )}
-
-            <button type="submit">Submit Donation</button>
-          </form>
+            <button type="button" onClick={() => navigate("/add_announcement")}>
+              Add Announcement
+            </button>
+          </div>
         </div>
       </div>
 
@@ -366,20 +211,6 @@ export default function User_Dashboard() {
         </table>
       </div>
 
-      {/* IMAGE PREVIEW MODAL */}
-      {modalOpen && modalImage && (
-        <div className="image-modal" onClick={() => setModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={modalImage} className="full-image" />
-            <button
-              className="close-modal-btn"
-              onClick={() => setModalOpen(false)}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }
