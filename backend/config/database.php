@@ -34,7 +34,8 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
-            'database' => database_path('Clothing_Donations.db'),
+            //config pour sqlite //
+            'database' => env('DB_DATABASE'),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,
