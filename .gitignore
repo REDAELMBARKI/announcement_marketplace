@@ -50,13 +50,13 @@ backend/bootstrap/cache/*.php
 # Database files (SQLite)
 # --------------------------
 # Use ** so nested dirs (e.g. database/sqlite/*.db) are ignored, not only top-level *.db
-backend/database/**/*.db
-backend/database/**/*.db-shm
-backend/database/**/*.db-wal
-database/*.db
-*.sqbpro
-*.sqlite
-*.sqlite3
+# backend/database/**/*.db
+# backend/database/**/*.db-shm
+# backend/database/**/*.db-wal
+# database/*.db
+# *.sqbpro
+# *.sqlite
+# *.sqlite3
 
 frontend/node_modules/
 frontend/dist/
