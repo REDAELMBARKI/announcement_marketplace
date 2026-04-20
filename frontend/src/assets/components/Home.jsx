@@ -1,127 +1,132 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Store, Gift, Heart, ShoppingBag, Eye, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import TrendingCard from "./TrendingCard";
+import MarketplaceCard from "./MarketplaceCard";
+import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 
-const impactMetrics = [
-  { icon: "📦", label: "Outfits Donated", value: 14500 },
-  { icon: "🏷️", label: "Items Sold Secondhand", value: 9200 },
-  { icon: "😊", label: "Families Helped", value: 679 },
-];
-
-const filterChips = [
-  "0-12 mo",
-  "1-2 yrs",
-  "3-5 yrs",
-  "6-8 yrs",
-  "9-12 yrs",
-  "Girls",
-  "Boys",
-  "Unisex",
-];
-
-const donationCauses = [
-  {
-    title: "Baby essentials for new mums",
-    location: "Austin, Texas",
-    timeline: "Ends in 2 Days",
-    raised: 3400,
-    goal: 5000,
-    icon: "👶",
-  },
-  {
-    title: "Winter jackets for kids, Devon",
-    location: "Devon, UK",
-    timeline: "Ends in 4 Days",
-    raised: 1890,
-    goal: 4500,
-    icon: "🧥",
-  },
-  {
-    title: "Backpacks for school restart",
-    location: "Manchester, UK",
-    timeline: "Ends in 3 Days",
-    raised: 2100,
-    goal: 4200,
-    icon: "🎒",
-  },
-];
-
-const marketplaceItems = [
-  {
-    title: "Floral Dress",
-    age: "Age 3-4",
-    type: "Girls",
-    badge: "Like new",
-    price: 4,
-    image: "👗",
-    tone: "mint",
-  },
-  {
-    title: "Jeans Bundle",
-    age: "Age 5-6",
-    type: "Boys",
-    badge: "Good cond.",
-    price: 6,
-    image: "👖",
-    tone: "blue",
-  },
-  {
-    title: "Teddy Plush Set",
-    age: "Age 2-5",
-    type: "Unisex",
-    badge: "With tags",
-    price: 5,
-    image: "🧸",
-    tone: "pink",
-  },
-  {
-    title: "Winter Gloves Pack",
-    age: "Age 6-8",
-    type: "Unisex",
-    badge: "Like new",
-    price: 3,
-    image: "🧤",
-    tone: "cream",
-  },
-];
-
-const activityFeed = [
-  "Maria donated 2 winter coats in Bristol.",
-  "Aisha listed a baby swing in Leeds.",
-  "David gave $25 to the diaper drive.",
-  "Sarah just bought the Paw Patrol set.",
-  "Noah donated 3 uniforms in Austin.",
-];
-
-const testimonials = [
-  {
-    name: "Mia, parent of two",
-    quote:
-      "Sold two bags of kids clothes in a week and donated the rest. It feels easy and meaningful.",
-  },
-  {
-    name: "Jordan, foster carer",
-    quote:
-      "We found warm coats and school gear locally in one place. The quality was better than expected.",
-  },
-  {
-    name: "Nadia, volunteer",
-    quote:
-      "The live cause progress helps people act quickly. Donations arrive much faster now.",
-  },
-];
 
 function Home() {
-  const [activeFilter, setActiveFilter] = useState("0-12 mo");
-  const [visibleActivity, setVisibleActivity] = useState(0);
+  const [homepageData, setHomepageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
+  const trendingScrollRef = useRef(null);
+  const marketScrollRef = useRef(null);
+  const donationCausesScrollRef = useRef(null);
+  const categoryRefs = useRef({});
 
+  // Fetch homepage data from API
   useEffect(() => {
-    const feedInterval = setInterval(() => {
-      setVisibleActivity((previous) => (previous + 1) % activityFeed.length);
-    }, 3000);
+    const fetchHomepageData = async () => {
+      try {
+        setLoading(true);
+        const data = await homeApi.getHomepageData({});
+        setHomepageData(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch homepage data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearInterval(feedInterval);
+    fetchHomepageData();
   }, []);
+
+  const scrollTrending = (direction) => {
+    const container = trendingScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollDonationCauses = (direction) => {
+    const container = donationCausesScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollCategory = (categoryId, direction) => {
+    const container = categoryRefs.current[categoryId];
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollMarket = (direction) => {
+    const container = marketScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const getCategoryColor = (categoryId) => {
+    const colors = [
+      '#667eea', '#f093fb', '#10b981', '#f59e0b', 
+      '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'
+    ];
+    return colors[categoryId % colors.length] || '#667eea';
+  };
+
+  const getCategoryEmoji = (categoryName) => {
+    const emojiMap = {
+      'Jouets 🧸': '🧸',
+      'Vêtements 👕': '👕', 
+      'Livres 📚': '📚',
+      'Mobilier 🛏️': '🛏️',
+      'Bébé 🍼': '🍼',
+      'Jeux 🎮': '🎮',
+      'Chaussures 👟': '👟',
+      'Activités 🎨': '🎨'
+    };
+    return emojiMap[categoryName] || '📦';
+  };
+
+  
+  if (loading) {
+    return (
+      <main className="home" id="home">
+        <div className="loading-container">
+          <div className="loading-spinner">Loading...</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="home" id="home">
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button onClick={() => window.location.reload()}>Try Again</button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="home" id="home">
@@ -129,54 +134,44 @@ function Home() {
         <div className="hero_copy">
           <p className="eyebrow">PRE-LOVED KIDS CLOTHES</p>
           <h1>
-            Give a little.
+            Find Great Deals.
             <br />
-            Change a lot.
+            Help Local Families.
           </h1>
-          <p>
-            Buy, sell, and donate children's clothing - every purchase supports a
-            local family in need.
+          <p className="tagline">
+            Buy affordable kids clothes or donate to families in need.
           </p>
           <div className="hero_actions">
-            <Link to="/add_announcement" className="hero_primary">
-              Browse clothes
+            <Link to="/marketplace" className="hero_primary">
+              Browse Items
             </Link>
-            <Link to="/sign_up" className="hero_secondary">
-              Donate now
+            <Link to="/donate" className="hero_secondary">
+              Donate Now
             </Link>
           </div>
-
+        </div>
+        <div className="hero_visual">
+          <div className="hero_image">
+            <span>??</span>
+          </div>
           <div className="hero_stats">
-            {impactMetrics.map((metric) => (
-              <div key={metric.label} className="hero_stat">
-                <strong>{`${(metric.value / 1000).toFixed(1)}k`}</strong>
-                <span>{metric.label}</span>
-              </div>
-            ))}
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
+              <span>Items Available</span>
+            </div>
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
+              <span>Active Users</span>
+            </div>
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
+              <span>Donations</span>
+            </div>
           </div>
         </div>
-        <div className="hero_shape" aria-hidden="true">
-          <div />
-          <div />
-        </div>
       </section>
 
-      <section className="filter_strip">
-        <p>Filter by age</p>
-        <div>
-          {filterChips.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              className={chip === activeFilter ? "active" : ""}
-              onClick={() => setActiveFilter(chip)}
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-      </section>
-
+      
       <section className="season_banner">
         <span className="season_icon" aria-hidden="true">
           ⭐
@@ -188,40 +183,208 @@ function Home() {
         <Link to="/sign_up">Donate now</Link>
       </section>
 
-      <section className="tt-section dark_section">
-        <div className="tt-section-head">
-          <p className="eyebrow">VERIFIED CAUSES</p>
-          <h3>Urgent donation causes</h3>
-          <p>Campaigns with under 5 days left - your support makes a direct impact.</p>
-        </div>
-        <div className="cause_list">
-          {donationCauses.map((cause) => {
-            const progress = Math.round((cause.raised / cause.goal) * 100);
-            return (
-              <article key={cause.title} className="cause_item">
-                <div className="cause_top">
-                  <div className="cause_icon">{cause.icon}</div>
-                  <div className="cause_meta">
-                    <h4>{cause.title}</h4>
-                    <p>
-                      {cause.location} - {cause.timeline} <span>Verified</span>
-                    </p>
+      {homepageData?.featured_categories?.map((category) => (
+        <section key={category.id} className="category-section">
+          <div className="section-header">
+            <div className="category-title">
+              <span className="category-icon">{category.icon}</span>
+              <h3>{category.name}</h3>
+            </div>
+            <Link to={`/category/${category.slug}`} className="see-all-link">
+              See all →
+            </Link>
+          </div>
+          <div className="scroll-container">
+            <button 
+              className="scroll-btn left" 
+              onClick={() => scrollCategory(category.id, 'left')}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="category-scroll" ref={el => categoryRefs.current[category.id] = el}>
+              {(homepageData?.products_by_category?.[category.id]?.length >= 3 ? homepageData?.products_by_category?.[category.id] : homepageData?.products_by_category?.[category.id]?.slice(0, 3))?.map((item) => (
+                <div key={item.id} className="category-product-card">
+                  <div className="product-header">
+                    <div className="user-avatar">
+                      <img src={item.user?.avatar || 'https://picsum.photos/seed/user/30/30.jpg'} alt={item.user?.name} />
+                    </div>
+                    <div className="user-details">
+                      <span className="username">{item.user?.name || 'Unknown'}</span>
+                      <span className="time-posted">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently'}</span>
+                    </div>
+                  </div>
+                  <div className="product-image">
+                    {item.thumbnail?.url ? (
+                      <img src={item.thumbnail.url} alt={item.title} />
+                    ) : (
+                      <div>??</div>
+                    )}
+                  </div>
+                  <div className="product-details">
+                    <div className="location-line">
+                      <MapPin size={12} />
+                      <span>{item.addresses?.[0]?.city || 'Unknown'}, {item.addresses?.[0]?.district || 'Unknown'}</span>
+                    </div>
+                    <h4 className="product-title">{item.title}</h4>
+                    <div className="tags-row">
+                      {item.condition && (
+                        <span className="tag">{item.condition}</span>
+                      )}
+                      {item.age_range && (
+                        <span className="tag">{item.age_range}</span>
+                      )}
+                    </div>
+                    <div className="price-section">
+                      {item.price ? (
+                        <span className="price-tag">£{item.price}</span>
+                      ) : (
+                        <span className="free-tag">FREE</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="tt-progress-track">
-                  <span style={{ width: `${progress}%` }} />
+              ))}
+            </div>
+            <button 
+              className="scroll-btn right" 
+              onClick={() => scrollCategory(category.id, 'right')}
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+      ))}
+
+      <section className="collections-section">
+        <div className="section-header">
+          <p className="eyebrow">FEATURED COLLECTIONS</p>
+          <h3>Browse by category</h3>
+        </div>
+        <div className="collections-grid">
+          {homepageData?.featured_categories?.slice(0, 8)?.map((category) => (
+            <Link key={category.id} to={`/category/${category.slug}`} className="collection-card">
+              <div className="collection-image" style={{ background: `linear-gradient(135deg, ${getCategoryColor(category.id)} 0%, ${getCategoryColor(category.id, 0.8)} 100%)` }}>
+                <span className="category-emoji">{getCategoryEmoji(category.name)}</span>
+              </div>
+              <div className="collection-content">
+                <h4>{category.name}</h4>
+                <p>Browse {category.name} items</p>
+                <div className="collection-meta">
+                  <span>{category.products_count || 0} items</span>
                 </div>
-                <div className="cause_progress_text">
-                  <p>
-                    ${cause.raised.toLocaleString()} raised of $
-                    {cause.goal.toLocaleString()}
-                  </p>
-                  <strong>{progress}%</strong>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {homepageData?.featured_categories?.length > 8 && (
+          <button className="show-more-btn" onClick={() => setShowMoreCategories(!showMoreCategories)}>
+            {showMoreCategories ? 'Show less' : 'Show more categories'}
+          </button>
+        )}
+      </section>
+
+      <section className="trending-section">
+        <div className="section-header">
+          <p className="eyebrow">TRENDING NOW</p>
+          <h3>Popular this week</h3>
+        </div>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollTrending('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="trending-scroll" ref={trendingScrollRef}>
+            {(homepageData?.popular_products?.length >= 3 ? homepageData?.popular_products : homepageData?.popular_products?.slice(0, 3))?.map((item) => (
+              <TrendingCard key={item.id} item={{
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
+                is_boosted: item.is_boosted || false,
+                city: item.addresses?.[0]?.city || 'Unknown',
+                district: item.addresses?.[0]?.district || 'Unknown',
+                condition: item.condition || 'Good',
+                age_range: item.age_range || 'Unknown',
+                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
+                image: item.thumbnail?.url || '??',
+                tone: 'blue',
+                likes: item.favorites_count || 0,
+                seller: {
+                  name: item.user?.name || 'Unknown',
+                  avatar: '??'
+                }
+              }} />
+            ))}
+          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollTrending('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </section>
+
+      <section className="donation-causes-section">
+        <div className="section-header">
+          <p className="eyebrow">URGENT DONATION CAUSES</p>
+          <h3>Support families in need</h3>
+        </div>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollDonationCauses('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="donation-causes-scroll" ref={donationCausesScrollRef}>
+            {(homepageData?.donation_causes?.length >= 3 ? homepageData?.donation_causes : homepageData?.donation_causes?.slice(0, 3))?.map((cause) => {
+              const daysAgo = Math.floor((Date.now() - new Date(cause.created_at)) / (1000 * 60 * 60 * 24));
+              const urgencyColor = daysAgo <= 1 ? 'green' : daysAgo <= 4 ? 'yellow' : 'red';
+              
+              return (
+                <div key={cause.id} className="donation-cause-card">
+                  <div className="cause-image">
+                    {cause.thumbnail?.url ? (
+                      <img src={cause.thumbnail.url} alt={cause.title} />
+                    ) : (
+                      <div>??</div>
+                    )}
+                  </div>
+                  <div className="cause-details">
+                    <h4>{cause.title}</h4>
+                    <div className="cause-location">
+                      <MapPin size={12} />
+                      <span>{cause.addresses?.[0]?.city || 'Unknown'}, {cause.addresses?.[0]?.district || 'Unknown'}</span>
+                    </div>
+                    <div className="cause-time">
+                      Posted {new Date(cause.created_at).toLocaleDateString()}
+                      <span className={`urgency-indicator ${urgencyColor}`}></span>
+                    </div>
+                    <div className="cause-stats">
+                      <span>{cause.favorites_count || 0} interested</span>
+                      <span>{cause.views_count || 0} views</span>
+                    </div>
+                    <button className="support-btn">Support</button>
+                  </div>
                 </div>
-                <button type="button">Support this cause</button>
-              </article>
-            );
-          })}
+              );
+            })}
+          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollDonationCauses('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </section>
 
@@ -233,43 +396,44 @@ function Home() {
           </div>
           <Link to="/add_announcement">See all</Link>
         </div>
-        <div className="market_grid_v2">
-          {marketplaceItems.map((item) => (
-            <article key={item.title} className="market_card_v2">
-              <div className={`market_image_v2 ${item.tone}`}>
-                <span>{item.badge}</span>
-                <div>{item.image}</div>
-              </div>
-              <div className="market_body_v2">
-                <h4>{item.title}</h4>
-                <p>
-                  {item.age} - {item.type}
-                </p>
-                <div className="market_price_row">
-                  <strong>£{item.price}</strong>
-                  <button type="button">Add to cart</button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="impact_block">
-        <h3>What your £5 does</h3>
-        <div>
-          <article>
-            <strong>2</strong>
-            <p>school notebooks and pencils for a child.</p>
-          </article>
-          <article>
-            <strong>1</strong>
-            <p>warm hoodie for a child in winter support programs.</p>
-          </article>
-          <article>
-            <strong>3</strong>
-            <p>pairs of socks distributed via partner charities.</p>
-          </article>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollMarket('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="market_grid_v2" ref={marketScrollRef}>
+            {(homepageData?.new_arrivals?.length >= 3 ? homepageData?.new_arrivals : homepageData?.new_arrivals?.slice(0, 3))?.map((item) => (
+              <MarketplaceCard key={item.id} item={{
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
+                is_boosted: item.is_boosted || false,
+                city: item.addresses?.[0]?.city || 'Unknown',
+                district: item.addresses?.[0]?.district || 'Unknown',
+                condition: item.condition || 'Good',
+                age_range: item.age_range || 'Unknown',
+                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
+                image: item.thumbnail?.url || '??',
+                tone: 'blue',
+                likes: item.favorites_count || 0,
+                seller: {
+                  name: item.user?.name || 'Unknown',
+                  avatar: '??'
+                }
+              }} />
+            ))}
+          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollMarket('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </section>
 
@@ -290,86 +454,78 @@ function Home() {
             <span>03</span>
             <h4>Make an Impact</h4>
             <p>Every item sold extends its life and supports children in need.</p>
-          </article>
-        </div>
-      </section>
+    </article>
+  </div>
+</section>
 
-      <section className="grid_two">
-        <article className="tt-activity-feed">
-          <h3>Recently donated</h3>
-          <div className="tt-activity-list">
-            {[0, 1, 2, 3].map((offset) => {
-              const item = activityFeed[(visibleActivity + offset) % activityFeed.length];
-              return (
-                <p key={item}>
-                  <span aria-hidden="true">●</span> {item}
-                </p>
-              );
-            })}
-          </div>
-        </article>
+<section className="tt-how-it-works upgraded">
+  <h3>How TinyTrove Works</h3>
+  <div className="tt-how-grid">
+    <article>
+      <span>01</span>
+      <h4>Gather Gear</h4>
+      <p>Find gently used outfits and toys your kids have outgrown.</p>
+    </article>
+    <article>
+      <span>02</span>
+      <h4>Choose Your Path</h4>
+      <p>Sell them for cash or donate them instantly to a verified cause.</p>
+    </article>
+    <article>
+      <span>03</span>
+      <h4>Make an Impact</h4>
+      <p>Every item sold extends its life and supports children in need.</p>
+    </article>
+  </div>
+</section>
 
-        <article className="map_section">
-          <h3>Causes near you</h3>
-          <p>Local drives active this week around your selected city.</p>
-          <div className="map_mock" aria-label="Map preview">
-            <span style={{ left: "28%", top: "35%" }}>📍</span>
-            <span style={{ left: "54%", top: "45%" }}>📍</span>
-            <span style={{ left: "70%", top: "30%" }}>📍</span>
-            <span style={{ left: "62%", top: "67%" }}>📍</span>
-          </div>
-          <button type="button">View map and nearby causes</button>
-        </article>
-      </section>
+<section className="testimonials">
+  <h3>Trusted by local parents</h3>
+  <div className="testimonials-grid">
+    {homepageData?.recent_reviews?.map((review) => (
+      <article className="testimonial-card" key={review.id}>
+        <div className="testimonial-quote-icon">??</div>
+        <p>"{review.comment || 'Great product!'}</p>
+        <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
+        <div className="rating">{'?'.repeat(review.rating || 5)}</div>
+      </article>
+    ))}
+  </div>
+</section>
 
-      <section className="testimonials">
-        <h3>Trusted by local parents</h3>
-        <div>
-          {testimonials.map((item) => (
-            <article key={item.name}>
-              <div className="avatar" aria-hidden="true">
-                👤
-              </div>
-              <p>"{item.quote}"</p>
-              <strong>{item.name}</strong>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="tt-main-footer">
-        <div>
-          <h4>TinyTrove</h4>
-          <p>
-            Buy and donate pre-loved kids essentials while supporting verified local
-            causes.
-          </p>
-        </div>
-        <div>
-          <h5>Quick Links</h5>
-          <ul>
-            <li>
-              <Link to="/our_partners">About Us</Link>
-            </li>
-            <li>
-              <Link to="/faq">How to Donate</Link>
-            </li>
-            <li>
-              <Link to="/faq">Seller Fees</Link>
-            </li>
-            <li>
-              <Link to="/faq">Safety</Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h5>Trusted Badges</h5>
-          <p>✅ Secure Payments</p>
-          <p>💙 Nonprofit Verified</p>
-          <p>📲 App Store / Google Play</p>
-          <input type="email" placeholder="Join our newsletter" aria-label="Newsletter email" />
-        </div>
-      </section>
+<section className="tt-main-footer">
+  <div>
+    <h4>TinyTrove</h4>
+    <p>
+      Buy and donate pre-loved kids essentials while supporting verified local
+      causes.
+    </p>
+  </div>
+  <div>
+    <h5>Quick Links</h5>
+    <ul>
+      <li>
+        <Link to="/our_partners">About Us</Link>
+      </li>
+      <li>
+        <Link to="/faq">How to Donate</Link>
+      </li>
+      <li>
+        <Link to="/faq">Seller Fees</Link>
+      </li>
+      <li>
+        <Link to="/faq">Safety</Link>
+      </li>
+    </ul>
+  </div>
+  <div>
+    <h5>Trusted Badges</h5>
+    <p>?? Secure Payments</p>
+    <p>?? Nonprofit Verified</p>
+    <p>?? App Store / Google Play</p>
+    <input type="email" placeholder="Join our newsletter" aria-label="Newsletter email" />
+  </div>
+</section>
     </main>
   );
 }

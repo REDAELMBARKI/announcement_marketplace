@@ -3,13 +3,10 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\DonationController;
-use App\Http\Controllers\DonationItemController;
-use App\Http\Controllers\CharityController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ViewUserController;
 use App\Http\Controllers\OpenAIController;
+use App\Http\Controllers\Home\HomepageController;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ReportController;
@@ -68,43 +65,6 @@ Route::get('/api/test-users', function() {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/logout', [AuthController::class, 'logout']);
-use App\Http\Controllers\UserProfileController;
-
-Route::get('/user/{id}', [UserProfileController::class, 'show']);
-Route::put('/user/{id}', [UserProfileController::class, 'update']);
-
- 
-// Inventory routes
-Route::get('/inventory', [InventoryController::class, 'index']);
-Route::get('/inventory/{id}', [InventoryController::class, 'show']);
-Route::post('/inventory/{id}/distribute', [InventoryController::class, 'distribute']);
-
-
-// Donations
-Route::get('/donations', [DonationController::class, 'getAllDonations']); 
-Route::get('/donations/{id}', [DonationController::class, 'show']);
-Route::post('/donations', [DonationController::class, 'store']);
-Route::get('/donations/user/{donorId}', [DonationController::class, 'getUserDonations']);
-Route::post('/donations/{donationId}/status', [DonationController::class, 'updateStatus']);
-Route::post('/announcements', [DonationController::class, 'store']);
-Route::get('/announcements/user/{donorId}', [DonationController::class, 'getUserDonations']);
-
-// Donation items
-Route::get('/donation-items', [DonationItemController::class, 'index']);
-Route::get('/donation-items/{id}', [DonationItemController::class, 'show']);
-
-// Charities
-Route::get('/charities', [CharityController::class, 'index']);
-Route::get('/charities/{id}', [CharityController::class, 'show']);
-Route::post('/charities', [CharityController::class, 'store']);
-Route::put('/charities/{id}', [CharityController::class, 'update']);  
-Route::delete('/charities/{id}', [CharityController::class, 'destroy']);
-
-
-
-// Charity — Get all donations assigned to this charity
-Route::get('/charity/{charityId}/donations', [DonationController::class, 'getCharityDonations']);
-
 
 // Admin routes
 Route::prefix('admin')->group(function () {
@@ -117,7 +77,6 @@ Route::prefix('admin')->group(function () {
 // User Management Routes
 Route::prefix('user-management')->group(function () {
     Route::get('/view-users', [ViewUserController::class, 'getViewUsers']);
-    Route::get('/charities-list', [CharityController::class, 'getCharitiesList']);
     Route::get('/roles', [ViewUserController::class, 'getRoles']);
     Route::put('/users/{id}', [ViewUserController::class, 'updateUser']);
     Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
@@ -135,6 +94,11 @@ Route::post('/ask-faq', [OpenAIController::class, 'ask']);
 Route::post('/ask-faq', [OpenAIController::class, 'ask'])
     ->middleware('throttle:3,1');
 // The above line limits to 3 requests per minute per IP address to prevent spam
+
+// Homepage route
+Route::get('/homepage', HomepageController::class)->name('homepage');
+
+
 
 // Reports routes
 Route::get('/reports/donations', [ReportController::class, 'donations']);
