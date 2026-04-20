@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Run the homepage seeder first
+        $this->call(HomepageSeeder::class);
+
         // Keep default user just in case
         User::factory()->create([
             'name' => 'Test User',

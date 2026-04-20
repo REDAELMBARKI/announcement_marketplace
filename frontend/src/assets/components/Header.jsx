@@ -1,73 +1,49 @@
-import React, { useState, useEffect } from "react";
-//import { HashLink } from "react-router-hash-link";
+import React from "react";
 import { Link } from "react-router-dom";
 import "../../css/header.css";
 
 function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
-    <>
-      <header className="header">
-        <div className="navbar">
-          <div className="logo">
-            <h1>
-              <Link to="/"> LetUsDonate.uk </Link>
-              <i className="fa-solid fa-leaf"></i>
-            </h1>
-            <div className="header_content">
-              <h2>Donating Clothes the easy way</h2>
-              <h3>
-                We connect with donors to make clothing donation <br /> more
-                efficient, transparent and impactful.
-              </h3>
-            </div>
-          </div>
-
-          <div className="nav_right">
-            <div className="how">
-              {/*<HashLink smooth to="/#howitworks">How does this work?</HashLink>*/}{" "}
-              {/* Temporarily removed  needs fixing */}
-            </div>
-            <div className="menu_text" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? "Close ✕" : "Menu"}
-            </div>
-          </div>
+    <header className="header">
+      <div className="top_navbar">
+        <div className="brand">
+          <Link to="/" className="brand_logo">
+            LetUsDonate.uk <i className="fa-solid fa-leaf" aria-hidden="true"></i>
+          </Link>
         </div>
-      </header>
 
-      <div className={`DropdownMenu ${menuOpen ? "open" : ""}`}>
-        <button className="close_btn" onClick={() => setMenuOpen(false)}>
-          ✕
-        </button>
-        <ul className="dropdown_links">
-          <li>
-            <Link to="/" onClick={() => setMenuOpen(false)}>
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link to="/our_partners" onClick={() => setMenuOpen(false)}>
-              Our Partners
-            </Link>
-          </li>
-          <li>
-            <Link to="/faq" onClick={() => setMenuOpen(false)}>
-              FAQ
-            </Link>
-          </li>
-          <li>
-            <Link to="/sign_up" onClick={() => setMenuOpen(false)}>
-              Join Us
-            </Link>
-          </li>
-          <li className="co2">
-            <p>Thanks to your donations this much CO₂ has been saved!</p>
-            <div className="co2_value">0 CO₂e</div>
-          </li>
-        </ul>
+        <nav className="main_links" aria-label="Main navigation">
+          <Link to="/">Home</Link>
+          <Link to="/our_partners">Our Partners</Link>
+          <Link to="/faq">FAQ</Link>
+          <Link to="/faq_chatbot">FAQ Chatbot</Link>
+          <Link to="/sign_up">Join Us</Link>
+        </nav>
+
+        <div className="nav_actions">
+          <Link to="/login" className="login_btn">
+            Log In
+          </Link>
+          <Link to="/add_announcement" className="post_btn">
+            Publish Announcement
+          </Link>
+        </div>
       </div>
-    </>
+
+      <div className="search_row">
+        <div className="search_box">
+          <span aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            placeholder="What are you looking for?"
+            aria-label="Search announcements"
+          />
+        </div>
+        <Link to="/add_announcement" className="search_cta">
+          Search
+        </Link>
+      </div>
+    </header>
   );
 }
 

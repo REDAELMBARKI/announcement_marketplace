@@ -1,255 +1,532 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import DonateImg from "../../images/Donate.png";
-import DonateImg2 from "../../images/Donate2.png";
-import DonateImg3 from "../../images/Donate3.png";
-import DonateImg4 from "../../images/Donate4.png";
+import { Store, Gift, Heart, ShoppingBag, Eye, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import TrendingCard from "./TrendingCard";
+import MarketplaceCard from "./MarketplaceCard";
+import homeApi from "../../services/homeApi";
 import "../../css/home.css";
-// This is the home page component for the LetUsDonate.uk website
+
+
 function Home() {
-  const comment = [
-    "I had so many clothes I never wore — this made it easy to donate them!",
-    "Super convenient and I love that it helps real charities!",
-    "No more plastic bags through the door. So much better!",
-  ];
+  const [homepageData, setHomepageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
+  const trendingScrollRef = useRef(null);
+  const marketScrollRef = useRef(null);
+  const donationCausesScrollRef = useRef(null);
+  const categoryRefs = useRef({});
 
-  const [currentComment, setCurrentComment] = useState(0);
-
+  // Fetch homepage data from API
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentComment((prevIndex) => (prevIndex + 1) % comment.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [comment.length]);
+    const fetchHomepageData = async () => {
+      try {
+        setLoading(true);
+        const data = await homeApi.getHomepageData({});
+        setHomepageData(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch homepage data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHomepageData();
+  }, []);
+
+  const scrollTrending = (direction) => {
+    const container = trendingScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollDonationCauses = (direction) => {
+    const container = donationCausesScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollCategory = (categoryId, direction) => {
+    const container = categoryRefs.current[categoryId];
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollMarket = (direction) => {
+    const container = marketScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 300;
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const getCategoryColor = (categoryId) => {
+    const colors = [
+      '#667eea', '#f093fb', '#10b981', '#f59e0b', 
+      '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'
+    ];
+    return colors[categoryId % colors.length] || '#667eea';
+  };
+
+  const getCategoryEmoji = (categoryName) => {
+    const emojiMap = {
+      'Jouets 🧸': '🧸',
+      'Vêtements 👕': '👕', 
+      'Livres 📚': '📚',
+      'Mobilier 🛏️': '🛏️',
+      'Bébé 🍼': '🍼',
+      'Jeux 🎮': '🎮',
+      'Chaussures 👟': '👟',
+      'Activités 🎨': '🎨'
+    };
+    return emojiMap[categoryName] || '📦';
+  };
+
+  
+  if (loading) {
+    return (
+      <main className="home" id="home">
+        <div className="loading-container">
+          <div className="loading-spinner">Loading...</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="home" id="home">
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button onClick={() => window.location.reload()}>Try Again</button>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <section className="home" id="home">
-      <div className="home_content">
-        <Link to="/sign_up" className="joinus">
-          Join Us
-        </Link>
-        <div className="or">
-          <h2>or</h2>
-        </div>
-        <Link to="/login" className="login">
-          Login
-        </Link>
-      </div>
-
-      <div className="why_donate">
-        <div className="why_text">
-          <h2>Why Donate Clothes?</h2>
-          <p>Free up space in your wardrobe , and leave your heart happy.</p>
-
-          <p>
-            Raise funds for a British charity of your choice, we give 82% of the
-            proceeds to your chosen charity.
+    <main className="home" id="home">
+      <section className="hero_v2">
+        <div className="hero_copy">
+          <p className="eyebrow">PRE-LOVED KIDS CLOTHES</p>
+          <h1>
+            Find Great Deals.
+            <br />
+            Help Local Families.
+          </h1>
+          <p className="tagline">
+            Buy affordable kids clothes or donate to families in need.
           </p>
-          <p>
-            Make your life easier, book a collection on a date that works for
-            you, no more trips to the charity shop.
-          </p>
-          <p>
-            Help us save the planet, your clothes don’t go to landfill, plus no
-            more plastic bags through your door.
-          </p>
-          <p>
-            Give your clothes a second home, and help people in need access
-            affordable clothing.
-          </p>
-        </div>
-        <div className="image">
-          <img src={DonateImg} alt="People donating clothes" />
-        </div>
-      </div>
-
-      <section className="charities">
-        <h2>Charities We Are Working With...</h2>
-        <div className="charity_text">
-          <div>
-            <h3>WearAgain Foundation</h3>
-            <p>
-              Helps low-income families by providing gently used clothes for
-              work, school, and daily life.
-            </p>
-          </div>
-          <div>
-            <h3>Threads of Hope UK</h3>
-            <p>
-              Supports refugees and homeless individuals with essential clothing
-              and footwear.
-            </p>
-          </div>
-          <div>
-            <h3>SecondChance Wardrobe</h3>
-            <p>
-              Collects and redistributes quality fashion items to women’s
-              shelters and youth hostels.
-            </p>
-          </div>
-          <div>
-            <h3>GreenStitch Collective</h3>
-            <p>
-              Focuses on textile recycling and promoting sustainable fashion
-              initiatives.
-            </p>
+          <div className="hero_actions">
+            <Link to="/marketplace" className="hero_primary">
+              Browse Items
+            </Link>
+            <Link to="/donate" className="hero_secondary">
+              Donate Now
+            </Link>
           </div>
         </div>
-      </section>
-
-      <section className="Header">
-        <h2>Here's Your Impact of the Day...</h2>
-        <div className="impact_row">
-          <div className="impact_info1">
-            <p>Thanks to your donations, this many people have been helped:</p>
-            <div className="co2_value">10 people!</div>
+        <div className="hero_visual">
+          <div className="hero_image">
+            <span>??</span>
           </div>
-          <div className="impact_info2">
-            <p>Your clothes donations have saved:</p>
-            <div className="co2_value">0 CO₂e</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="Header" id="howitworks">
-        <div className="image2">
-          <img src={DonateImg2} alt="Illustration of donation process" />
-        </div>
-        <h2>How It Works</h2>
-        <p>Donating Clothes The Easy Way</p>
-
-        <div className="how_works_content">
-          <div className="steps_container">
-            <div className="step1">
-              <h3>Log Your Donation</h3>
-              <p>
-                Follow simple steps once logged in to record your clothing
-                donation online. Add short descriptions or photos so we know
-                what you’re giving — it only takes a minute.
-              </p>
+          <div className="hero_stats">
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
+              <span>Items Available</span>
             </div>
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
+              <span>Active Users</span>
+            </div>
+            <div className="hero_stat">
+              <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
+              <span>Donations</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="step2">
-              <h3>Bag Up Your Clothes</h3>
-              <p>
-                Pop your clean, pre-loved clothes into any bag or box. Make sure
-                everything’s washed and ready to be re-loved by someone new.
-              </p>
-              <div className="image3">
-                <img src={DonateImg4} alt="Bagging up donated clothes" />
+      
+      <section className="season_banner">
+        <span className="season_icon" aria-hidden="true">
+          ⭐
+        </span>
+        <div>
+          <h3>Summer Clothing Drive - ends July 31</h3>
+          <p>Donate summer essentials for kids heading back to school. 3 days left.</p>
+        </div>
+        <Link to="/sign_up">Donate now</Link>
+      </section>
+
+      {homepageData?.featured_categories?.map((category) => (
+        <section key={category.id} className="category-section">
+          <div className="section-header">
+            <div className="category-title">
+              <span className="category-icon">{category.icon}</span>
+              <h3>{category.name}</h3>
+            </div>
+            <Link to={`/category/${category.slug}`} className="see-all-link">
+              See all →
+            </Link>
+          </div>
+          <div className="scroll-container">
+            <button 
+              className="scroll-btn left" 
+              onClick={() => scrollCategory(category.id, 'left')}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="category-scroll" ref={el => categoryRefs.current[category.id] = el}>
+              {(homepageData?.products_by_category?.[category.id]?.length >= 3 ? homepageData?.products_by_category?.[category.id] : homepageData?.products_by_category?.[category.id]?.slice(0, 3))?.map((item) => (
+                <div key={item.id} className="category-product-card">
+                  <div className="product-header">
+                    <div className="user-avatar">
+                      <img src={item.user?.avatar || 'https://picsum.photos/seed/user/30/30.jpg'} alt={item.user?.name} />
+                    </div>
+                    <div className="user-details">
+                      <span className="username">{item.user?.name || 'Unknown'}</span>
+                      <span className="time-posted">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently'}</span>
+                    </div>
+                  </div>
+                  <div className="product-image">
+                    {item.thumbnail?.url ? (
+                      <img src={item.thumbnail.url} alt={item.title} />
+                    ) : (
+                      <div>??</div>
+                    )}
+                  </div>
+                  <div className="product-details">
+                    <div className="location-line">
+                      <MapPin size={12} />
+                      <span>{item.addresses?.[0]?.city || 'Unknown'}, {item.addresses?.[0]?.district || 'Unknown'}</span>
+                    </div>
+                    <h4 className="product-title">{item.title}</h4>
+                    <div className="tags-row">
+                      {item.condition && (
+                        <span className="tag">{item.condition}</span>
+                      )}
+                      {item.age_range && (
+                        <span className="tag">{item.age_range}</span>
+                      )}
+                    </div>
+                    <div className="price-section">
+                      {item.price ? (
+                        <span className="price-tag">£{item.price}</span>
+                      ) : (
+                        <span className="free-tag">FREE</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button 
+              className="scroll-btn right" 
+              onClick={() => scrollCategory(category.id, 'right')}
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+      ))}
+
+      <section className="collections-section">
+        <div className="section-header">
+          <p className="eyebrow">FEATURED COLLECTIONS</p>
+          <h3>Browse by category</h3>
+        </div>
+        <div className="collections-grid">
+          {homepageData?.featured_categories?.slice(0, 8)?.map((category) => (
+            <Link key={category.id} to={`/category/${category.slug}`} className="collection-card">
+              <div className="collection-image" style={{ background: `linear-gradient(135deg, ${getCategoryColor(category.id)} 0%, ${getCategoryColor(category.id, 0.8)} 100%)` }}>
+                <span className="category-emoji">{getCategoryEmoji(category.name)}</span>
               </div>
-            </div>
+              <div className="collection-content">
+                <h4>{category.name}</h4>
+                <p>Browse {category.name} items</p>
+                <div className="collection-meta">
+                  <span>{category.products_count || 0} items</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {homepageData?.featured_categories?.length > 8 && (
+          <button className="show-more-btn" onClick={() => setShowMoreCategories(!showMoreCategories)}>
+            {showMoreCategories ? 'Show less' : 'Show more categories'}
+          </button>
+        )}
+      </section>
 
-            <div className="step3">
-              <h3>We Collect or You Drop Off</h3>
-              <p>
-                On your chosen day, we’ll collect your donation or you can drop
-                it off at a partner charity location. You’ll get a reminder with
-                your collection details.
-              </p>
-            </div>
-
-            <div className="step4">
-              <h3>We Process Your Donation</h3>
-              <p>
-                Our partner charities carefully sort, categorise, and prepare
-                your items for redistribution or resale to ensure they reach the
-                right people.
-              </p>
-            </div>
-
-            <div className="step5">
-              <h3>Our Charity — and the Planet — Benefit</h3>
-              <p>
-                Once your clothes are reused or resold, your chosen charity
-                receives direct support — and you can track your sustainability
-                impact from CO₂ saved to people helped.
-              </p>
-            </div>
+      <section className="trending-section">
+        <div className="section-header">
+          <p className="eyebrow">TRENDING NOW</p>
+          <h3>Popular this week</h3>
+        </div>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollTrending('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="trending-scroll" ref={trendingScrollRef}>
+            {(homepageData?.popular_products?.length >= 3 ? homepageData?.popular_products : homepageData?.popular_products?.slice(0, 3))?.map((item) => (
+              <TrendingCard key={item.id} item={{
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
+                is_boosted: item.is_boosted || false,
+                city: item.addresses?.[0]?.city || 'Unknown',
+                district: item.addresses?.[0]?.district || 'Unknown',
+                condition: item.condition || 'Good',
+                age_range: item.age_range || 'Unknown',
+                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
+                image: item.thumbnail?.url || '??',
+                tone: 'blue',
+                likes: item.favorites_count || 0,
+                seller: {
+                  name: item.user?.name || 'Unknown',
+                  avatar: '??'
+                }
+              }} />
+            ))}
           </div>
-
-          <div className="Please_Donate">
-            <h3>Please Donate:</h3>
-            <ul>
-              <li>Good quality clean adults’ and children’s clothing</li>
-              <li>Pairs of shoes</li>
-              <li>Handbags & belts</li>
-              <li>Unused underwear & swimwear</li>
-            </ul>
-
-            <h3>Please Don’t Give Us:</h3>
-            <ul>
-              <li>Stained or damaged clothing</li>
-              <li>Duvets, pillows & cushions</li>
-              <li>Books, DVDs, CDs & video games</li>
-              <li>Coat hangers, lampshades & roller blinds</li>
-              <li>Rugs</li>
-              <li>Plastic toys, board games & puzzles</li>
-              <li>Furniture & mattresses</li>
-              <li>Large electrical items</li>
-            </ul>
-
-            <h3>Did You Know?</h3>
-            <p>
-              An estimated £140m worth of clothing is sent to UK landfill every
-              year.
-            </p>
-            <p>
-              The average UK household owns £4000 worth of clothes — and unused
-              clothes in UK wardrobes are worth £30bn.
-            </p>
-            <p>
-              <strong>Source:</strong> WRAP
-            </p>
-
-            <h3>Want to Know More?</h3>
-            <p>Check out our FAQs:</p>
-            <ul>
-              <li>
-                <Link to="/FAQ">What makes LetUsDonate different?</Link>
-              </li>
-              <li>
-                <Link to="/FAQ">What can I donate?</Link>
-              </li>
-              <li>
-                <Link to="/FAQ">How do I book a collection?</Link>
-              </li>
-              <li>
-                <Link to="/FAQ">How much money goes to my chosen charity?</Link>
-              </li>
-            </ul>
-          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollTrending('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </section>
 
-      <section className="Header">
-        <h2>What People Have to Say About Us</h2>
-        <div className="comments">
-          <p className="comments">{comment[currentComment]}</p>
+      <section className="donation-causes-section">
+        <div className="section-header">
+          <p className="eyebrow">URGENT DONATION CAUSES</p>
+          <h3>Support families in need</h3>
+        </div>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollDonationCauses('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="donation-causes-scroll" ref={donationCausesScrollRef}>
+            {(homepageData?.donation_causes?.length >= 3 ? homepageData?.donation_causes : homepageData?.donation_causes?.slice(0, 3))?.map((cause) => {
+              const daysAgo = Math.floor((Date.now() - new Date(cause.created_at)) / (1000 * 60 * 60 * 24));
+              const urgencyColor = daysAgo <= 1 ? 'green' : daysAgo <= 4 ? 'yellow' : 'red';
+              
+              return (
+                <div key={cause.id} className="donation-cause-card">
+                  <div className="cause-image">
+                    {cause.thumbnail?.url ? (
+                      <img src={cause.thumbnail.url} alt={cause.title} />
+                    ) : (
+                      <div>??</div>
+                    )}
+                  </div>
+                  <div className="cause-details">
+                    <h4>{cause.title}</h4>
+                    <div className="cause-location">
+                      <MapPin size={12} />
+                      <span>{cause.addresses?.[0]?.city || 'Unknown'}, {cause.addresses?.[0]?.district || 'Unknown'}</span>
+                    </div>
+                    <div className="cause-time">
+                      Posted {new Date(cause.created_at).toLocaleDateString()}
+                      <span className={`urgency-indicator ${urgencyColor}`}></span>
+                    </div>
+                    <div className="cause-stats">
+                      <span>{cause.favorites_count || 0} interested</span>
+                      <span>{cause.views_count || 0} views</span>
+                    </div>
+                    <button className="support-btn">Support</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollDonationCauses('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       </section>
 
-      <div className="home_content">
-        <div className="image3">
-          <img src={DonateImg3} alt="Happy donor after giving clothes" />
-        </div>
-
-        <div className="ready_text">
-          <p>
-            Ready to free up space in your wardrobe, and leave your heart happy?
-          </p>
-          <Link to="/sign_up" className="joinus">
-            Join Us
-          </Link>
-          <div className="or">
-            <h2>or</h2>
+      <section className="tt-section dark_section">
+        <div className="tt-section-head market_head">
+          <div>
+            <p className="eyebrow">MARKETPLACE</p>
+            <h3>New arrivals</h3>
           </div>
-          <Link to="/login" className="login">
-            Login
-          </Link>
+          <Link to="/add_announcement">See all</Link>
         </div>
-      </div>
-    </section>
+        <div className="scroll-container">
+          <button 
+            className="scroll-btn left" 
+            onClick={() => scrollMarket('left')}
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="market_grid_v2" ref={marketScrollRef}>
+            {(homepageData?.new_arrivals?.length >= 3 ? homepageData?.new_arrivals : homepageData?.new_arrivals?.slice(0, 3))?.map((item) => (
+              <MarketplaceCard key={item.id} item={{
+                id: item.id,
+                title: item.title,
+                price: item.price,
+                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
+                is_boosted: item.is_boosted || false,
+                city: item.addresses?.[0]?.city || 'Unknown',
+                district: item.addresses?.[0]?.district || 'Unknown',
+                condition: item.condition || 'Good',
+                age_range: item.age_range || 'Unknown',
+                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
+                image: item.thumbnail?.url || '??',
+                tone: 'blue',
+                likes: item.favorites_count || 0,
+                seller: {
+                  name: item.user?.name || 'Unknown',
+                  avatar: '??'
+                }
+              }} />
+            ))}
+          </div>
+          <button 
+            className="scroll-btn right" 
+            onClick={() => scrollMarket('right')}
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </section>
+
+      <section className="tt-how-it-works upgraded">
+        <h3>How TinyTrove Works</h3>
+        <div className="tt-how-grid">
+          <article>
+            <span>01</span>
+            <h4>Gather Gear</h4>
+            <p>Find gently used outfits and toys your kids have outgrown.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h4>Choose Your Path</h4>
+            <p>Sell them for cash or donate them instantly to a verified cause.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h4>Make an Impact</h4>
+            <p>Every item sold extends its life and supports children in need.</p>
+    </article>
+  </div>
+</section>
+
+<section className="tt-how-it-works upgraded">
+  <h3>How TinyTrove Works</h3>
+  <div className="tt-how-grid">
+    <article>
+      <span>01</span>
+      <h4>Gather Gear</h4>
+      <p>Find gently used outfits and toys your kids have outgrown.</p>
+    </article>
+    <article>
+      <span>02</span>
+      <h4>Choose Your Path</h4>
+      <p>Sell them for cash or donate them instantly to a verified cause.</p>
+    </article>
+    <article>
+      <span>03</span>
+      <h4>Make an Impact</h4>
+      <p>Every item sold extends its life and supports children in need.</p>
+    </article>
+  </div>
+</section>
+
+<section className="testimonials">
+  <h3>Trusted by local parents</h3>
+  <div className="testimonials-grid">
+    {homepageData?.recent_reviews?.map((review) => (
+      <article className="testimonial-card" key={review.id}>
+        <div className="testimonial-quote-icon">??</div>
+        <p>"{review.comment || 'Great product!'}</p>
+        <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
+        <div className="rating">{'?'.repeat(review.rating || 5)}</div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<section className="tt-main-footer">
+  <div>
+    <h4>TinyTrove</h4>
+    <p>
+      Buy and donate pre-loved kids essentials while supporting verified local
+      causes.
+    </p>
+  </div>
+  <div>
+    <h5>Quick Links</h5>
+    <ul>
+      <li>
+        <Link to="/our_partners">About Us</Link>
+      </li>
+      <li>
+        <Link to="/faq">How to Donate</Link>
+      </li>
+      <li>
+        <Link to="/faq">Seller Fees</Link>
+      </li>
+      <li>
+        <Link to="/faq">Safety</Link>
+      </li>
+    </ul>
+  </div>
+  <div>
+    <h5>Trusted Badges</h5>
+    <p>?? Secure Payments</p>
+    <p>?? Nonprofit Verified</p>
+    <p>?? App Store / Google Play</p>
+    <input type="email" placeholder="Join our newsletter" aria-label="Newsletter email" />
+  </div>
+</section>
+    </main>
   );
 }
 

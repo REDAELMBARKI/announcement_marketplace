@@ -3,13 +3,10 @@
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\DonationController;
-use App\Http\Controllers\DonationItemController;
-use App\Http\Controllers\CharityController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ViewUserController;
 use App\Http\Controllers\OpenAIController;
+use App\Http\Controllers\Home\HomepageController;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ReportController;
@@ -65,9 +62,7 @@ Route::get('/api/test-users', function() {
 
 
 // Authenrtication routes
-// Route::post('/login', [AuthController::class, 'login']);
-// Route::post('/signup', [AuthController::class, 'signup']);
-// Route::post('/logout', [AuthController::class, 'logout']);
+
 use App\Http\Controllers\UserProfileController;
 
 Route::get('/user/{id}', [UserProfileController::class, 'show']);
@@ -106,6 +101,11 @@ Route::delete('/charities/{id}', [CharityController::class, 'destroy']);
 Route::get('/charity/{charityId}/donations', [DonationController::class, 'getCharityDonations']);
 
 
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/signup', [AuthController::class, 'signup']);
+Route::post('/logout', [AuthController::class, 'logout']);
+
+
 // Admin routes
 Route::prefix('admin')->group(function () {
     Route::get('/donations',  [AdminController::class, 'getAllDonations']);
@@ -117,7 +117,6 @@ Route::prefix('admin')->group(function () {
 // User Management Routes
 Route::prefix('user-management')->group(function () {
     Route::get('/view-users', [ViewUserController::class, 'getViewUsers']);
-    Route::get('/charities-list', [CharityController::class, 'getCharitiesList']);
     Route::get('/roles', [ViewUserController::class, 'getRoles']);
     Route::put('/users/{id}', [ViewUserController::class, 'updateUser']);
     Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
@@ -135,6 +134,11 @@ Route::post('/ask-faq', [OpenAIController::class, 'ask']);
 Route::post('/ask-faq', [OpenAIController::class, 'ask'])
     ->middleware('throttle:3,1');
 // The above line limits to 3 requests per minute per IP address to prevent spam
+
+// Homepage route
+Route::get('/homepage', HomepageController::class)->name('homepage');
+
+
 
 // Reports routes
 Route::get('/reports/donations', [ReportController::class, 'donations']);
