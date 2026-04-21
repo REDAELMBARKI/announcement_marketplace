@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Charity;
-use App\Models\DomainUser;
-use App\Models\CharityStaff;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class CharityController extends Controller
 {
@@ -53,28 +53,29 @@ class CharityController extends Controller
             ]);
 
             // try to find existing user by email
-            $user = DomainUser::where('user_email', $request->staff_email)->first();
+            $user = User::where('email', $request->staff_email)->first();
 
             // if user doesn't exist then create a new one
             if (!$user) {
-                $user = DomainUser::create([
-                    'user_name'     => $request->staff_username,
-                    'user_email'    => $request->staff_email,
-                    'user_password' => password_hash($request->staff_password, PASSWORD_DEFAULT),
+                $user = User::create([
+                    'name'          => $request->staff_username,
+                    'email'         => $request->staff_email,
+                    'password'      => Hash::make($request->staff_password),
                     'role_id'       => 11, //charity staff role
                 ]);
             }
 
             // check if this user is already linked to the charity
-            $linkExists = CharityStaff::where('charity_ID', $charity->charity_ID)
-                ->where('user_ID', $user->user_ID)
+            $linkExists = DB::table('Charity_Staff')
+                ->where('charity_ID', $charity->charity_ID)
+                ->where('user_ID', $user->id)
                 ->exists();
 
             // if the link does not exist, create it
             if (!$linkExists) {
-                CharityStaff::create([
+                DB::table('Charity_Staff')->insert([
                     'charity_ID' => $charity->charity_ID,
-                    'user_ID'    => $user->user_ID,
+                    'user_ID'    => $user->id,
                 ]);
             }
 
@@ -149,7 +150,7 @@ public function destroy($id)
         }
 
         // remove any staff that are linked
-        CharityStaff::where('charity_ID', $id)->delete();
+        DB::table('Charity_Staff')->where('charity_ID', $id)->delete();
 
         // delete the charity
         $charity->delete();

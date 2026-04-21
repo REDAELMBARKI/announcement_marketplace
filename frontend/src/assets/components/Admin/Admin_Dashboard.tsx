@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Chart } from "chart.js/auto";
 import "../../../css/admin.css";
+import api from "../../../services/api";
 
 // this is js to get text color based on theme
 function getChartTextColor() {
@@ -14,6 +15,7 @@ function getChartTextColor() {
 export function Admin_Dashboard() {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
@@ -39,18 +41,26 @@ export function Admin_Dashboard() {
 
   // fetch donations from the API aka backend
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/donations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setDonations(data.donations);
-        }
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await api.get("/admin/donations");
+        const payload = response.data;
+        const records = payload?.data ?? payload?.donations ?? [];
+        setDonations(Array.isArray(records) ? records : []);
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          "Unable to load admin dashboard data. Please login again.";
+        setError(message);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Network error:", err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   // filters donations by time period, returning only those within the specified number of days
@@ -331,6 +341,8 @@ export function Admin_Dashboard() {
       <div className="data-reports">
         {loading ? (
           <p>Loading data...</p>
+        ) : error ? (
+          <p>{error}</p>
         ) : (
           <>
             <div className="chart-card">
