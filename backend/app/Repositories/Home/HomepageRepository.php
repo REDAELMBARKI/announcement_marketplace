@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class HomepageRepository implements HomepageRepositoryInterface
 {
+    public function __construct(
+        private Category $category,
+        private Product $product
+    ) {}
     public function getStats(): array
     {
         return [

@@ -14,6 +14,8 @@ use App\Observers\ReviewObserver;
 use App\Observers\UserObserver;
 use App\Repositories\Home\HomepageRepository;
 use App\Repositories\Home\HomepageRepositoryInterface;
+use App\Repositories\ProductRepository;
+use App\Repositories\ProductRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(HomepageRepositoryInterface::class, HomepageRepository::class);
+        $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
     }
 
     /**

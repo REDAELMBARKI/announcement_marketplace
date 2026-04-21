@@ -33,7 +33,7 @@ class HomepageService
                 featuredCategories: $this->repository->getFeaturedCategories()->toArray(),
                 popularProducts: $this->repository->getPopularProducts($filters)->toArray(),
                 newArrivals: $this->repository->getNewArrivals()->toArray(),
-                productsByCategory: $this->repository->getAllProductsByCategory()->toArray(),
+                productsByCategory: $this->repository->getAllProductsByCategory(),
                 donationCauses: $this->repository->getDonationCauses()->toArray(),
                 trendingTags: $this->repository->getTrendingTags()->toArray(),
                 topSellers: $this->repository->getTopSellers()->toArray(),

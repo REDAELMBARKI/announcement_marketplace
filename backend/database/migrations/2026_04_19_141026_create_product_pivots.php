@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // ─── product_category pivot ───────────────────────────────────────────
-        // A product can belong to multiple categories (e.g. Clothing + Boys)
-        Schema::create('category_product', function (Blueprint $table) {
+        // ─── subcategory_product pivot ───────────────────────────────────────────
+        // A product can have multiple sub-categories (e.g. Clothing + Boys)
+        Schema::create('subcategory_product', function (Blueprint $table) {
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->primary(['product_id', 'category_id']);
@@ -37,6 +37,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('product_tag');
         Schema::dropIfExists('tags');
-        Schema::dropIfExists('category_product');
+        Schema::dropIfExists('subcategory_product');
     }
 };

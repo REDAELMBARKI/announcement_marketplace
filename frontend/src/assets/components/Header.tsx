@@ -14,6 +14,7 @@ function Header() {
 
         <nav className="main_links" aria-label="Main navigation">
           <Link to="/">Home</Link>
+          <Link to="/marketplace">Marketplace</Link>
           <Link to="/our_partners">Our Partners</Link>
           <Link to="/faq">FAQ</Link>
           <Link to="/faq_chatbot">FAQ Chatbot</Link>

@@ -26,7 +26,7 @@ return new class extends Migration
 
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-
+            $table->foreignId('super_category_id')->constrained('categories')->nullable()->nullOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
             // Listing mode: sell or donate only

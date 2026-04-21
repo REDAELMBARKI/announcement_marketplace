@@ -81,6 +81,14 @@ export default function User_Dashboard() {
                   <Link to="/my_impact">My Impact</Link>
                 </li>
                 <li>
+                  <i className="fa-solid fa-shop"></i>
+                  <Link to="/marketplace">Marketplace</Link>
+                </li>
+                <li>
+                  <i className="fa-solid fa-list"></i>
+                  <Link to="/my_announcements">My Announcements</Link>
+                </li>
+                <li>
                   <i className="fa-solid fa-inbox"></i>
                   <Link to="/my_donations">My Donations</Link>
                 </li>

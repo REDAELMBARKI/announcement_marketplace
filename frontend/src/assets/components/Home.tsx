@@ -106,6 +106,36 @@ function Home() {
     return emojiMap[categoryName] || '📦';
   };
 
+  const getCardCountClass = (count) => {
+    if (count === 1) return 'single-card';
+    if (count >= 2 && count <= 4) return 'few-cards';
+    return 'many-cards';
+  };
+
+  // Countdown timer state
+  const [timeLeft, setTimeLeft] = useState({ days: 3, hours: 0, minutes: 0, seconds: 0 });
+
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        const totalSeconds = prev.days * 86400 + prev.hours * 3600 + prev.minutes * 60 + prev.seconds - 1;
+        if (totalSeconds <= 0) {
+          clearInterval(timer);
+          return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+        }
+        return {
+          days: Math.floor(totalSeconds / 86400),
+          hours: Math.floor((totalSeconds % 86400) / 3600),
+          minutes: Math.floor((totalSeconds % 3600) / 60),
+          seconds: totalSeconds % 60
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   
   if (loading) {
     return (
@@ -151,8 +181,13 @@ function Home() {
           </div>
         </div>
         <div className="hero_visual">
+          <div className="floating-cards">
+            <div className="floating-card">👕</div>
+            <div className="floating-card">👟</div>
+            <div className="floating-card">🧸</div>
+          </div>
           <div className="hero_image">
-            <span>??</span>
+            <span>👨‍👩‍👧‍👦</span>
           </div>
           <div className="hero_stats">
             <div className="hero_stat">
@@ -178,7 +213,10 @@ function Home() {
         </span>
         <div>
           <h3>Summer Clothing Drive - ends July 31</h3>
-          <p>Donate summer essentials for kids heading back to school. 3 days left.</p>
+          <p>Donate summer essentials for kids heading back to school.</p>
+          <div className="countdown-timer">
+            {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
+          </div>
         </div>
         <Link to="/sign_up">Donate now</Link>
       </section>
@@ -287,19 +325,32 @@ function Home() {
 
       <section className="trending-section">
         <div className="section-header">
-          <p className="eyebrow">TRENDING NOW</p>
-          <h3>Popular this week</h3>
+          <div>
+            <p className="eyebrow">TRENDING NOW</p>
+            <h3>Popular this week</h3>
+          </div>
+          {homepageData?.popular_products?.length > 4 && (
+            <div className="scroll-controls">
+              <button 
+                className="scroll-btn left" 
+                onClick={() => scrollTrending('left')}
+                aria-label="Scroll left"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button 
+                className="scroll-btn right" 
+                onClick={() => scrollTrending('right')}
+                aria-label="Scroll right"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
         </div>
         <div className="scroll-container">
-          <button 
-            className="scroll-btn left" 
-            onClick={() => scrollTrending('left')}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div className="trending-scroll" ref={trendingScrollRef}>
-            {(homepageData?.popular_products?.length >= 3 ? homepageData?.popular_products : homepageData?.popular_products?.slice(0, 3))?.map((item) => (
+          <div className={`trending-scroll ${getCardCountClass(homepageData?.popular_products?.length || 0)}`} ref={trendingScrollRef}>
+            {homepageData?.popular_products?.map((item) => (
               <TrendingCard key={item.id} item={{
                 id: item.id,
                 title: item.title,
@@ -321,13 +372,6 @@ function Home() {
               }} />
             ))}
           </div>
-          <button 
-            className="scroll-btn right" 
-            onClick={() => scrollTrending('right')}
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={20} />
-          </button>
         </div>
       </section>
 

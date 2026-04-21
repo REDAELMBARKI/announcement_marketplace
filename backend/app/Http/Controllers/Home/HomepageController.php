@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers\Home;
 
-use App\Actions\Home\GetHomepageDataAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Home\GetHomepageDataRequest;
 use App\Http\Resources\Home\HomepageResource;
+use App\Services\Home\HomepageService;
 use Illuminate\Http\JsonResponse;
 
 class HomepageController extends Controller
 {
     public function __construct(
-        private readonly GetHomepageDataAction $action
+        private readonly HomepageService $service
     ) {}
 
     public function __invoke(GetHomepageDataRequest $request): JsonResponse
     {
-        $data = $this->action->execute($request);
-        
+        $homepageData = $this->service->getHomepageData($request);
+
         return response()->json(
-            new HomepageResource($data)
+            new HomepageResource($homepageData)
         );
     }
 }

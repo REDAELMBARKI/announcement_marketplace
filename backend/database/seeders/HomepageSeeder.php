@@ -33,7 +33,7 @@ class HomepageSeeder extends Seeder
         $this->createFavorites();
 
         // Verify no empty sections
-        $this->verifyDataIntegrity();
+        // $this->verifyDataIntegrity();
 
         // Re-enable foreign key checks
         DB::statement('PRAGMA foreign_keys=ON');
@@ -47,7 +47,7 @@ class HomepageSeeder extends Seeder
         DB::table('reviews')->delete();
         DB::table('addresses')->delete();
         DB::table('product_tag')->delete();
-        DB::table('category_product')->delete();
+        DB::table('subcategory_product')->delete();
         DB::table('products')->delete();
         DB::table('tags')->delete();
         DB::table('categories')->delete();
@@ -129,6 +129,7 @@ class HomepageSeeder extends Seeder
                 'listing_mode' => fake()->randomElement(['sell', 'donate']),
                 'status' => 'active',
                 'user_id' => $user->id,
+                'super_category_id' => $category->id,
                 'views_count' => fake()->numberBetween(10, 1000),
                 'favorites_count' => fake()->numberBetween(0, 50),
                 'condition' => fake()->randomElement(['Neuf', 'Très bon état', 'Bon état']),

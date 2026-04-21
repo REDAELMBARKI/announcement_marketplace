@@ -24,14 +24,6 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            // Example tree:
-            // Clothing (parent)
-            //   ├── Boys
-            //   ├── Girls
-            //   └── Newborn
-            // Toys & Games (parent)
-            //   ├── Educational
-            //   └── Outdoor
         });
     }
 

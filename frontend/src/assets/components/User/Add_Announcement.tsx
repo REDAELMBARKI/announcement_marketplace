@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import {
   Baby,
   BookOpen,
@@ -32,6 +33,42 @@ import {
 } from "./announcement/Shared.jsx";
 import "../../../css/add_announcement.css";
 
+// Types
+interface FormState {
+  super_category_id: number | null;
+  sub_category_ids: number[];
+  title: string;
+  description: string;
+  listing_type: string;
+  gender: string;
+  age_range: string;
+  brand: string;
+  condition: string;
+  sizes: string[];
+  colors: string[];
+  season: string;
+  material: string;
+  listing_mode: string;
+  price: string;
+  price_negotiable: boolean;
+  pickup_address: string;
+  handover_method: string;
+}
+
+interface Category {
+  label: string;
+  icon: LucideIcon;
+}
+
+interface FieldErrors {
+  [key: string]: string;
+}
+
+interface StatusMessage {
+  type: "success" | "error";
+  message: string;
+}
+
 const BASE_STEPS = [
   { key: "category", label: "Categorie" },
   { key: "product", label: "Produit & Media" },
@@ -57,34 +94,32 @@ export default function Add_Announcement() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const fileInputRef = useRef(null);
 
-  const [stepKey, setStepKey] = useState("category");
-  const [status, setStatus] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [photos, setPhotos] = useState([]);
-  const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
-  const [form, setForm] = useState({
-    category: "Vetements",
-    item_name: "",
+  const [stepKey, setStepKey] = useState<string>("category");
+  const [status, setStatus] = useState<StatusMessage | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [mediaIds, setMediaIds] = useState<number[]>([]);
+  const [mainPhotoIndex, setMainPhotoIndex] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [form, setForm] = useState<FormState>({
+    super_category_id: null, // Single super category
+    sub_category_ids: [],    // Multiple sub categories
+    title: "",
     description: "",
-    is_collection: false,
+    listing_type: "single",
     gender: "",
-    recommended_age: "",
+    age_range: "",
     brand: "",
     condition: "",
     sizes: [],
     colors: [],
-    material: "",
-    quantity: 1,
     season: "",
-    listing_type: "donation",
+    material: "",
+    listing_mode: "donate",
     price: "",
-    negotiable: false,
-    is_fixed_price: false,
-    pickup_city: "",
-    pickup_district: "",
-    handover_method: "both",
+    price_negotiable: false,
     pickup_address: "",
-    charity_ID: 1,
+    handover_method: "both",
   });
 
   const visibleSteps = useMemo(() => BASE_STEPS, []);
@@ -96,30 +131,30 @@ export default function Add_Announcement() {
 
   const canPublish = useMemo(() => {
     return (
-      form.item_name.trim() &&
+      form.title.trim() &&
       form.description.trim() &&
       form.condition &&
-      form.pickup_city.trim() &&
+      form.pickup_address?.trim() &&
       form.handover_method
     );
   }, [form]);
 
-  const updateField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-  const clearFieldError = (key) =>
+  const updateField = (key: keyof FormState, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
+  const clearFieldError = (key: string) =>
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
       delete next[key];
       return next;
     });
-  const updateFieldWithValidation = (key, value) => {
+  const updateFieldWithValidation = (key: keyof FormState, value: any) => {
     updateField(key, value);
     clearFieldError(key);
   };
 
-  const toggleItem = (key, value) => {
+  const toggleItem = (key: keyof FormState, value: any) => {
     setForm((prev) => {
-      const selected = prev[key];
+      const selected = prev[key] as any[];
       return {
         ...prev,
         [key]: selected.includes(value)
@@ -132,27 +167,24 @@ export default function Add_Announcement() {
 
   const validateStep = (targetStepKey = stepKey) => {
     const errors = {};
-    if (targetStepKey === "category" && !form.category) {
-      errors.category = "Choisissez une categorie.";
+    if (targetStepKey === "category" && !form.super_category_id) {
+      errors.super_category_id = "Choisissez une categorie principale.";
     }
     if (targetStepKey === "product") {
-      if (!form.item_name.trim()) errors.item_name = "Le titre est obligatoire.";
+      if (!form.title.trim()) errors.title = "Le titre est obligatoire.";
       if (!form.description.trim()) errors.description = "La description est obligatoire.";
       if (!form.condition) errors.condition = "Choisissez l'etat du produit.";
       if (!photos.length) errors.photos = "Ajoutez au moins une photo.";
     }
-    if (targetStepKey === "variants" && !form.is_collection) {
+    if (targetStepKey === "variants" && form.listing_type === "single") {
       if (!form.sizes.length) errors.sizes = "Selectionnez au moins une taille.";
       if (!form.colors.length) errors.colors = "Selectionnez au moins une couleur.";
-      if (!form.material) errors.material = "Selectionnez une matiere.";
-      if (!form.quantity || Number(form.quantity) < 1) errors.quantity = "Quantite minimum: 1.";
       if (!form.season) errors.season = "Choisissez une saison.";
     }
-    if (targetStepKey === "price" && form.listing_type === "sale" && !String(form.price).trim()) {
+    if (targetStepKey === "price" && form.listing_mode === "sell" && !String(form.price).trim()) {
       errors.price = "Le prix est obligatoire pour une vente.";
     }
     if (targetStepKey === "location") {
-      if (!form.pickup_city.trim()) errors.pickup_city = "La ville est obligatoire.";
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
     }
     return errors;
@@ -183,18 +215,72 @@ export default function Add_Announcement() {
     }
   };
 
-  const onPhotoChange = (event) => {
-    const incoming = Array.from(event.target.files || []);
-    const merged = [...photos, ...incoming].slice(0, 8);
-    setPhotos(merged);
-    if (mainPhotoIndex >= merged.length) {
-      setMainPhotoIndex(0);
+  const uploadImages = async (files) => {
+    setIsUploading(true);
+    const uploadedMediaIds = [];
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('image', files[i]);
+        // First image is thumbnail, others are gallery
+        formData.append('collection', i === 0 ? 'thumbnail' : 'gallery');
+        
+        const response = await fetch('http://localhost:8000/api/media/upload', {
+          method: 'POST',
+          body: formData,
+          headers: { Accept: 'application/json' },
+        });
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+          uploadedMediaIds.push(result.mediaId);
+        } else {
+          throw new Error(result.message || 'Upload failed');
+        }
+      }
+      
+      setMediaIds(uploadedMediaIds);
+      setPhotos(files);
+      return uploadedMediaIds;
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Image upload failed. Please try again.' });
+      return [];
+    } finally {
+      setIsUploading(false);
     }
-    clearFieldError("photos");
   };
 
-  const removePhoto = (indexToRemove) => {
+  const onPhotoChange = async (event) => {
+    const incoming = Array.from(event.target.files || []);
+    const merged = [...photos, ...incoming].slice(0, 8);
+    
+    // Upload new images
+    const newMediaIds = await uploadImages(incoming);
+    if (newMediaIds.length > 0) {
+      setPhotos(merged);
+      if (mainPhotoIndex >= merged.length) {
+        setMainPhotoIndex(0);
+      }
+      clearFieldError('photos');
+    }
+  };
+
+  const removePhoto = async (indexToRemove) => {
+    // Delete temporary media if it exists
+    const mediaIdToRemove = mediaIds[indexToRemove];
+    if (mediaIdToRemove) {
+      try {
+        await fetch(`http://localhost:8000/api/media/temporary/${mediaIdToRemove}`, {
+          method: 'DELETE',
+        });
+      } catch (error) {
+        console.error('Failed to delete temporary media:', error);
+      }
+    }
+    
     setPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setMediaIds((prev) => prev.filter((_, index) => index !== indexToRemove));
     setMainPhotoIndex((prevIndex) => {
       if (indexToRemove === prevIndex) {
         return 0;
@@ -207,7 +293,7 @@ export default function Add_Announcement() {
   };
 
   const submitAnnouncement = async () => {
-    if (!user?.donor?.donor_ID) {
+    if (!user?.id) {
       setStatus({ type: "error", message: "Connectez-vous d'abord." });
       return;
     }
@@ -219,37 +305,37 @@ export default function Add_Announcement() {
       return;
     }
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        formData.append(key, value.join(","));
-      } else {
-        formData.append(key, value);
-      }
-    });
-    formData.append("donor_ID", user.donor.donor_ID);
-    formData.append("currency", "MAD");
-    formData.append("primary_photo_index", String(mainPhotoIndex));
-    formData.append("size", form.sizes[0] || "");
-    formData.append("condition", form.condition || "bon");
-    photos.forEach((photo) => formData.append("photos[]", photo));
-    if (photos[0]) {
-      formData.append("image", photos[0]);
+    if (mediaIds.length === 0) {
+      setStatus({ type: 'error', message: 'Please add at least one photo.' });
+      return;
     }
+
+    // Build payload as JSON to support arrays properly
+    const payload = {
+      ...form,
+      user_id: user.id,
+      currency: "MAD",
+      super_category_id: form.super_category_id, // Single super category
+      sub_category_ids: form.sub_category_ids,   // Multiple sub categories
+      media_ids: mediaIds, // Send as array, not JSON string
+    };
 
     try {
       const response = await fetch("http://localhost:8000/api/announcements", {
         method: "POST",
-        body: formData,
-        headers: { Accept: "application/json" },
+        body: JSON.stringify(payload),
+        headers: { 
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
       });
-      const payload = await response.json();
-      if (payload.status === "success") {
+      const result = await response.json();
+      if (result.status === "success") {
         setStatus({ type: "success", message: "Annonce publiee avec succes." });
-        setTimeout(() => navigate("/my_donations"), 1200);
+        setTimeout(() => navigate("/my_announcements"), 1200);
         return;
       }
-      setStatus({ type: "error", message: payload.message || "Erreur de validation." });
+      setStatus({ type: "error", message: result.message || "Erreur de validation." });
     } catch (error) {
       setStatus({ type: "error", message: "Erreur reseau." });
     }
@@ -259,20 +345,47 @@ export default function Add_Announcement() {
     if (stepKey === "category") {
       return (
         <>
-          <h3>Qu’annoncez-vous aujourd’hui ?</h3>
-          <p className="subtitle">Selectionnez une categorie principale.</p>
-          {fieldErrors.category ? <p className="aa-error-text">{fieldErrors.category}</p> : null}
-          <div className="aa-icon-grid">
-            {CATEGORIES.map(({ label, icon }) => (
-              <IconCardButton
-                key={label}
-                icon={icon}
-                title={label}
-                active={form.category === label}
-                onClick={() => updateFieldWithValidation("category", label)}
-              />
-            ))}
+          <h3>Qu'annoncez-vous aujourd'hui ?</h3>
+          
+          {/* Super Category - Single Select */}
+          <div className="aa-section">
+            <p className="subtitle">1. Selectionnez une categorie principale</p>
+            {fieldErrors.super_category_id ? <p className="aa-error-text">{fieldErrors.super_category_id}</p> : null}
+            <div className="aa-icon-grid">
+              {CATEGORIES.map(({ label, icon }, index) => (
+                <IconCardButton
+                  key={label}
+                  icon={icon}
+                  title={label}
+                  active={form.super_category_id === index + 1}
+                  onClick={() => {
+                    updateFieldWithValidation("super_category_id", index + 1);
+                    // Clear sub-categories when super category changes
+                    updateField("sub_category_ids", []);
+                  }}
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Sub Categories - Multi Select (only show if super category selected) */}
+          {form.super_category_id && (
+            <div className="aa-section" style={{ marginTop: '24px' }}>
+              <p className="subtitle">2. Selectionnez des sous-categories (optionnel)</p>
+              <div className="aa-checkbox-grid">
+                {CATEGORIES.map(({ label }, index) => (
+                  <label key={`sub-${label}`} className="aa-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={form.sub_category_ids.includes(index + 1)}
+                      onChange={() => toggleItem("sub_category_ids", index + 1)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       );
     }
@@ -282,6 +395,11 @@ export default function Add_Announcement() {
         <>
           <h3>Media & Details produit</h3>
           <div className="aa-media-uploader">
+            {isUploading && (
+              <div className="aa-upload-status">
+                <p>Uploading images...</p>
+              </div>
+            )}
             <div className="aa-photos-row">
               {photos.map((photo, index) => (
                 <div key={`${photo.name}-${index}`} className={`aa-thumb ${index === 0 ? "main" : ""}`}>
@@ -293,7 +411,7 @@ export default function Add_Announcement() {
                 </div>
               ))}
 
-              {photos.length < 8 ? (
+              {photos.length < 8 && !isUploading ? (
                 <button
                   type="button"
                   className="aa-ghost-uploader"
@@ -317,11 +435,11 @@ export default function Add_Announcement() {
           <div className="aa-two-col">
             <Field label="Titre de l'annonce">
               <TextInput
-                value={form.item_name}
+                value={form.title}
                 placeholder="Ex : Manteau chaud garcon 4 ans"
-                onChange={(e) => updateFieldWithValidation("item_name", e.target.value)}
+                onChange={(e) => updateFieldWithValidation("title", e.target.value)}
               />
-              {fieldErrors.item_name ? <p className="aa-error-text">{fieldErrors.item_name}</p> : null}
+              {fieldErrors.title ? <p className="aa-error-text">{fieldErrors.title}</p> : null}
             </Field>
             <Field label="Marque">
               <TextInput
@@ -352,8 +470,8 @@ export default function Add_Announcement() {
             </Field>
             <Field label="Age recommande">
               <SelectInput
-                value={form.recommended_age}
-                onChange={(e) => updateFieldWithValidation("recommended_age", e.target.value)}
+                value={form.age_range}
+                onChange={(e) => updateFieldWithValidation("age_range", e.target.value)}
                 options={[
                   { label: "— Choisir —", value: "" },
                   { label: "0-2 ans", value: "0-2 ans" },
@@ -387,12 +505,12 @@ export default function Add_Announcement() {
           <label className="aa-collection-toggle">
             <input
               type="checkbox"
-              checked={form.is_collection}
-              onChange={(e) => updateField("is_collection", e.target.checked)}
+              checked={form.listing_type === "collection"}
+              onChange={(e) => updateField("listing_type", e.target.checked ? "collection" : "single")}
             />
             C'est un lot / collection
           </label>
-          {!form.is_collection ? (
+          {form.listing_type === "single" ? (
             <>
               <div className="aa-pills-wrap">
                 {SIZES.map((size) => (
@@ -424,15 +542,6 @@ export default function Add_Announcement() {
               </div>
               {fieldErrors.material ? <p className="aa-error-text">{fieldErrors.material}</p> : null}
               <div className="aa-two-col">
-                <Field label="Quantite">
-                  <TextInput
-                    type="number"
-                    min="1"
-                    value={form.quantity}
-                    onChange={(e) => updateFieldWithValidation("quantity", Number(e.target.value))}
-                  />
-                  {fieldErrors.quantity ? <p className="aa-error-text">{fieldErrors.quantity}</p> : null}
-                </Field>
                 <Field label="Saison">
                   <SelectInput
                     value={form.season}
@@ -462,39 +571,39 @@ export default function Add_Announcement() {
           <div className="aa-two-buttons">
             <button
               type="button"
-              className={`aa-toggle-card ${form.listing_type === "sale" ? "active" : ""}`}
-              onClick={() => updateField("listing_type", "sale")}
+              className={`aa-toggle-card ${form.listing_mode === "sell" ? "active" : ""}`}
+              onClick={() => updateField("listing_mode", "sell")}
             >
               Vendre avec un prix
             </button>
             <button
               type="button"
-              className={`aa-toggle-card aa-donation-card ${form.listing_type === "donation" ? "active" : ""}`}
+              className={`aa-toggle-card aa-donation-card ${form.listing_mode === "donate" ? "active" : ""}`}
               onClick={() => {
-                updateField("listing_type", "donation");
+                updateField("listing_mode", "donate");
                 updateField("price", "");
               }}
             >
               <Heart size={16} /> Don gratuit
             </button>
           </div>
-          <div className={`aa-price-block ${form.listing_type === "donation" ? "disabled" : ""}`}>
+          <div className={`aa-price-block ${form.listing_mode === "donate" ? "disabled" : ""}`}>
             <Field label="Prix (MAD)">
               <TextInput
                 type="number"
                 min="0"
                 value={form.price}
-                disabled={form.listing_type === "donation"}
+                disabled={form.listing_mode === "donate"}
                 onChange={(e) => updateFieldWithValidation("price", e.target.value)}
                 placeholder="Ex : 80"
               />
               {fieldErrors.price ? <p className="aa-error-text">{fieldErrors.price}</p> : null}
             </Field>
             <div className="aa-pills-wrap">
-              <PillButton active={form.negotiable} onClick={() => updateField("negotiable", true)}>
+              <PillButton active={form.price_negotiable} onClick={() => updateField("price_negotiable", true)}>
                 Oui, negociable
               </PillButton>
-              <PillButton active={!form.negotiable} onClick={() => updateField("negotiable", false)}>
+              <PillButton active={!form.price_negotiable} onClick={() => updateField("price_negotiable", false)}>
                 Prix fixe
               </PillButton>
             </div>
@@ -507,30 +616,21 @@ export default function Add_Announcement() {
       return (
         <>
           <h3>Localisation & Remise</h3>
-          <div className="aa-two-col">
-            <Field label="Ville">
-              <TextInput
-                value={form.pickup_city}
-                placeholder="Ex : Marrakech"
-                onChange={(e) => updateFieldWithValidation("pickup_city", e.target.value)}
-              />
-              {fieldErrors.pickup_city ? <p className="aa-error-text">{fieldErrors.pickup_city}</p> : null}
-            </Field>
-            <Field label="Quartier (optionnel)">
-              <TextInput
-                value={form.pickup_district}
-                placeholder="Ex : Gueliz"
-                onChange={(e) => updateFieldWithValidation("pickup_district", e.target.value)}
-              />
-            </Field>
-          </div>
+          <Field label="Adresse de retrait">
+            <TextInput
+              value={form.pickup_address}
+              placeholder="Ex : 123 Rue Mohammed, Marrakech"
+              onChange={(e) => updateFieldWithValidation("pickup_address", e.target.value)}
+            />
+            {fieldErrors.pickup_address ? <p className="aa-error-text">{fieldErrors.pickup_address}</p> : null}
+          </Field>
           <div className="aa-icon-grid aa-delivery-grid">
             <IconCardButton
               icon={HandHeart}
               title="En main propre"
               subtitle="Remise en personne"
-              active={form.handover_method === "in_person"}
-              onClick={() => updateFieldWithValidation("handover_method", "in_person")}
+              active={form.handover_method === "pickup"}
+              onClick={() => updateFieldWithValidation("handover_method", "pickup")}
             />
             <IconCardButton
               icon={Truck}
@@ -545,13 +645,6 @@ export default function Add_Announcement() {
               subtitle="Main propre ou livraison"
               active={form.handover_method === "both"}
               onClick={() => updateFieldWithValidation("handover_method", "both")}
-            />
-            <IconCardButton
-              icon={Package}
-              title="Point relais"
-              subtitle="Depot en point collecte"
-              active={form.handover_method === "drop_off"}
-              onClick={() => updateFieldWithValidation("handover_method", "drop_off")}
             />
           </div>
           {fieldErrors.handover_method ? <p className="aa-error-text">{fieldErrors.handover_method}</p> : null}
@@ -618,13 +711,13 @@ export default function Add_Announcement() {
             <div className="preview-row">
               <Tag size={16} />
               <p className="preview-price">
-                {form.listing_type === "donation" ? "Don gratuit" : `${form.price || 0} MAD`}
+                {form.listing_mode === "donate" ? "Don gratuit" : `${form.price || 0} MAD`}
               </p>
             </div>
 
             <div className="preview-row">
               <Shapes size={16} />
-              <h5>{form.item_name || "Titre de l'annonce..."}</h5>
+              <h5>{form.title || "Titre de l'annonce..."}</h5>
             </div>
 
             <p className="preview-description">{form.description || "Description..."}</p>
@@ -632,7 +725,7 @@ export default function Add_Announcement() {
             <div className="preview-meta">
               <div className="preview-row">
                 <Shapes size={16} />
-                <span>Categorie: {form.category || "Non defini"}</span>
+                <span>Categorie: {form.super_category_id ? CATEGORIES[form.super_category_id - 1]?.label : "Non defini"}</span>
               </div>
               <div className="preview-row">
                 <Baby size={16} />
@@ -640,7 +733,7 @@ export default function Add_Announcement() {
               </div>
               <div className="preview-row">
                 <Baby size={16} />
-                <span>Age: {form.recommended_age || "Non defini"}</span>
+                <span>Age: {form.age_range || "Non defini"}</span>
               </div>
               <div className="preview-row">
                 <Ruler size={16} />
@@ -652,7 +745,7 @@ export default function Add_Announcement() {
               </div>
               <div className="preview-row">
                 <MapPinned size={16} />
-                <span>Ville: {form.pickup_city || "Non defini"}</span>
+                <span>Adresse: {form.pickup_address || "Non defini"}</span>
               </div>
             </div>
           </div>

@@ -13,6 +13,8 @@ const Login = lazy(() => import("./assets/components/Login.jsx"));
 const FAQ = lazy(() => import("./assets/components/FAQ.jsx"));
 const Our_Partners = lazy(() => import("./assets/components/Our_Partners.jsx"));
 const FAQChatBot = lazy(() => import("./assets/components/FAQChatBot.jsx"));
+const Marketplace = lazy(() => import("./assets/components/Marketplace.jsx"));
+const Product_Details = lazy(() => import("./assets/components/Product_Details.jsx"));
 
 // Admin
 const Admin_Dashboard = lazy(
@@ -65,6 +67,9 @@ const My_Impact = lazy(() => import("./assets/components/User/My_Impact.jsx"));
 const My_Profile = lazy(
   () => import("./assets/components/User/My_Profile.jsx"),
 );
+const My_Announcements = lazy(
+  () => import("./assets/components/User/My_Announcements.jsx"),
+);
 const Add_Announcement = lazy(
   () => import("./assets/components/User/Add_Announcement.jsx"),
 );
@@ -112,6 +117,7 @@ export default function Layout() {
     "/admin_inventory",
     "/admin_donations",
     "/manage_charity",
+    "/my_announcements",
   ];
 
   const hideHeaderFooter = noHeaderFooterPaths.includes(path);
@@ -136,6 +142,8 @@ export default function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/faq_chatbot" element={<FAQChatBot />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/product/:id" element={<Product_Details />} />
           <Route path="/our_partners" element={<Our_Partners />} />
 
           {/* Admin */}
@@ -162,6 +170,7 @@ export default function Layout() {
           <Route path="/my_donations" element={<My_Donations />} />
           <Route path="/my_impact" element={<My_Impact />} />
           <Route path="/my_profile" element={<My_Profile />} />
+          <Route path="/my_announcements" element={<My_Announcements />} />
           <Route path="/add_announcement" element={<Add_Announcement />} />
 
           {/* Footer items */}

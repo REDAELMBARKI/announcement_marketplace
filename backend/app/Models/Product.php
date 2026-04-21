@@ -17,6 +17,7 @@ class Product extends Model
 
     protected $fillable = [
         'user_id',
+        'super_category_id',
         'listing_mode',
         'listing_type',
         'title',
@@ -52,9 +53,28 @@ class Product extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function superCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'super_category_id');
+    }
+
+    public function subCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'subcategory_product');
+    }
+
+    // Backward compatibility alias
     public function categories(): BelongsToMany
     {
-        return $this->belongsToMany(Category::class, 'category_product');
+        return $this->subCategories();
+    }
+
+    // Get all categories (super + sub) as a merged collection
+    public function allCategories()
+    {
+        $super = $this->superCategory ? [$this->superCategory] : [];
+        $subs = $this->subCategories->all();
+        return collect(array_merge($super, $subs));
     }
 
     public function tags(): BelongsToMany

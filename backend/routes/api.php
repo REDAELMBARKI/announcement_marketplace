@@ -7,6 +7,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ViewUserController;
 use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\Home\HomepageController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\MediaController;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ReportController;
@@ -66,12 +68,19 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+// Media upload routes
+Route::post('/media/upload', [MediaController::class, 'upload']);
+Route::post('/media/upload-multiple', [MediaController::class, 'uploadMultiple']);
+Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnouncement']);
+Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary']);
+Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary']);
+
 // Admin routes
 Route::prefix('admin')->group(function () {
-    Route::get('/donations',  [AdminController::class, 'getAllDonations']);
-    Route::get('/charities',  [AdminController::class, 'getAllCharities']);
-    Route::get('/users',      [AdminController::class, 'getAllUsers']);
-    Route::get('/stats',      [AdminController::class, 'getDashboardStats']);
+    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
+    Route::get('/charities',    [AdminController::class, 'getAllCharities']);
+    Route::get('/users',        [AdminController::class, 'getAllUsers']);
+    Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
 });
 
 // User Management Routes
@@ -99,6 +108,28 @@ Route::post('/ask-faq', [OpenAIController::class, 'ask'])
 Route::get('/homepage', HomepageController::class)->name('homepage');
 
 
+
+// Announcements routes (handles both donations and sales)
+Route::post('/announcements', [AnnouncementController::class, 'store']);
+Route::get('/announcements/{id}', [AnnouncementController::class, 'show']);
+Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+Route::put('/announcements/{announcementId}/status', [AnnouncementController::class, 'updateStatus']);
+
+// User announcements routes
+Route::prefix('user')->group(function () {
+    Route::get('/announcements/{userId}', [AnnouncementController::class, 'getUserAnnouncements']);
+    Route::get('/donations/{userId}', [AnnouncementController::class, 'getUserDonations']);
+    Route::get('/sales/{userId}', [AnnouncementController::class, 'getUserSales']);
+});
+
+// Public announcements routes
+Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncements']);
+
+// Charity announcements routes
+Route::get('/charities/{charityId}/announcements', [AnnouncementController::class, 'getCharityAnnouncements']);
+
+// Admin announcements routes
+Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
 
 // Reports routes
 Route::get('/reports/donations', [ReportController::class, 'donations']);

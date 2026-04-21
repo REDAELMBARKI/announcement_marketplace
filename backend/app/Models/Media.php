@@ -21,6 +21,7 @@ class Media extends Model
         'size',
         'collection',
         'sort_order',
+        'is_temporary',
     ];
 
     protected $casts = [
