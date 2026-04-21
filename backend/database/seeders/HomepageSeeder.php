@@ -76,27 +76,105 @@ class HomepageSeeder extends Seeder
 
     private function createCategories(): void
     {
-        // Create 8 top-level Moroccan kids categories
-        $categories = [
-            ['name' => 'Jouets ', 'slug' => 'jouets', 'icon' => 'gamepad-2'],
-            ['name' => 'Vêtements ', 'slug' => 'vetements', 'icon' => 'shirt'],
-            ['name' => 'Livres ', 'slug' => 'livres', 'icon' => 'book-open'],
-            ['name' => 'Mobilier ', 'slug' => 'mobilier', 'icon' => 'home'],
-            ['name' => 'Bébé ', 'slug' => 'bebe', 'icon' => 'baby'],
-            ['name' => 'Jeux ', 'slug' => 'jeux', 'icon' => 'gamepad-2'],
-            ['name' => 'Chaussures ', 'slug' => 'chaussures', 'icon' => 'footprints'],
-            ['name' => 'Activités ', 'slug' => 'activites', 'icon' => 'palette'],
+        // Create 8 top-level super categories with their sub-categories
+        $superCategories = [
+            [
+                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'gamepad-2',
+                'subcategories' => [
+                    ['name' => 'Jouets éducatifs', 'slug' => 'jouets-educatifs'],
+                    ['name' => 'Peluches', 'slug' => 'peluches'],
+                    ['name' => 'Jeux de construction', 'slug' => 'jeux-construction'],
+                    ['name' => 'Figurines', 'slug' => 'figurines'],
+                    ['name' => 'Véhicules', 'slug' => 'vehicules'],
+                ]
+            ],
+            [
+                'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'shirt',
+                'subcategories' => [
+                    ['name' => 'T-shirts', 'slug' => 't-shirts'],
+                    ['name' => 'Pantalons', 'slug' => 'pantalons'],
+                    ['name' => 'Robes', 'slug' => 'robes'],
+                    ['name' => 'Costumes traditionnels', 'slug' => 'costumes-traditionnels'],
+                    ['name' => 'Pyjamas', 'slug' => 'pyjamas'],
+                ]
+            ],
+            [
+                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'book-open',
+                'subcategories' => [
+                    ['name' => 'Contes marocains', 'slug' => 'contes-marocains'],
+                    ['name' => 'Livres éducatifs', 'slug' => 'livres-educatifs'],
+                    ['name' => 'Coloriages', 'slug' => 'coloriages'],
+                    ['name' => 'Histoires', 'slug' => 'histoires'],
+                ]
+            ],
+            [
+                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'home',
+                'subcategories' => [
+                    ['name' => 'Lits bébé', 'slug' => 'lits-bebe'],
+                    ['name' => 'Chambres enfant', 'slug' => 'chambres-enfant'],
+                    ['name' => 'Tables et chaises', 'slug' => 'tables-chaises'],
+                    ['name' => 'Rangements', 'slug' => 'rangements'],
+                ]
+            ],
+            [
+                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'baby',
+                'subcategories' => [
+                    ['name' => 'Poussettes', 'slug' => 'poussettes'],
+                    ['name' => 'Porte-bébés', 'slug' => 'porte-bebes'],
+                    ['name' => 'Allaitement', 'slug' => 'allaitement'],
+                    ['name' => 'Doudous', 'slug' => 'doudous'],
+                ]
+            ],
+            [
+                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'dice-5',
+                'subcategories' => [
+                    ['name' => 'Jeux de société', 'slug' => 'jeux-societe'],
+                    ['name' => 'Jeux d\'extérieur', 'slug' => 'jeux-exterieur'],
+                    ['name' => 'Puzzles', 'slug' => 'puzzles'],
+                    ['name' => 'Jeux vidéo', 'slug' => 'jeux-video'],
+                ]
+            ],
+            [
+                'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'footprints',
+                'subcategories' => [
+                    ['name' => 'Chaussures sport', 'slug' => 'chaussures-sport'],
+                    ['name' => 'Chaussures cuir', 'slug' => 'chaussures-cuir'],
+                    ['name' => 'Sandales', 'slug' => 'sandales'],
+                    ['name' => 'Bottes', 'slug' => 'bottes'],
+                ]
+            ],
+            [
+                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'palette',
+                'subcategories' => [
+                    ['name' => 'Peinture', 'slug' => 'peinture'],
+                    ['name' => 'Musique', 'slug' => 'musique'],
+                    ['name' => 'Sport', 'slug' => 'sport'],
+                    ['name' => 'Loisirs créatifs', 'slug' => 'loisirs-creatifs'],
+                ]
+            ],
         ];
 
-        foreach ($categories as $index => $category) {
-            Category::factory()->create([
-                'name' => $category['name'],
-                'slug' => $category['slug'],
-                'icon' => $category['icon'],
+        foreach ($superCategories as $index => $superCategory) {
+            $parent = Category::factory()->create([
+                'name' => $superCategory['name'],
+                'slug' => $superCategory['slug'],
+                'icon' => $superCategory['icon'],
                 'is_active' => true,
                 'sort_order' => $index + 1,
                 'parent_id' => null,
             ]);
+
+            // Create sub-categories for this super category
+            foreach ($superCategory['subcategories'] as $subIndex => $subCategory) {
+                Category::factory()->create([
+                    'name' => $subCategory['name'],
+                    'slug' => $subCategory['slug'],
+                    'icon' => null,
+                    'is_active' => true,
+                    'sort_order' => $subIndex + 1,
+                    'parent_id' => $parent->id,
+                ]);
+            }
         }
     }
 
