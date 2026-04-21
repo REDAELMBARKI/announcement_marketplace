@@ -16,36 +16,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Run the homepage seeder first
-        $this->call(HomepageSeeder::class);
+        // Run the announcement seeder first
+        $this->call(AnnouncementSeeder::class);
 
         // Keep default user just in case
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
-        ]);
-
-        // Insert roles
-        Role::insert([
-            ['role_name' => 'admin', 'role_description' => 'Administrator'],
-            ['role_name' => 'donor', 'role_description' => 'Donor'],
-            ['role_name' => 'charity_staff', 'role_description' => 'Charity Staff'],
-        ]);
-
-        $donorRole = Role::where('role_name', 'donor')->first();
-
-        // Create a test user in DomainUser
-        $domainUser = DomainUser::create([
-            'user_name' => 'Test User',
-            'user_email' => 'test@example.com',
-            'user_password' => Hash::make('password'),
-            'role_id' => $donorRole->role_ID,
-        ]);
-
-        Donor::create([
-            'user_ID' => $domainUser->user_ID,
-            'donor_address' => '123 Test Street'
         ]);
     }
 }

@@ -23,7 +23,7 @@ const My_Announcements: React.FC = () => {
   const getImageUrl = (media: any) => {
     if (!media) return null;
     if (media.url && media.url.startsWith('http')) return media.url;
-    return `http://localhost:8000/storage/${media.file_path.replace("public/", "")}`;
+    return `http://127.0.0.1:8000/storage/${media.file_path.replace("public/", "")}`;
   };
 
   useEffect(() => {
@@ -32,11 +32,12 @@ const My_Announcements: React.FC = () => {
       return;
     }
 
-    fetch(`http://localhost:8000/api/user/announcements/${user.id}`)
+    fetch(`http://127.0.0.1:8000/api/user/announcements/${user.id}`)
       .then((res) => res.json())
-      .then((data: ApiResponse<{ products: Product[] }>) => {
-        if (data.status === "success" && data.products) {
-          setProducts(data.products);
+      .then((data: any) => {
+        if (data.status === "success") {
+          const productsArray = data.products?.data || data.products;
+          setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);
       })
@@ -49,7 +50,7 @@ const My_Announcements: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
       try {
-        const response = await fetch(`http://localhost:8000/api/announcements/${id}`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/announcements/${id}`, {
           method: "DELETE",
         });
         const result: ApiResponse<any> = await response.json();

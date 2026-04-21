@@ -24,20 +24,21 @@ const Product_Details: React.FC = () => {
   const getImageUrl = (media: any) => {
     if (!media) return null;
     if (media.url && media.url.startsWith('http')) return media.url;
-    return `http://localhost:8000/storage/${media.file_path.replace("public/", "")}`;
+    return `http://127.0.0.1:8000/storage/${media.file_path.replace("public/", "")}`;
   };
 
   useEffect(() => {
     if (!id) return;
     
-    fetch(`http://localhost:8000/api/announcements/${id}`)
+    fetch(`http://127.0.0.1:8000/api/announcements/${id}`)
       .then((res) => res.json())
-      .then((data: ApiResponse<{ product: Product }>) => {
-        if (data.status === "success" && data.product) {
-          setProduct(data.product);
+      .then((data: any) => {
+        if (data.status === "success" && (data.product?.data || data.product)) {
+          const productData = data.product?.data || data.product;
+          setProduct(productData);
           // Set initial active image
-          if (data.product.thumbnail) {
-            setActiveImage(getImageUrl(data.product.thumbnail));
+          if (productData.thumbnail) {
+            setActiveImage(getImageUrl(productData.thumbnail));
           }
         }
         setLoading(false);

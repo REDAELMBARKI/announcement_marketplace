@@ -17,11 +17,14 @@ const Marketplace: React.FC = () => {
   const [modeFilter, setModeFilter] = useState<'all' | 'sell' | 'donate'>("all");
   
   useEffect(() => {
-    fetch("http://localhost:8000/api/announcements")
+    fetch("http://127.0.0.1:8000/api/announcements")
       .then((res) => res.json())
-      .then((data: ApiResponse<{ products: Product[] }>) => {
-        if (data.status === "success" && data.products) {
-          setProducts(data.products);
+      .then((data: any) => {
+        console.log("Marketplace data:", data);
+        if (data.status === "success") {
+          // Check if data is wrapped in 'products' or 'products.data'
+          const productsArray = data.products?.data || data.products;
+          setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);
       })
@@ -41,7 +44,7 @@ const Marketplace: React.FC = () => {
   const getImageUrl = (path: string | undefined, url: string | undefined) => {
     if (url && url.startsWith('http')) return url;
     if (!path) return null;
-    return `http://localhost:8000/storage/${path.replace("public/", "")}`;
+    return `http://127.0.0.1:8000/storage/${path.replace("public/", "")}`;
   };
 
   return (

@@ -48,12 +48,13 @@ return new class extends Migration
 
             // Status lifecycle
             $table->enum('status', [
-                'draft',
-                'active',
+                'sell',
+                'donate',
                 'reserved',
                 'sold',
                 'donated',
                 'closed',
+                'draft'
             ])->default('draft');
 
             $table->string('condition')->nullable();  // new, like_new, good, fair — for single items

@@ -84,6 +84,20 @@ Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnou
 Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary']);
 Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary']);
 
+// Categories routes
+Route::get('/categories', function () {
+    $superCategories = \App\Models\Category::with('children')
+        ->whereNull('parent_id')
+        ->where('is_active', true)
+        ->orderBy('sort_order')
+        ->get();
+    
+    return response()->json([
+        'status' => 'success',
+        'categories' => $superCategories,
+    ]);
+});
+
 // Admin routes
 Route::prefix('admin')->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);

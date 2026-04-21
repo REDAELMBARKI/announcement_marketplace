@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Exception;
 
-class HomepageSeeder extends Seeder
+class AnnouncementSeeder extends Seeder
 {
     public function run(): void
     {
@@ -38,7 +38,7 @@ class HomepageSeeder extends Seeder
         // Re-enable foreign key checks
         DB::statement('PRAGMA foreign_keys=ON');
 
-        $this->command->info('Homepage data seeded successfully!');
+        $this->command->info('Announcement data seeded successfully!');
     }
 
     private function clearExistingData(): void
@@ -200,12 +200,13 @@ class HomepageSeeder extends Seeder
             $category = $categories[$index % $categories->count()];
             $user = $users[$index % $users->count()];
 
+            $mode = fake()->randomElement(['sell', 'donate']);
             $product = Product::factory()->create([
                 'title' => $productName,
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
                 'price' => fake()->randomFloat(2, 50, 500),
-                'listing_mode' => fake()->randomElement(['sell', 'donate']),
-                'status' => 'active',
+                'listing_mode' => $mode,
+                'status' => $mode, // status is now 'sell' or 'donate' instead of 'active'
                 'user_id' => $user->id,
                 'super_category_id' => $category->id,
                 'views_count' => fake()->numberBetween(10, 1000),

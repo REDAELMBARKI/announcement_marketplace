@@ -34,31 +34,51 @@ import {
 import "../../../css/add_announcement.css";
 
 // Types
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  children: Category[];
+}
+
 interface FormState {
   super_category_id: number | null;
   sub_category_ids: number[];
   title: string;
   description: string;
-  listing_type: string;
+  listing_type: "single" | "collection";
+  listing_mode: "sell" | "donate";
+  price: string;
+  currency: string;
+  price_negotiable: boolean;
+  condition: string;
+  material: string;
   gender: string;
   age_range: string;
   brand: string;
-  condition: string;
+  season: string;
   sizes: string[];
   colors: string[];
-  season: string;
-  material: string;
-  listing_mode: string;
-  price: string;
-  price_negotiable: boolean;
-  pickup_address: string;
   handover_method: string;
+  pickup_address: string;
 }
 
-interface Category {
-  label: string;
-  icon: LucideIcon;
-}
+// Helper to get icon by category name
+const getCategoryIcon = (iconName: string): LucideIcon => {
+  const iconMap: Record<string, LucideIcon> = {
+    'shirt': Shirt,
+    'footprints': Footprints,
+    'gamepad-2': ToyBrick,
+    'book-open': BookOpen,
+    'home': Baby,
+    'baby': Baby,
+    'palette': Palette,
+    'package': Package,
+    'dice-5': ToyBrick,
+  };
+  return iconMap[iconName] || Package;
+};
 
 interface FieldErrors {
   [key: string]: string;
@@ -77,7 +97,8 @@ const BASE_STEPS = [
   { key: "location", label: "Localisation" },
 ];
 
-const CATEGORIES = [
+// Fallback categories while loading
+const FALLBACK_CATEGORIES = [
   { label: "Vetements", icon: Shirt },
   { label: "Chaussures", icon: Footprints },
   { label: "Jouets", icon: ToyBrick },
@@ -101,9 +122,11 @@ export default function Add_Announcement() {
   const [mediaIds, setMediaIds] = useState<number[]>([]);
   const [mainPhotoIndex, setMainPhotoIndex] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
   const [form, setForm] = useState<FormState>({
-    super_category_id: null, // Single super category
-    sub_category_ids: [],    // Multiple sub categories
+    super_category_id: null,
+    sub_category_ids: [],    
     title: "",
     description: "",
     listing_type: "single",
@@ -342,45 +365,91 @@ export default function Add_Announcement() {
   };
 
   const renderStep = () => {
-    if (stepKey === "category") {
+  if (stepKey === "category") {
+      // Get selected super category's sub-categories
+      const selectedSuperCategory = categories.find(cat => cat.id === form.super_category_id);
+      const subCategories = selectedSuperCategory?.children || [];
+
       return (
         <>
           <h3>Qu'annoncez-vous aujourd'hui ?</h3>
+          
+          {/* Loading State */}
+          {categoriesLoading && (
+            <div className="aa-loading-categories">
+              <p>Chargement des categories...</p>
+            </div>
+          )}
           
           {/* Super Category - Single Select */}
           <div className="aa-section">
             <p className="subtitle">1. Selectionnez une categorie principale</p>
             {fieldErrors.super_category_id ? <p className="aa-error-text">{fieldErrors.super_category_id}</p> : null}
-            <div className="aa-icon-grid">
-              {CATEGORIES.map(({ label, icon }, index) => (
-                <IconCardButton
-                  key={label}
-                  icon={icon}
-                  title={label}
-                  active={form.super_category_id === index + 1}
-                  onClick={() => {
-                    updateFieldWithValidation("super_category_id", index + 1);
-                    // Clear sub-categories when super category changes
-                    updateField("sub_category_ids", []);
-                  }}
-                />
-              ))}
-            </div>
+            
+            {categories.length > 0 ? (
+              <div className="aa-icon-grid">
+                {categories.map((category) => {
+                  const IconComponent = getCategoryIcon(category.icon);
+                  return (
+                    <IconCardButton
+                      key={category.id}
+                      icon={IconComponent}
+                      title={category.name}
+                      active={form.super_category_id === category.id}
+                      onClick={() => {
+                        updateFieldWithValidation("super_category_id", category.id);
+                        // Clear sub-categories when super category changes
+                        updateField("sub_category_ids", []);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="aa-icon-grid">
+                {FALLBACK_CATEGORIES.map(({ label, icon }, index) => (
+                  <IconCardButton
+                    key={label}
+                    icon={icon}
+                    title={label}
+                    active={form.super_category_id === index + 1}
+                    onClick={() => {
+                      updateFieldWithValidation("super_category_id", index + 1);
+                      updateField("sub_category_ids", []);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Sub Categories - Multi Select (only show if super category selected) */}
-          {form.super_category_id && (
-            <div className="aa-section" style={{ marginTop: '24px' }}>
-              <p className="subtitle">2. Selectionnez des sous-categories (optionnel)</p>
-              <div className="aa-checkbox-grid">
-                {CATEGORIES.map(({ label }, index) => (
-                  <label key={`sub-${label}`} className="aa-checkbox-label">
+          {/* Sub Categories Container - Multi Select */}
+          {form.super_category_id && subCategories.length > 0 && (
+            <div className="aa-subcategories-container">
+              <div className="aa-subcategories-header">
+                <h4>Sous-categories pour {selectedSuperCategory?.name}</h4>
+                <span className="aa-subcategories-count">
+                  {form.sub_category_ids.length} selectionnee(s)
+                </span>
+              </div>
+              <p className="aa-subcategories-hint">Selectionnez une ou plusieurs sous-categories (optionnel)</p>
+              
+              <div className="aa-subcategories-grid">
+                {subCategories.map((subCategory) => (
+                  <label 
+                    key={subCategory.id} 
+                    className={`aa-subcategory-card ${form.sub_category_ids.includes(subCategory.id) ? 'selected' : ''}`}
+                  >
                     <input
                       type="checkbox"
-                      checked={form.sub_category_ids.includes(index + 1)}
-                      onChange={() => toggleItem("sub_category_ids", index + 1)}
+                      checked={form.sub_category_ids.includes(subCategory.id)}
+                      onChange={() => toggleItem("sub_category_ids", subCategory.id)}
+                      className="aa-subcategory-input"
                     />
-                    <span>{label}</span>
+                    <span className="aa-subcategory-name">{subCategory.name}</span>
+                    {form.sub_category_ids.includes(subCategory.id) && (
+                      <span className="aa-subcategory-check">✓</span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -725,7 +794,7 @@ export default function Add_Announcement() {
             <div className="preview-meta">
               <div className="preview-row">
                 <Shapes size={16} />
-                <span>Categorie: {form.super_category_id ? CATEGORIES[form.super_category_id - 1]?.label : "Non defini"}</span>
+                <span>Categorie: {form.super_category_id ? categories.find(c => c.id === form.super_category_id)?.name : "Non defini"}</span>
               </div>
               <div className="preview-row">
                 <Baby size={16} />

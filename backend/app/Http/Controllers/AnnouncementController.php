@@ -157,7 +157,7 @@ class AnnouncementController extends Controller
 
         return response()->json([
             'status'     => 'success',
-            'products'   => ProductResource::collection($products),
+            'products'   => ProductResource::collection($products)->resolve(),
         ]);
     }
 

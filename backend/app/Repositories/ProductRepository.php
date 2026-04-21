@@ -10,7 +10,7 @@ class ProductRepository implements ProductRepositoryInterface
     public function getAllActive(): Collection
     {
         return Product::with(['superCategory', 'subCategories', 'thumbnail', 'gallery', 'user'])
-            ->where('status', 'active')
+            ->whereIn('status', ['donate','sell'])
             ->orderByDesc('created_at')
             ->get();
     }

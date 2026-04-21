@@ -1,0 +1,132 @@
+/* Sub-categories Container Styles */
+
+.aa-subcategories-container {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aa-subcategories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #adb5bd;
+}
+
+.aa-subcategories-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.aa-subcategories-count {
+  background: #495057;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.aa-subcategories-hint {
+  margin: 8px 0 16px 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.aa-subcategories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.aa-subcategory-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.aa-subcategory-card:hover {
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.aa-subcategory-card.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+}
+
+.aa-subcategory-input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.aa-subcategory-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.aa-subcategory-check {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Loading state */
+.aa-loading-categories {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .aa-subcategories-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .aa-subcategory-card {
+    padding: 10px 12px;
+  }
+  
+  .aa-subcategories-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aa-subcategories-grid {
+    grid-template-columns: 1fr;
+  }
+}

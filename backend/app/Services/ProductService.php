@@ -14,12 +14,12 @@ class ProductService
 
     public function getActiveProducts(): Collection
     {
-        return $this->productRepository.getAllActive();
+        return $this->productRepository->getAllActive();
     }
 
     public function getProductDetails(int $id): ?Product
     {
-        $product = $this->productRepository.getById($id);
+        $product = $this->productRepository->getById($id);
         if ($product) {
             $product->increment('views_count');
         }
@@ -28,11 +28,11 @@ class ProductService
 
     public function getUserAnnouncements(int $userId): Collection
     {
-        return $this->productRepository.getByUserId($userId);
+        return $this->productRepository->getByUserId($userId);
     }
 
     public function deleteAnnouncement(int $id): bool
     {
-        return $this->productRepository.delete($id);
+        return $this->productRepository->delete($id);
     }
 }
