@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../utils/route";
 import { 
   MessageCircle, 
   Share2, 
@@ -29,11 +31,8 @@ const Product_Details: React.FC = () => {
     const newStatus = !isFavorited;
     setIsFavorited(newStatus);
     
-    fetch(`http://127.0.0.1:8000/api/announcements/${id}/favorite`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorite: newStatus })
-    }).catch(err => console.error("Favorite toggle error:", err));
+    axios.post(route('announcements.favorite', { productId: id }).toString(), { favorite: newStatus })
+      .catch(err => console.error("Favorite toggle error:", err));
   };
 
   const getImageUrl = (media: any) => {
@@ -45,11 +44,10 @@ const Product_Details: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     
-    fetch(`http://127.0.0.1:8000/api/announcements/${id}`)
-      .then((res) => res.json())
-      .then((data: any) => {
-        if (data.status === "success" && (data.product?.data || data.product)) {
-          const productData = data.product?.data || data.product;
+    axios.get(route('announcements.show', { id }).toString())
+      .then((res: any) => {
+        if (res.data.status === "success" && (res.data.product?.data || res.data.product)) {
+          const productData = res.data.product?.data || res.data.product;
           setProduct(productData);
           // Set initial active image
           if (productData.thumbnail) {

@@ -7,8 +7,8 @@ import { BrowserRouter as Router } from "react-router-dom";
 // import EditProduct from "./pages/EditProduct";
 
 
-import Layout from "./Layout.jsx";
-import { ThemeProvider } from "./context/ThemeContext.jsx";
+import Layout from "./Layout";
+import { ThemeProvider } from "./context/ThemeContext";
 // Main application component that sets up routing and layout
 export default function App() {
   return (

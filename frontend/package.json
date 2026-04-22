@@ -11,10 +11,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@fortawesome/fontawesome-free": "^7.1.0",
+    "@mui/material": "^9.0.0",
     "@solar-icons/react": "^1.1.0",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
+    "axios": "^1.15.2",
     "chart.js": "^4.5.1",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.38.0",
@@ -23,7 +27,8 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6"
+    "react-router-dom": "^7.9.6",
+    "ziggy-js": "^2.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

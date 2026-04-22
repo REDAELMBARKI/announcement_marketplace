@@ -1,10 +1,100 @@
 import React, { createContext, useContext, useEffect, useMemo } from "react";
 
-const lightTheme = {
+export type ThemeColors = {
+  bgPrimary: string;
+  bgSecondary: string;
+  bgTertiary: string;
+  bgDark: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  textLight: string;
+  border: string;
+  borderDark: string;
+  primary: string;
+  primaryHover: string;
+  success: string;
+  successLight: string;
+  warning: string;
+  danger: string;
+  infoBg: string;
+  infoText: string;
+  iconPrimary: string;
+  iconSecondary: string;
+  iconMuted: string;
+  iconCoral: string;
+  iconSuccess: string;
+  iconDanger: string;
+  heroGradientStart: string;
+  heroGradientEnd: string;
+  darkGradientStart: string;
+  darkGradientEnd: string;
+  accent: string;
+  accentGreen: string;
+  accentMint: string;
+  accentLightGreen: string;
+  coral: string;
+  coralHover: string;
+  coralLight: string;
+  darkNavy: string;
+  sidebarBorder: string;
+  filterLabel: string;
+  filterBg: string;
+  filterBorder: string;
+  scrollbarTrack: string;
+  cardBg: string;
+  cardBgSecondary: string;
+  cardBgTertiary: string;
+  cardBorder: string;
+  cardBorderSecondary: string;
+  eyebrow: string;
+  heroText: string;
+  heroBorder: string;
+  buttonPrimary: string;
+  buttonSecondary: string;
+  buttonBorder: string;
+  filterActive: string;
+  filterActiveText: string;
+  seasonBg: string;
+  seasonText: string;
+  seasonBorder: string;
+  seasonIcon: string;
+  seasonButton: string;
+  progressBg: string;
+  progressFill: string;
+  verifiedBg: string;
+  verifiedText: string;
+  mintBg: string;
+  blueBg: string;
+  pinkBg: string;
+  creamBg: string;
+  badgeBg: string;
+  badgeText: string;
+  footerBg: string;
+  footerText: string;
+  footerLink: string;
+  mapBg: string;
+  mapGradient1: string;
+  mapGradient2: string;
+  mapBorder: string;
+  // New colors
+  surface: string;
+  onSurface: string;
+  onPrimary: string;
+  onSecondary: string;
+  shadow: string;
+};
+
+export type Theme = {
+  colors: ThemeColors;
+};
+
+const lightTheme: Theme = {
   colors: {
     // Primary colors
     bgPrimary: "#f8f9fb",
     bgSecondary: "#ffffff",
+    bgTertiary: "#f3f4f6",
     bgDark: "#f8f9fb",
     textPrimary: "#1f2937",
     textSecondary: "#6b7280",
@@ -91,13 +181,20 @@ const lightTheme = {
     mapBg: "#f8f9fb",
     mapGradient1: "#e0e7ff",
     mapGradient2: "#dbeafe",
-    mapBorder: "#93c5fd"
+    mapBorder: "#93c5fd",
+
+    // New colors
+    surface: "#ffffff",
+    onSurface: "#1f2937",
+    onPrimary: "#ffffff",
+    onSecondary: "#1f2937",
+    shadow: "rgba(0, 0, 0, 0.1)",
   },
 };
 
-const ThemeContext = createContext(lightTheme);
+const ThemeContext = createContext<Theme>(lightTheme);
 
-export function ThemeProvider({ children }) {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme = useMemo(() => lightTheme, []);
 
   useEffect(() => {

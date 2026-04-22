@@ -29,6 +29,20 @@ class Media extends Model
         'sort_order' => 'integer',
     ];
 
+    /**
+     * attributes hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'mediable_id',
+        'mediable_type',
+        'disk',
+        'is_temporary',
+        'created_at',
+        'updated_at',
+    ];
+
     public function mediable(): MorphTo
     {
         return $this->morphTo();

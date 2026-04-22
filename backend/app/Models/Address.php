@@ -27,6 +27,18 @@ class Address extends Model
         'is_default' => 'boolean',
     ];
 
+    /**
+     * attributes hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'addressable_id',
+        'addressable_type',
+        'created_at',
+        'updated_at',
+    ];
+
     public function addressable(): MorphTo
     {
         return $this->morphTo();

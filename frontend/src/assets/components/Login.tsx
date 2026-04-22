@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../utils/route";
 import "../../css/sign_up_login.css";
 
 // This is the login component for users to access their accounts
@@ -14,19 +16,12 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await axios.post(route('login').toString(), { email, password });
 
-      const data = await response.json();
-      console.log("Login response:", response.status, data);
+      const data = res.data;
+      console.log("Login response:", res.status, data);
       
-      if (response.ok && data.status === "success") {
+      if (res.status === 200 && data.status === "success") {
         const user = data.user;
 
         // For Debug- log user object to verify charity_ID

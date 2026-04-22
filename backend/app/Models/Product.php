@@ -48,6 +48,17 @@ class Product extends Model
         'favorites_count' => 'integer',
     ];
 
+    /**
+     * attributes hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'user_id',
+        'super_category_id',
+        'deleted_at',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

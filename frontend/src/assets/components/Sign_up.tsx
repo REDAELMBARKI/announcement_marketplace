@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import route from "../../utils/route";
 import "../../css/sign_up_login.css";
 
 function DonorSignUp() {
@@ -32,30 +34,21 @@ function DonorSignUp() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-        }),
+      const res = await axios.post(route('signup').toString(), {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      // fix- show backend validation error (duplicate email)
-      if (!response.ok) {
-        setMessage(data.message || data.errors?.email?.[0] || "Signup failed");
-        return;
-      }
+      const data = res.data;
 
       if (data.status === "success") {
         setMessage("Signup successful! Redirecting to login...");
         setTimeout(() => navigate("/login"), 1000);
       }
-    } catch (err) {
-      setMessage("Network error. Please try again.");
+    } catch (err: any) {
+      const data = err.response?.data;
+      setMessage(data?.message || data?.errors?.email?.[0] || "Signup failed");
     }
   };
 

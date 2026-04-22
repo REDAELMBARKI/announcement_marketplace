@@ -29,6 +29,18 @@ class Category extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * attributes hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'parent_id',
+        'is_active',
+        'created_at',
+        'updated_at',
+    ];
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');

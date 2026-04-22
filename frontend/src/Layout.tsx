@@ -7,86 +7,87 @@ import Header_alt from "./assets/components/Header_alt.jsx";
 import Footer from "./assets/components/Footer.jsx";
 
 // lazy-load all page components
-const Home = lazy(() => import("./assets/components/Home.jsx"));
-const Sign_up = lazy(() => import("./assets/components/Sign_up.jsx"));
-const Login = lazy(() => import("./assets/components/Login.jsx"));
-const FAQ = lazy(() => import("./assets/components/FAQ.jsx"));
-const Our_Partners = lazy(() => import("./assets/components/Our_Partners.jsx"));
-const FAQChatBot = lazy(() => import("./assets/components/FAQChatBot.jsx"));
-const Marketplace = lazy(() => import("./assets/components/Marketplace.jsx"));
-const Product_Details = lazy(() => import("./assets/components/Product_Details.jsx"));
+const Home = lazy(() => import("./assets/components/Home"));
+const Sign_up = lazy(() => import("./assets/components/Sign_up"));
+const Login = lazy(() => import("./assets/components/Login"));
+const FAQ = lazy(() => import("./assets/components/FAQ"));
+const Our_Partners = lazy(() => import("./assets/components/Our_Partners"));
+const FAQChatBot = lazy(() => import("./assets/components/FAQChatBot"));
+const Marketplace = lazy(() => import("./assets/components/Marketplace"));
+const Product_Details = lazy(() => import("./assets/components/Product_Details"));
 
 // Admin
 const Admin_Dashboard = lazy(
-  () => import("./assets/components/Admin/Admin_Dashboard.jsx"),
+  () => import("./assets/components/Admin/Admin_Dashboard"),
 );
 const Add_Charity = lazy(
-  () => import("./assets/components/Admin/Add_Charity.jsx"),
+  () => import("./assets/components/Admin/Add_Charity"),
 );
 const Data_Reports = lazy(
-  () => import("./assets/components/Admin/Data_Reports.jsx"),
+  () => import("./assets/components/Admin/Data_Reports"),
 );
 const View_Users = lazy(
-  () => import("./assets/components/Admin/View_Users.jsx"),
+  () => import("./assets/components/Admin/View_Users"),
 );
 const Admin_Inventory = lazy(
-  () => import("./assets/components/Admin/Admin_Inventory.jsx"),
+  () => import("./assets/components/Admin/Admin_Inventory"),
 );
 const Admin_Donations = lazy(
-  () => import("./assets/components/Admin/Admin_Donations.jsx"),
+  () => import("./assets/components/Admin/Admin_Donations"),
 );
 const Manage_Charity = lazy(
-  () => import("./assets/components/Admin/Manage_Charity.jsx"),
+  () => import("./assets/components/Admin/Manage_Charity"),
 );
 
 // Charity
 const Charity_Dashboard = lazy(
-  () => import("./assets/components/Charity/Charity_Dashboard.jsx"),
+  () => import("./assets/components/Charity/Charity_Dashboard"),
 );
 const Approve_Donations = lazy(
-  () => import("./assets/components/Charity/Approve_Donations.jsx"),
+  () => import("./assets/components/Charity/Approve_Donations"),
 );
 const Distribution_Records = lazy(
-  () => import("./assets/components/Charity/Distribution_Records.jsx"),
+  () => import("./assets/components/Charity/Distribution_Records"),
 );
 const View_Donations = lazy(
-  () => import("./assets/components/Charity/View_Donations.jsx"),
+  () => import("./assets/components/Charity/View_Donations"),
 );
 const View_Inventory = lazy(
-  () => import("./assets/components/Charity/View_Inventory.jsx"),
+  () => import("./assets/components/Charity/View_Inventory"),
 );
 
 // User
 const User_Dashboard = lazy(
-  () => import("./assets/components/User/User_Dashboard.jsx"),
+  () => import("./assets/components/User/User_Dashboard"),
 );
 const My_Donations = lazy(
-  () => import("./assets/components/User/My_Donations.jsx"),
+  () => import("./assets/components/User/My_Donations"),
 );
-const My_Impact = lazy(() => import("./assets/components/User/My_Impact.jsx"));
+const My_Impact = lazy(() => import("./assets/components/User/My_Impact"));
 const My_Profile = lazy(
-  () => import("./assets/components/User/My_Profile.jsx"),
+  () => import("./assets/components/User/My_Profile"),
 );
 const My_Announcements = lazy(
-  () => import("./assets/components/User/My_Announcements.jsx"),
+  () => import("./assets/components/User/My_Announcements"),
 );
 const Add_Announcement = lazy(
-  () => import("./assets/components/User/Add_Announcement.jsx"),
+  () => import("./assets/components/User/Add_Announcement"),
 );
 
 // Footer content pages
 const Terms_Conditions = lazy(
-  () => import("./assets/components/Footer_Content/Terms_Conditions.jsx"),
+  () => import("./assets/components/Footer_Content/Terms_Conditions"),
 );
 const Privacy_Policy = lazy(
-  () => import("./assets/components/Footer_Content/Privacy_Policy.jsx"),
+  () => import("./assets/components/Footer_Content/Privacy_Policy"),
 );
 const Cookie_Policy = lazy(
-  () => import("./assets/components/Footer_Content/Cookie_Policy.jsx"),
+  () => import("./assets/components/Footer_Content/Cookie_Policy"),
 );
 const Accessibility = lazy(
-  () => import("./assets/components/Footer_Content/Accessibility.jsx"),
+  () => import("./assets/components/Footer_Content/Accessibility"),
 );
+
 
 // Not found page
 const NotFound = lazy(() => import("./404.jsx"));

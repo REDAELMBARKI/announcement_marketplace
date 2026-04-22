@@ -67,22 +67,22 @@ Route::get('/api/test-users', function() {
 
 use App\Http\Controllers\UserProfileController;
 
-Route::get('/user/{id}', [UserProfileController::class, 'show']);
-Route::put('/user/{id}', [UserProfileController::class, 'update']);
+Route::get('/user/{id}', [UserProfileController::class, 'show'])->name('user.show');
+Route::put('/user/{id}', [UserProfileController::class, 'update'])->name('user.update');
 
  
 
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/signup', [AuthController::class, 'signup']);
-Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/signup', [AuthController::class, 'signup'])->name('signup');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Media upload routes
-Route::post('/media/upload', [MediaController::class, 'upload']);
-Route::post('/media/upload-multiple', [MediaController::class, 'uploadMultiple']);
-Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnouncement']);
-Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary']);
-Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary']);
+Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
+Route::post('/media/upload-multiple', [MediaController::class, 'uploadMultiple'])->name('media.upload-multiple');
+Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnouncement'])->name('media.link-to-announcement');
+Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary'])->name('media.delete-temporary');
+Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary'])->name('media.cleanup-temporary');
 
 // Categories routes
 Route::get('/categories', function () {
@@ -96,22 +96,22 @@ Route::get('/categories', function () {
         'status' => 'success',
         'categories' => $superCategories,
     ]);
-});
+})->name('categories.index');
 
 // Admin routes
-Route::prefix('admin')->group(function () {
-    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
-    Route::get('/charities',    [AdminController::class, 'getAllCharities']);
-    Route::get('/users',        [AdminController::class, 'getAllUsers']);
-    Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('announcements.index');
+    Route::get('/charities',    [AdminController::class, 'getAllCharities'])->name('charities.index');
+    Route::get('/users',        [AdminController::class, 'getAllUsers'])->name('users.index');
+    Route::get('/stats',        [AdminController::class, 'getDashboardStats'])->name('stats');
 });
 
 // User Management Routes
-Route::prefix('user-management')->group(function () {
-    Route::get('/view-users', [ViewUserController::class, 'getViewUsers']);
-    Route::get('/roles', [ViewUserController::class, 'getRoles']);
-    Route::put('/users/{id}', [ViewUserController::class, 'updateUser']);
-    Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
+Route::prefix('user-management')->name('user-management.')->group(function () {
+    Route::get('/view-users', [ViewUserController::class, 'getViewUsers'])->name('view-users');
+    Route::get('/roles', [ViewUserController::class, 'getRoles'])->name('roles');
+    Route::put('/users/{id}', [ViewUserController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser'])->name('users.destroy');
 });
 
 Route::post('/remote-sessions', function (Request $request) {
@@ -119,13 +119,10 @@ Route::post('/remote-sessions', function (Request $request) {
         'status' => 'success',
         'session_id' => (string) Str::uuid(), 
     ]);
-});
+})->name('remote-sessions');
 
 // OpenAI Integration Route
-Route::post('/ask-faq', [OpenAIController::class, 'ask']);
-Route::post('/ask-faq', [OpenAIController::class, 'ask'])
-    ->middleware('throttle:3,1');
-// The above line limits to 3 requests per minute per IP address to prevent spam
+Route::post('/ask-faq', [OpenAIController::class, 'ask'])->name('ask-faq');
 
 // Homepage route
 Route::get('/homepage', HomepageController::class)->name('homepage');
@@ -133,32 +130,34 @@ Route::get('/homepage', HomepageController::class)->name('homepage');
 
 
 // Announcements routes (handles both donations and sales)
-Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketplaceInitData']);
-Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketplaceListings']);
-Route::post('/announcements', [AnnouncementController::class, 'store']);
-Route::get('/announcements/{id}', [AnnouncementController::class, 'show']);
-Route::post('/announcements/{productId}/favorite', [AnnouncementController::class, 'toggleFavorite']);
-Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
-Route::put('/announcements/{announcementId}/status', [AnnouncementController::class, 'updateStatus']);
+Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketplaceInitData'])->name('marketplace.init-data');
+Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketplaceListings'])->name('marketplace.listings');
+Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+Route::get('/announcements/{id}', [AnnouncementController::class, 'show'])->name('announcements.show');
+Route::post('/announcements/{productId}/favorite', [AnnouncementController::class, 'toggleFavorite'])->name('announcements.favorite');
+Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+Route::put('/announcements/{announcementId}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
 
 // User announcements routes
-Route::prefix('user')->group(function () {
-    Route::get('/announcements/{userId}', [AnnouncementController::class, 'getUserAnnouncements']);
-    Route::get('/donations/{userId}', [AnnouncementController::class, 'getUserDonations']);
-    Route::get('/sales/{userId}', [AnnouncementController::class, 'getUserSales']);
+Route::prefix('user')->name('user.')->group(function () {
+    Route::get('/announcements/{userId}', [AnnouncementController::class, 'getUserAnnouncements'])->name('announcements');
+    Route::get('/donations/{userId}', [AnnouncementController::class, 'getUserDonations'])->name('donations');
+    Route::get('/sales/{userId}', [AnnouncementController::class, 'getUserSales'])->name('sales');
 });
 
 // Public announcements routes
-Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncements']);
+Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncements'])->name('announcements.all');
 
 // Charity announcements routes
-Route::get('/charities/{charityId}/announcements', [AnnouncementController::class, 'getCharityAnnouncements']);
+Route::get('/charities/{charityId}/announcements', [AnnouncementController::class, 'getCharityAnnouncements'])->name('charity.announcements');
 
 // Admin announcements routes
-Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
+Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('admin.announcements.all');
 
 // Reports routes
-Route::get('/reports/donations', [ReportController::class, 'donations']);
-Route::get('/reports/users', [ReportController::class, 'users']);
-Route::get('/reports/sustainability', [ReportController::class, 'sustainability']);
-Route::get('/reports/charities', [ReportController::class, 'charities']);
+Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/donations', [ReportController::class, 'donations'])->name('donations');
+    Route::get('/users', [ReportController::class, 'users'])->name('users');
+    Route::get('/sustainability', [ReportController::class, 'sustainability'])->name('sustainability');
+    Route::get('/charities', [ReportController::class, 'charities'])->name('charities');
+});

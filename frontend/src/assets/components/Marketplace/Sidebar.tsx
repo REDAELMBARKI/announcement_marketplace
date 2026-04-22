@@ -17,7 +17,7 @@ import {
   UsersGroupRounded as People
 } from '@solar-icons/react';
 import { useTheme } from '../../../context/ThemeContext';
-import CustomSelect from '../Common/CustomSelect';
+import CustomSelect from '../common/CustomSelect';
 
 interface SidebarProps {
   initData: any;
@@ -143,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Selected city pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
             {(filters.cities || []).map((cityId: any) => {
-              const city = initData?.cities.find((c: any) => c.id === cityId);
+              const city = initData?.cities?.find((c: any) => c.id === cityId);
               if (!city) return null;
               return (
                 <div key={cityId} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', border: `1px solid ${colors.infoText}`, backgroundColor: colors.infoBg, color: colors.infoText, fontSize: '11px', fontWeight: '600' }}>
@@ -159,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>Type d'annonce</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {initData?.listingTypes.map((type: any) => {
+            {initData?.listingTypes?.map((type: any) => {
               const Icon = type.value === 'sell' ? Store : Gift;
               const active = filters.mode?.includes(type.value);
               return (
@@ -194,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>Tranche d'âge</SectionLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {initData?.ageRanges.map((age: any) => {
+            {initData?.ageRanges?.map((age: any) => {
               const active = filters.age_range?.includes(age.value);
               return (
                 <button 
@@ -272,7 +272,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {(sizeTab === 'clothes' ? initData?.clothingSizes : initData?.shoeSizes || []).map((s: any) => {
+            {(sizeTab === 'clothes' ? initData?.clothingSizes : initData?.shoeSizes || [])?.map((s: any) => {
               const active = filters.sizes?.includes(s.value);
               return (
                 <button 
@@ -300,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>État</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {initData?.conditions.map((cond: any) => {
+            {initData?.conditions?.map((cond: any) => {
               const active = filters.condition === cond.value;
               return (
                 <div 

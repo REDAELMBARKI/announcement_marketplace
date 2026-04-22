@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import route from "../../../utils/route";
 import { 
   FileEdit as Edit3, 
   Trash, 
@@ -36,11 +38,10 @@ const My_Announcements: React.FC = () => {
       return;
     }
 
-    fetch(`http://127.0.0.1:8000/api/user/announcements/${user.id}`)
-      .then((res) => res.json())
-      .then((data: any) => {
-        if (data.status === "success") {
-          const productsArray = data.products?.data || data.products;
+    axios.get(route('user.announcements', { userId: user.id }).toString())
+      .then((res) => {
+        if (res.data.status === "success") {
+          const productsArray = res.data.products?.data || res.data.products;
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);
@@ -54,11 +55,8 @@ const My_Announcements: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/announcements/${id}`, {
-          method: "DELETE",
-        });
-        const result: ApiResponse<any> = await response.json();
-        if (result.status === "success") {
+        const res = await axios.delete(route('announcements.destroy', { id }).toString());
+        if (res.data.status === "success") {
           setProducts(products.filter((p) => p.id !== id));
         }
       } catch (error) {

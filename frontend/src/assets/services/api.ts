@@ -1,26 +1,28 @@
 
+import axios from "axios";
+import route from "../../utils/route";
 import { Product } from "../../types/Product";
 
-const API = "http://127.0.0.1:8000/api";
-
 export const getProducts = async (): Promise<Product[]> => {
-  const res = await fetch(`${API}/products`);
-  return res.json();
+  const res = await axios.get(route('announcements.all').toString());
+  return res.data;
 };
 
 export const getProduct = async (id: number): Promise<Product> => {
-  const res = await fetch(`${API}/products/${id}`);
-  return res.json();
+  const res = await axios.get(route('announcements.show', { id }).toString());
+  return res.data;
 };
 
 export const getMyProducts = async (token: string): Promise<Product[]> => {
-  const res = await fetch(`${API}/my-products`, {
+  // We need user ID for this route, or we can use a generic my-products route if it exists
+  // For now using user.announcements as an example
+  const res = await axios.get(route('user.announcements', { userId: 'me' }).toString(), {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
 
-  return res.json();
+  return res.data;
 };
 
 export const updateProduct = async (
@@ -28,12 +30,9 @@ export const updateProduct = async (
   data: Partial<Product>,
   token: string
 ) => {
-  return fetch(`${API}/products/${id}`, {
-    method: "PUT",
+  return axios.put(route('announcements.update-status', { announcementId: id }).toString(), data, {
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(data)
+    }
   });
 };

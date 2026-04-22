@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../utils/route";
 import { 
   Search, 
   ChevronLeft,
@@ -12,8 +14,10 @@ import {
 import { 
   MapPoint as MapPin, 
   Bag as ShoppingBag,
-  Star
+  Star,
+  ChatLine
 } from "@solar-icons/react";
+import { Button } from "@mui/material";
 import "../../css/home.css"; 
 import { useTheme } from "../../context/ThemeContext";
 import Sidebar from "./Marketplace/Sidebar";
@@ -74,11 +78,10 @@ const Marketplace: React.FC = () => {
 
   // Fetch Initialization Data
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/marketplace/init-data")
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") {
-          setInitData(data);
+    axios.get(route('marketplace.init-data').toString())
+      .then(res => {
+        if (res.data.status === "success") {
+          setInitData(res.data);
         }
       })
       .catch(err => console.error("Init error:", err));
@@ -87,27 +90,27 @@ const Marketplace: React.FC = () => {
   // Fetch Listings
   const fetchListings = useCallback(() => {
     setListingsLoading(true);
-    const params = new URLSearchParams();
-    if (filters.search) params.append("search", filters.search);
-    if (filters.category) params.append("category", filters.category);
-    if (filters.gender) params.append("gender", filters.gender);
-    if (filters.condition) params.append("condition", filters.condition);
-    if (filters.min_price) params.append("min_price", filters.min_price);
-    if (filters.max_price) params.append("max_price", filters.max_price);
-    if (filters.free_only) params.append("free_only", "1");
-    if (filters.sort) params.append("sort", filters.sort);
+    const params: any = {
+      search: filters.search,
+      category: filters.category,
+      gender: filters.gender,
+      condition: filters.condition,
+      min_price: filters.min_price,
+      max_price: filters.max_price,
+      free_only: filters.free_only ? "1" : undefined,
+      sort: filters.sort,
+    };
     
     // Arrays
-    filters.cities.forEach(v => params.append("cities[]", String(v)));
-    filters.mode.forEach(v => params.append("mode[]", v));
-    filters.age_range.forEach(v => params.append("age_range[]", v));
-    filters.sizes.forEach(v => params.append("sizes[]", v));
+    if (filters.cities.length > 0) params['cities'] = filters.cities;
+    if (filters.mode.length > 0) params['mode'] = filters.mode;
+    if (filters.age_range.length > 0) params['age_range'] = filters.age_range;
+    if (filters.sizes.length > 0) params['sizes'] = filters.sizes;
 
-    fetch(`http://127.0.0.1:8000/api/marketplace/listings?${params.toString()}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") {
-          const productsArray = data.data.data || data.data;
+    axios.get(route('marketplace.listings', params).toString())
+      .then(res => {
+        if (res.data.status === "success") {
+          const productsArray = res.data.data.data || res.data.data;
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);
@@ -331,11 +334,8 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
     setIsFavorited(newStatus);
     
     // Proactively implement the API call (even if endpoint is pending)
-    fetch(`http://127.0.0.1:8000/api/announcements/${product.id}/favorite`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorite: newStatus })
-    }).catch(err => console.error("Favorite toggle error:", err));
+    axios.post(route('announcements.favorite', { productId: product.id }).toString(), { favorite: newStatus })
+      .catch(err => console.error("Favorite toggle error:", err));
   };
 
   if (view === 'list') {
@@ -375,17 +375,29 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.textMuted, fontSize: '13px' }}>
                 <MapPin size={14} weight="BoldDuotone" /> Agadir, Maroc
               </div>
-              <div style={{ 
-                padding: '8px 20px', 
-                borderRadius: '12px', 
-                backgroundColor: colors.coral, 
-                color: colors.bgSecondary, 
-                fontSize: '13px', 
-                fontWeight: '700',
-                cursor: 'pointer'
-              }}>
+              <Button 
+                variant="contained" 
+                size="small"
+                startIcon={<ChatLine size={16} weight="BoldDuotone" />}
+                sx={{ 
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  bgcolor: colors.coral,
+                  '&:hover': {
+                    bgcolor: colors.coralHover,
+                  },
+                  boxShadow: 'none',
+                  px: 2.5
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Contact logic
+                }}
+              >
                 Contact
-              </div>
+              </Button>
             </div>
           </div>
         </div>
@@ -422,21 +434,32 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
             <span style={{ fontSize: '10px', color: colors.textMuted }}>il y a 2h</span>
           </div>
         </div>
-        <div style={{ 
-          padding: '6px 14px', 
-          borderRadius: '10px', 
-          backgroundColor: colors.coral, 
-          color: colors.bgSecondary, 
-          fontSize: '11px', 
-          fontWeight: '700',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+        <Button 
+          variant="contained" 
+          size="small"
+          startIcon={<ChatLine size={16} weight="BoldDuotone" />}
+          sx={{ 
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontWeight: 700,
+            bgcolor: colors.coral,
+            '&:hover': {
+              bgcolor: colors.coralHover,
+            },
+            boxShadow: 'none',
+            px: 1.5,
+            minWidth: 'auto',
+            height: '30px',
+            fontSize: '11px'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Contact logic
+          }}
+        >
           Contact
-        </div>
+        </Button>
       </div>
 
       {/* Image Carousel */}
@@ -451,7 +474,7 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
           {product.listing_mode === 'sell' ? 'À VENDRE' : 'GRATUIT'}
         </div>
         
-        <button onClick={toggleFavorite} style={{ position: 'absolute', top: '10px', right: '10px', width: '34px', height: '34px', borderRadius: '50', backgroundColor: colors.bgSecondary, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <button onClick={toggleFavorite} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '5px' }}>
           <Heart size={18} color={colors.coral} fill={isFavorited ? colors.coral : "none"} strokeWidth={2} />
         </button>
 

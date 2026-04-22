@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../../utils/route";
 import "../../../css/user.css";
 
 export default function User_Dashboard() {
@@ -36,19 +38,17 @@ export default function User_Dashboard() {
   useEffect(() => {
     if (!user?.donor?.donor_ID) return;
 
-    fetch(`http://localhost:8000/api/donations/user/${user.donor.donor_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setDonations(data.donations);
+    axios.get(route('reports.donations', { donor_id: user.donor.donor_ID }).toString())
+      .then((res) => {
+        if (res.data.status === "success") setDonations(res.data.donations);
       })
       .catch((err) => console.error("Donation fetch error:", err));
   }, [user]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/charities")
-      .then((res) => res.json())
-      .then((data) => {
-        setCharities(data);
+    axios.get(route('admin.charities.index').toString())
+      .then((res) => {
+        setCharities(res.data);
         setLoadingCharities(false);
       })
       .catch(() => setLoadingCharities(false));
