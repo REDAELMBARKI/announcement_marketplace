@@ -17,8 +17,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Run the announcement seeder first
-        $this->call(AnnouncementSeeder::class);
-
+        $this->call([
+                     FilterAttributeSeeder::class
+                    ,AnnouncementSeeder::class]);
+        
         // Keep default user just in case
         User::factory()->create([
             'name' => 'Test User',
