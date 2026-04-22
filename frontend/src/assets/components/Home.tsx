@@ -1,13 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Store, Gift, Heart, ShoppingBag, Eye, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { 
+  Eye, 
+  ChevronLeft, 
+  ChevronRight, 
+} from "lucide-react";
+import {
+  Shop as Store,
+  Gift,
+  Heart,
+  Bag as ShoppingBag,
+  MapPoint as MapPin,
+} from "@solar-icons/react";
 import TrendingCard from "./TrendingCard";
 import MarketplaceCard from "./MarketplaceCard";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
+import { useTheme } from "../../context/ThemeContext";
 
 
 function Home() {
+  const { colors } = useTheme();
   const [homepageData, setHomepageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,8 +152,8 @@ function Home() {
   
   if (loading) {
     return (
-      <main className="home" id="home">
-        <div className="loading-container">
+      <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
+        <div className="loading-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: colors.textSecondary }}>
           <div className="loading-spinner">Loading...</div>
         </div>
       </main>
@@ -149,76 +162,76 @@ function Home() {
 
   if (error) {
     return (
-      <main className="home" id="home">
-        <div className="error-container">
+      <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
+        <div className="error-container" style={{ textAlign: 'center', padding: '100px', color: colors.danger }}>
           <div className="error-message">{error}</div>
-          <button onClick={() => window.location.reload()}>Try Again</button>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: colors.primary, color: colors.bgSecondary, border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Try Again</button>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="home" id="home">
-      <section className="hero_v2">
+    <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
+      <section className="hero_v2" style={{ backgroundColor: colors.bgSecondary }}>
         <div className="hero_copy">
-          <p className="eyebrow">PRE-LOVED KIDS CLOTHES</p>
-          <h1>
+          <p className="eyebrow" style={{ color: colors.coral }}>PRE-LOVED KIDS CLOTHES</p>
+          <h1 style={{ color: colors.textPrimary }}>
             Find Great Deals.
             <br />
             Help Local Families.
           </h1>
-          <p className="tagline">
+          <p className="tagline" style={{ color: colors.textSecondary }}>
             Buy affordable kids clothes or donate to families in need.
           </p>
           <div className="hero_actions">
-            <Link to="/marketplace" className="hero_primary">
+            <Link to="/marketplace" className="hero_primary" style={{ backgroundColor: colors.coral, color: colors.bgSecondary }}>
               Browse Items
             </Link>
-            <Link to="/donate" className="hero_secondary">
+            <Link to="/donate" className="hero_secondary" style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
               Donate Now
             </Link>
           </div>
         </div>
         <div className="hero_visual">
           <div className="floating-cards">
-            <div className="floating-card">👕</div>
-            <div className="floating-card">👟</div>
-            <div className="floating-card">🧸</div>
+            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>👕</div>
+            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>👟</div>
+            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>🧸</div>
           </div>
-          <div className="hero_image">
+          <div className="hero_image" style={{ backgroundColor: colors.bgTertiary }}>
             <span>👨‍👩‍👧‍👦</span>
           </div>
-          <div className="hero_stats">
+          <div className="hero_stats" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div className="hero_stat">
-              <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
-              <span>Items Available</span>
+              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
+              <span style={{ color: colors.textSecondary }}>Items Available</span>
             </div>
             <div className="hero_stat">
-              <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
-              <span>Active Users</span>
+              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
+              <span style={{ color: colors.textSecondary }}>Active Users</span>
             </div>
             <div className="hero_stat">
-              <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
-              <span>Donations</span>
+              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
+              <span style={{ color: colors.textSecondary }}>Donations</span>
             </div>
           </div>
         </div>
       </section>
 
       
-      <section className="season_banner">
-        <span className="season_icon" aria-hidden="true">
+      <section className="season_banner" style={{ backgroundColor: colors.bgTertiary, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
+        <span className="season_icon" aria-hidden="true" style={{ fontSize: '32px' }}>
           ⭐
         </span>
-        <div>
-          <h3>Summer Clothing Drive - ends July 31</h3>
-          <p>Donate summer essentials for kids heading back to school.</p>
-          <div className="countdown-timer">
+        <div style={{ flex: 1 }}>
+          <h3 style={{ color: colors.textPrimary, margin: 0 }}>Summer Clothing Drive - ends July 31</h3>
+          <p style={{ color: colors.textSecondary, margin: '5px 0' }}>Donate summer essentials for kids heading back to school.</p>
+          <div className="countdown-timer" style={{ fontWeight: '700', color: colors.coral }}>
             {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
           </div>
         </div>
-        <Link to="/sign_up">Donate now</Link>
+        <Link to="/sign_up" style={{ padding: '10px 20px', backgroundColor: colors.coral, color: colors.bgSecondary, borderRadius: '8px', textDecoration: 'none', fontWeight: '700' }}>Donate now</Link>
       </section>
 
       {homepageData?.featured_categories?.map((category) => (
@@ -238,7 +251,7 @@ function Home() {
               onClick={() => scrollCategory(category.id, 'left')}
               aria-label="Scroll left"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={20} strokeWidth={2} />
             </button>
             <div className="category-scroll" ref={el => categoryRefs.current[category.id] = el}>
               {(homepageData?.products_by_category?.[category.id]?.length >= 3 ? homepageData?.products_by_category?.[category.id] : homepageData?.products_by_category?.[category.id]?.slice(0, 3))?.map((item) => (
@@ -261,7 +274,7 @@ function Home() {
                   </div>
                   <div className="product-details">
                     <div className="location-line">
-                      <MapPin size={12} />
+                      <MapPin size={12} weight="BoldDuotone" />
                       <span>{item.addresses?.[0]?.city || 'Unknown'}, {item.addresses?.[0]?.district || 'Unknown'}</span>
                     </div>
                     <h4 className="product-title">{item.title}</h4>
@@ -277,7 +290,10 @@ function Home() {
                       {item.price ? (
                         <span className="price-tag">£{item.price}</span>
                       ) : (
-                        <span className="free-tag">FREE</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Gift size={16} weight="BoldDuotone" />
+                          <span className="free-tag">FREE</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -289,7 +305,7 @@ function Home() {
               onClick={() => scrollCategory(category.id, 'right')}
               aria-label="Scroll right"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={20} strokeWidth={2} />
             </button>
           </div>
         </section>
@@ -336,14 +352,14 @@ function Home() {
                 onClick={() => scrollTrending('left')}
                 aria-label="Scroll left"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={20} strokeWidth={2} />
               </button>
               <button 
                 className="scroll-btn right" 
                 onClick={() => scrollTrending('right')}
                 aria-label="Scroll right"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={20} strokeWidth={2} />
               </button>
             </div>
           )}
@@ -386,7 +402,7 @@ function Home() {
             onClick={() => scrollDonationCauses('left')}
             aria-label="Scroll left"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={20} strokeWidth={2} />
           </button>
           <div className="donation-causes-scroll" ref={donationCausesScrollRef}>
             {(homepageData?.donation_causes?.length >= 3 ? homepageData?.donation_causes : homepageData?.donation_causes?.slice(0, 3))?.map((cause) => {
@@ -405,7 +421,7 @@ function Home() {
                   <div className="cause-details">
                     <h4>{cause.title}</h4>
                     <div className="cause-location">
-                      <MapPin size={12} />
+                      <MapPin size={12} weight="BoldDuotone" />
                       <span>{cause.addresses?.[0]?.city || 'Unknown'}, {cause.addresses?.[0]?.district || 'Unknown'}</span>
                     </div>
                     <div className="cause-time">
@@ -427,7 +443,7 @@ function Home() {
             onClick={() => scrollDonationCauses('right')}
             aria-label="Scroll right"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={20} strokeWidth={2} />
           </button>
         </div>
       </section>
@@ -446,7 +462,7 @@ function Home() {
             onClick={() => scrollMarket('left')}
             aria-label="Scroll left"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={20} strokeWidth={2} />
           </button>
           <div className="market_grid_v2" ref={marketScrollRef}>
             {(homepageData?.new_arrivals?.length >= 3 ? homepageData?.new_arrivals : homepageData?.new_arrivals?.slice(0, 3))?.map((item) => (
@@ -476,7 +492,7 @@ function Home() {
             onClick={() => scrollMarket('right')}
             aria-label="Scroll right"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={20} strokeWidth={2} />
           </button>
         </div>
       </section>

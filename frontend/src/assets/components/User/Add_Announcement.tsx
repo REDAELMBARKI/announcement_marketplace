@@ -1,9 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { LucideIcon } from "lucide-react";
 import {
-  Baby,
-  BookOpen,
   Camera,
   Image,
   MapPinned,
@@ -11,17 +8,21 @@ import {
   Ruler,
   Shapes,
   Tag,
+  Plus,
+  X,
+} from "lucide-react";
+import {
+  Baby,
+  BookOpen,
   Footprints,
   HandHeart,
   Heart,
-  MapPin,
-  Package,
-  Plus,
+  MapPoint as MapPin,
+  Box as Package,
   Shirt,
   ToyBrick,
-  Truck,
-  X,
-} from "lucide-react";
+  Delivery as Truck,
+} from "@solar-icons/react";
 import {
   Field,
   IconCardButton,
@@ -65,8 +66,8 @@ interface FormState {
 }
 
 // Helper to get icon by category name
-const getCategoryIcon = (iconName: string): LucideIcon => {
-  const iconMap: Record<string, LucideIcon> = {
+const getCategoryIcon = (iconName: string): any => {
+  const iconMap: Record<string, any> = {
     'shirt': Shirt,
     'footprints': Footprints,
     'gamepad-2': ToyBrick,
@@ -474,7 +475,7 @@ export default function Add_Announcement() {
                 <div key={`${photo.name}-${index}`} className={`aa-thumb ${index === 0 ? "main" : ""}`}>
                   {index === 0 ? <span className="aa-main-tag">Principale</span> : null}
                   <button type="button" className="aa-thumb-delete" onClick={() => removePhoto(index)}>
-                    <X size={14} />
+                    <X size={14} strokeWidth={2} />
                   </button>
                   <img src={URL.createObjectURL(photo)} alt={photo.name} />
                 </div>
@@ -486,8 +487,8 @@ export default function Add_Announcement() {
                   className="aa-ghost-uploader"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Camera size={18} />
-                  <Plus size={14} />
+                  <Camera size={18} strokeWidth={2} />
+                  <Plus size={14} strokeWidth={2} />
                 </button>
               ) : null}
             </div>
@@ -653,7 +654,7 @@ export default function Add_Announcement() {
                 updateField("price", "");
               }}
             >
-              <Heart size={16} /> Don gratuit
+              <Heart size={16} weight="BoldDuotone" /> Don gratuit
             </button>
           </div>
           <div className={`aa-price-block ${form.listing_mode === "donate" ? "disabled" : ""}`}>
@@ -771,21 +772,21 @@ export default function Add_Announcement() {
                 </>
               ) : (
                 <div className="preview-empty-image">
-                  <Image size={18} />
+                  <Image size={18} strokeWidth={2} />
                   Photo principale
                 </div>
               )}
             </div>
 
             <div className="preview-row">
-              <Tag size={16} />
+              <Tag size={16} strokeWidth={2} />
               <p className="preview-price">
                 {form.listing_mode === "donate" ? "Don gratuit" : `${form.price || 0} MAD`}
               </p>
             </div>
 
             <div className="preview-row">
-              <Shapes size={16} />
+              <Shapes size={16} strokeWidth={2} />
               <h5>{form.title || "Titre de l'annonce..."}</h5>
             </div>
 
@@ -793,27 +794,27 @@ export default function Add_Announcement() {
 
             <div className="preview-meta">
               <div className="preview-row">
-                <Shapes size={16} />
+                <Shapes size={16} strokeWidth={2} />
                 <span>Categorie: {form.super_category_id ? categories.find(c => c.id === form.super_category_id)?.name : "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <Baby size={16} />
+                <Baby size={16} weight="BoldDuotone" />
                 <span>Genre: {form.gender || "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <Baby size={16} />
+                <Baby size={16} weight="BoldDuotone" />
                 <span>Age: {form.age_range || "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <Ruler size={16} />
+                <Ruler size={16} strokeWidth={2} />
                 <span>Tailles: {form.sizes.join(", ") || "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <Palette size={16} />
+                <Palette size={16} strokeWidth={2} />
                 <span>Couleurs: {form.colors.join(", ") || "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <MapPinned size={16} />
+                <MapPinned size={16} strokeWidth={2} />
                 <span>Adresse: {form.pickup_address || "Non defini"}</span>
               </div>
             </div>

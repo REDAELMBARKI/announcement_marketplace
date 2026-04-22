@@ -20,6 +20,12 @@ const lightTheme = {
     danger: "#dc2626",
     infoBg: "#e8f1ff",
     infoText: "#1e40af",
+    iconPrimary: "#1f2937",
+    iconSecondary: "#6b7280",
+    iconMuted: "#9ea5ad",
+    iconCoral: "#ff6b35",
+    iconSuccess: "#2e7d32",
+    iconDanger: "#dc2626",
     
     // Gradient colors
     heroGradientStart: "#2563eb",
@@ -85,7 +91,7 @@ const lightTheme = {
     mapBg: "#f8f9fb",
     mapGradient1: "#e0e7ff",
     mapGradient2: "#dbeafe",
-    mapBorder: "#93c5fd",
+    mapBorder: "#93c5fd"
   },
 };
 

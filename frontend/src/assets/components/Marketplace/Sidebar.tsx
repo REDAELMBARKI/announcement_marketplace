@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { 
-  Star, 
   Search, 
   ChevronRight, 
-  MapPin, 
-  ShoppingBag, 
-  Gift, 
-  RefreshCw, 
   Check,
-  Tag,
   Camera,
   X,
   ChevronDown
 } from 'lucide-react';
+import { 
+  MapPoint as MapPin, 
+  Bag as ShoppingBag, 
+  Gift,
+  Shop as Store,
+  Tag,
+  User,
+  UsersGroupRounded as People
+} from '@solar-icons/react';
 import { useTheme } from '../../../context/ThemeContext';
 import CustomSelect from '../Common/CustomSelect';
 
@@ -54,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 
   const Skeleton = () => (
-    <div style={{ height: '40px', backgroundColor: '#f3f4f6', borderRadius: '10px', marginBottom: '20px', animation: 'pulse 1.5s infinite' }} />
+    <div style={{ height: '40px', backgroundColor: colors.bgTertiary, borderRadius: '10px', marginBottom: '20px', animation: 'pulse 1.5s infinite' }} />
   );
 
   if (loading && !initData) {
@@ -62,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <aside style={{ 
         width: '280px', 
         borderRight: `1px solid ${colors.sidebarBorder}`, 
-        backgroundColor: '#ffffff', 
+        backgroundColor: colors.bgSecondary, 
         height: 'calc(100vh - 80px)', 
         position: 'sticky',
         top: '80px',
@@ -77,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <aside style={{ 
       width: '280px', 
       borderRight: `1px solid ${colors.sidebarBorder}`, 
-      backgroundColor: '#ffffff', 
+      backgroundColor: colors.bgSecondary, 
       height: 'calc(100vh - 80px)', 
       position: 'sticky', 
       top: '80px', 
@@ -121,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             value={filters.category}
             onChange={(val) => onFilterChange('category', val)}
             placeholder="Choisir catégorie"
-            icon={<ShoppingBag size={18} />}
+            icon={<ShoppingBag size={18} weight="BoldDuotone" color={colors.iconCoral} />}
           />
         </div>
 
@@ -135,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             value={filters.cities || []}
             onChange={(val) => onFilterChange('cities', val)}
             placeholder="Choisir ville - secteur"
-            icon={<MapPin size={18} />}
+            icon={<MapPin size={18} weight="BoldDuotone" color={colors.iconCoral} />}
           />
           {/* Selected city pills */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
@@ -143,9 +146,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               const city = initData?.cities.find((c: any) => c.id === cityId);
               if (!city) return null;
               return (
-                <div key={cityId} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #3b82f6', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '11px', fontWeight: '600' }}>
+                <div key={cityId} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '6px', border: `1px solid ${colors.infoText}`, backgroundColor: colors.infoBg, color: colors.infoText, fontSize: '11px', fontWeight: '600' }}>
                   {city.label}
-                  <X size={12} style={{ cursor: 'pointer' }} onClick={() => onToggleArrayFilter('cities', cityId)} />
+                  <X size={12} style={{ cursor: 'pointer' }} onClick={() => onToggleArrayFilter('cities', cityId)} strokeWidth={2} />
                 </div>
               );
             })}
@@ -156,30 +159,34 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>Type d'annonce</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {initData?.listingTypes.map((type: any) => (
-              <div 
-                key={type.value} 
-                onClick={() => onToggleArrayFilter('mode', type.value)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>{type.icon}</span>
-                  <span style={{ fontSize: '14px', color: colors.textPrimary }}>{type.label}</span>
+            {initData?.listingTypes.map((type: any) => {
+              const Icon = type.value === 'sell' ? Store : Gift;
+              const active = filters.mode?.includes(type.value);
+              return (
+                <div 
+                  key={type.value} 
+                  onClick={() => onToggleArrayFilter('mode', type.value)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Icon size={20} weight="BoldDuotone" color={active ? colors.coral : colors.iconMuted} />
+                    <span style={{ fontSize: '14px', color: colors.textPrimary }}>{type.label}</span>
+                  </div>
+                  <div style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    borderRadius: '4px', 
+                    border: `1px solid ${active ? colors.coral : colors.border}`,
+                    backgroundColor: active ? colors.coral : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {active && <Check size={14} color={colors.bgSecondary} strokeWidth={2} />}
+                  </div>
                 </div>
-                <div style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  borderRadius: '4px', 
-                  border: `1px solid ${filters.mode?.includes(type.value) ? colors.coral : '#ddd'}`,
-                  backgroundColor: filters.mode?.includes(type.value) ? colors.coral : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {filters.mode?.includes(type.value) && <Check size={14} color="#ffffff" />}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -196,9 +203,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   style={{ 
                     padding: '6px 12px', 
                     borderRadius: '20px', 
-                    border: active ? 'none' : '1px solid #ddd',
-                    backgroundColor: active ? colors.coral : '#ffffff',
-                    color: active ? '#ffffff' : colors.textSecondary,
+                    border: active ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: active ? colors.coral : colors.bgSecondary,
+                    color: active ? colors.bgSecondary : colors.textSecondary,
                     fontSize: '12px',
                     fontWeight: '600',
                     cursor: 'pointer'
@@ -217,7 +224,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div style={{ display: 'flex', gap: '8px' }}>
             {['girl', 'boy', 'both'].map((g) => {
               const active = filters.gender === g;
-              const labels: any = { girl: '👧 Fille', boy: '👦 Garçon', both: '🔀 Mixte' };
+              const labels: any = { girl: 'Fille', boy: 'Garçon', both: 'Mixte' };
+              const Icon = g === 'both' ? People : User;
               return (
                 <button 
                   key={g}
@@ -226,14 +234,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                     flex: 1,
                     padding: '8px 0', 
                     borderRadius: '10px', 
-                    border: active ? 'none' : '1px solid #ddd',
-                    backgroundColor: active ? colors.coral : '#ffffff',
-                    color: active ? '#ffffff' : colors.textSecondary,
+                    border: active ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: active ? colors.coral : colors.bgSecondary,
+                    color: active ? colors.bgSecondary : colors.textSecondary,
                     fontSize: '12px',
                     fontWeight: '600',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
+                  <Icon size={18} weight="BoldDuotone" color={active ? colors.bgSecondary : colors.iconMuted} />
                   {labels[g]}
                 </button>
               );
@@ -244,7 +257,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Taille */}
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>Taille</SectionLabel>
-          <div style={{ display: 'flex', borderBottom: '1px solid #eee', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', borderBottom: `1px solid ${colors.border}`, marginBottom: '12px' }}>
             <button 
               onClick={() => setSizeTab('clothes')}
               style={{ flex: 1, padding: '8px 0', background: 'none', border: 'none', borderBottom: sizeTab === 'clothes' ? `2px solid ${colors.coral}` : 'none', color: sizeTab === 'clothes' ? colors.coral : colors.textSecondary, fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
@@ -268,9 +281,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   style={{ 
                     padding: '4px 10px', 
                     borderRadius: '15px', 
-                    border: active ? 'none' : '1px solid #ddd',
-                    backgroundColor: active ? colors.coral : '#ffffff',
-                    color: active ? '#ffffff' : colors.textSecondary,
+                    border: active ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: active ? colors.coral : colors.bgSecondary,
+                    color: active ? colors.bgSecondary : colors.textSecondary,
                     fontSize: '11px',
                     fontWeight: '600',
                     cursor: 'pointer'
@@ -323,7 +336,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 placeholder="Min" 
                 value={filters.min_price}
                 onChange={(e) => onFilterChange('min_price', e.target.value)}
-                style={{ width: '100%', padding: '8px 40px 8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }}
+                style={{ width: '100%', padding: '8px 40px 8px 12px', borderRadius: '8px', border: `1px solid ${colors.border}`, fontSize: '13px', backgroundColor: colors.bgSecondary, color: colors.textPrimary }}
               />
               <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: colors.textMuted }}>MAD</span>
             </div>
@@ -333,7 +346,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 placeholder="Max" 
                 value={filters.max_price}
                 onChange={(e) => onFilterChange('max_price', e.target.value)}
-                style={{ width: '100%', padding: '8px 40px 8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }}
+                style={{ width: '100%', padding: '8px 40px 8px 12px', borderRadius: '8px', border: `1px solid ${colors.border}`, fontSize: '13px', backgroundColor: colors.bgSecondary, color: colors.textPrimary }}
               />
               <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: colors.textMuted }}>MAD</span>
             </div>
@@ -343,9 +356,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Simple toggle placeholder */}
             <div 
               onClick={() => onFilterChange('free_only', !filters.free_only)}
-              style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: filters.free_only ? colors.coral : '#e5e7eb', position: 'relative', cursor: 'pointer' }}
+              style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: filters.free_only ? colors.coral : colors.bgTertiary, position: 'relative', cursor: 'pointer' }}
             >
-              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', left: filters.free_only ? '18px' : '2px', top: '2px', transition: 'left 0.2s' }} />
+              <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: colors.bgSecondary, position: 'absolute', left: filters.free_only ? '18px' : '2px', top: '2px', transition: 'left 0.2s' }} />
             </div>
           </div>
         </div>
@@ -353,18 +366,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Toggle Switches (bottom) */}
         <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[
-            { key: 'with_media', label: 'Annonces avec photos-vidéos uniquement', icon: <Camera size={14} /> }
+            { key: 'with_media', label: 'Annonces avec photos-vidéos uniquement', icon: <Camera size={14} strokeWidth={2} /> }
           ].map((item) => (
             <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ backgroundColor: colors.darkNavy, color: '#ffffff', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ backgroundColor: colors.darkNavy, color: colors.bgSecondary, padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.icon}
               </div>
               <span style={{ flex: 1, fontSize: '12px', color: colors.textPrimary }}>{item.label}</span>
               <div 
                 onClick={() => onFilterChange(item.key, !filters[item.key])}
-                style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: filters[item.key] ? colors.coral : '#e5e7eb', position: 'relative', cursor: 'pointer' }}
+                style={{ width: '36px', height: '20px', borderRadius: '10px', backgroundColor: filters[item.key] ? colors.coral : colors.bgTertiary, position: 'relative', cursor: 'pointer' }}
               >
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', left: filters[item.key] ? '18px' : '2px', top: '2px', transition: 'left 0.2s' }} />
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: colors.bgSecondary, position: 'absolute', left: filters[item.key] ? '18px' : '2px', top: '2px', transition: 'left 0.2s' }} />
               </div>
             </div>
           ))}
@@ -374,8 +387,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Apply Button */}
       <div style={{ 
         padding: '16px', 
-        borderTop: '1px solid #eee', 
-        backgroundColor: '#ffffff',
+        borderTop: `1px solid ${colors.border}`, 
+        backgroundColor: colors.bgSecondary,
         position: 'sticky',
         bottom: 0,
         zIndex: 5
@@ -386,13 +399,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             width: '100%', 
             padding: '14px', 
             backgroundColor: colors.coral, 
-            color: '#ffffff', 
+            color: colors.bgSecondary, 
             border: 'none', 
             borderRadius: '12px', 
             fontWeight: '700', 
             fontSize: '14px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(255, 107, 53, 0.2)',
+            boxShadow: `0 4px 12px ${colors.coral}33`,
             transition: 'all 0.2s'
           }}
           onMouseOver={(e) => {

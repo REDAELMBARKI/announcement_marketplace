@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Leaf } from "@solar-icons/react";
 import "../../css/header.css";
 
 function Header() {
@@ -8,7 +9,7 @@ function Header() {
       <div className="top_navbar">
         <div className="brand">
           <Link to="/" className="brand_logo">
-            LetUsDonate.uk <i className="fa-solid fa-leaf" aria-hidden="true"></i>
+            LetUsDonate.uk <Leaf size={24} weight="BoldDuotone" style={{ marginLeft: '8px' }} />
           </Link>
         </div>
 

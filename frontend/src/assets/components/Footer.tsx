@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Leaf } from "@solar-icons/react";
 import "../../css/footer.css";
 
 export function Footer() {
@@ -14,7 +15,7 @@ export function Footer() {
           {new Date().getFullYear()}LetUsDonateUK <br></br>All rights reserved.
         </p>
         <div className="footer-logo">
-          <i className="fa-solid fa-leaf"></i>
+          <Leaf size={24} weight="BoldDuotone" />
         </div>
       </div>
     </footer>

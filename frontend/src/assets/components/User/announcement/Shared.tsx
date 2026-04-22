@@ -61,9 +61,12 @@ export function PillButton({ active, children, ...props }) {
 }
 
 export function IconCardButton({ icon: Icon, title, subtitle, active, ...props }) {
+  // Check if it's a Solar icon by checking if it accepts weight prop or by standard convention
+  // We'll pass BoldDuotone to Solar icons. 
+  // Lucide icons don't have weight prop but have strokeWidth.
   return (
     <button type="button" className={`aa-icon-card ${active ? "active" : ""}`} {...props}>
-      <Icon size={22} />
+      <Icon size={22} weight="BoldDuotone" strokeWidth={2} />
       <strong>{title}</strong>
       {subtitle ? <small>{subtitle}</small> : null}
     </button>

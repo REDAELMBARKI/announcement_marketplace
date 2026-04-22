@@ -137,6 +137,7 @@ Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketp
 Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketplaceListings']);
 Route::post('/announcements', [AnnouncementController::class, 'store']);
 Route::get('/announcements/{id}', [AnnouncementController::class, 'show']);
+Route::post('/announcements/{productId}/favorite', [AnnouncementController::class, 'toggleFavorite']);
 Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
 Route::put('/announcements/{announcementId}/status', [AnnouncementController::class, 'updateStatus']);
 

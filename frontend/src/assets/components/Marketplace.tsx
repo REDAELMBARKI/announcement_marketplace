@@ -2,16 +2,18 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { 
   Search, 
-  MapPin, 
-  Heart, 
-  ShoppingBag,
-  Star,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
   List,
-  Camera
+  Camera,
+  Heart
 } from "lucide-react";
+import { 
+  MapPoint as MapPin, 
+  Bag as ShoppingBag,
+  Star
+} from "@solar-icons/react";
 import "../../css/home.css"; 
 import { useTheme } from "../../context/ThemeContext";
 import Sidebar from "./Marketplace/Sidebar";
@@ -38,6 +40,7 @@ interface FilterState {
   condition: string;
   min_price: string;
   max_price: string;
+  sizes: string[];
   free_only: boolean;
   with_media: boolean;
   sort: string;
@@ -62,6 +65,7 @@ const Marketplace: React.FC = () => {
     condition: "",
     min_price: "",
     max_price: "",
+    sizes: [],
     free_only: false,
     with_media: false,
     sort: "newest",
@@ -97,6 +101,7 @@ const Marketplace: React.FC = () => {
     filters.cities.forEach(v => params.append("cities[]", String(v)));
     filters.mode.forEach(v => params.append("mode[]", v));
     filters.age_range.forEach(v => params.append("age_range[]", v));
+    filters.sizes.forEach(v => params.append("sizes[]", v));
 
     fetch(`http://127.0.0.1:8000/api/marketplace/listings?${params.toString()}`)
       .then(res => res.json())
@@ -126,7 +131,8 @@ const Marketplace: React.FC = () => {
 
   const handleToggleArrayFilter = (key: string, value: any) => {
     setFilters(prev => {
-      const current = (prev as any)[key] as any[];
+      const current = (prev as any)[key] || [];
+      if (!Array.isArray(current)) return prev;
       const next = current.includes(value) 
         ? current.filter(v => v !== value) 
         : [...current, value];
@@ -145,6 +151,7 @@ const Marketplace: React.FC = () => {
       condition: "",
       min_price: "",
       max_price: "",
+      sizes: [],
       free_only: false,
       with_media: false,
       sort: "newest",
@@ -161,7 +168,7 @@ const Marketplace: React.FC = () => {
   return (
     <div className="marketplace-page" style={{ 
       display: 'flex', 
-      backgroundColor: '#f4f5f7', 
+      backgroundColor: colors.bgPrimary, 
       minHeight: '100vh', 
       fontFamily: "'Poppins', sans-serif" 
     }}>
@@ -185,9 +192,9 @@ const Marketplace: React.FC = () => {
           position: 'sticky', 
           top: '80px', 
           zIndex: 100, 
-          backgroundColor: '#ffffff', 
+          backgroundColor: colors.bgSecondary, 
           padding: '12px 40px', 
-          borderBottom: '1px solid #e8e8e8',
+          borderBottom: `1px solid ${colors.border}`,
           display: 'flex',
           alignItems: 'center',
           gap: '20px',
@@ -206,9 +213,9 @@ const Marketplace: React.FC = () => {
                   style={{ 
                     padding: '8px 20px', 
                     borderRadius: '20px', 
-                    border: active ? 'none' : '1px solid #e5e7eb',
-                    backgroundColor: active ? colors.coral : 'white',
-                    color: active ? 'white' : colors.textSecondary,
+                    border: active ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: active ? colors.coral : colors.bgSecondary,
+                    color: active ? colors.bgSecondary : colors.textSecondary,
                     fontSize: '13px',
                     fontWeight: '600',
                     cursor: 'pointer',
@@ -227,7 +234,7 @@ const Marketplace: React.FC = () => {
               <select 
                 value={filters.sort}
                 onChange={(e) => handleFilterChange('sort', e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px', color: colors.textPrimary, cursor: 'pointer', outline: 'none' }}
+                style={{ padding: '8px 12px', borderRadius: '8px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.textPrimary, cursor: 'pointer', outline: 'none', backgroundColor: colors.bgSecondary }}
               >
                 <option value="newest">Plus récent</option>
                 <option value="price_asc">Prix croissant</option>
@@ -235,23 +242,23 @@ const Marketplace: React.FC = () => {
               </select>
             </div>
 
-            <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '4px', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', backgroundColor: colors.bgTertiary, padding: '4px', borderRadius: '8px' }}>
               <button 
                 onClick={() => handleFilterChange('view', 'grid')}
-                style={{ padding: '6px', borderRadius: '6px', backgroundColor: filters.view === 'grid' ? 'white' : 'transparent', border: 'none', cursor: 'pointer', color: filters.view === 'grid' ? colors.coral : '#9ca3af' }}
+                style={{ padding: '6px', borderRadius: '6px', backgroundColor: filters.view === 'grid' ? colors.bgSecondary : 'transparent', border: 'none', cursor: 'pointer', color: filters.view === 'grid' ? colors.coral : colors.textMuted }}
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={18} strokeWidth={2} />
               </button>
               <button 
                 onClick={() => handleFilterChange('view', 'list')}
-                style={{ padding: '6px', borderRadius: '6px', backgroundColor: filters.view === 'list' ? 'white' : 'transparent', border: 'none', cursor: 'pointer', color: filters.view === 'list' ? colors.coral : '#9ca3af' }}
+                style={{ padding: '6px', borderRadius: '6px', backgroundColor: filters.view === 'list' ? colors.bgSecondary : 'transparent', border: 'none', cursor: 'pointer', color: filters.view === 'list' ? colors.coral : colors.textMuted }}
               >
-                <List size={18} />
+                <List size={18} strokeWidth={2} />
               </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', backgroundColor: colors.coralLight, color: colors.coral, borderRadius: '20px', fontSize: '13px', fontWeight: '600' }}>
-              <MapPin size={14} />
+              <MapPin size={14} weight="BoldDuotone" color={colors.iconCoral} />
               <span>Agadir</span>
             </div>
           </div>
@@ -262,7 +269,7 @@ const Marketplace: React.FC = () => {
           {listingsLoading ? (
             <div style={{ display: 'grid', gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: '25px' }}>
               {[1,2,3,4,5,6,7,8].map(i => (
-                <div key={i} style={{ height: '380px', backgroundColor: 'white', borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
+                <div key={i} style={{ height: '380px', backgroundColor: colors.bgSecondary, borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
               ))}
             </div>
           ) : products.length > 0 ? (
@@ -276,13 +283,13 @@ const Marketplace: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: 'white', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-              <ShoppingBag size={64} color="#d1d5db" style={{ marginBottom: '20px' }} />
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: colors.bgSecondary, borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <ShoppingBag size={64} color={colors.textMuted} style={{ marginBottom: '20px' }} weight="BoldDuotone" />
               <h2 style={{ fontSize: '24px', fontWeight: '800', color: colors.textPrimary, marginBottom: '10px' }}>Aucun article trouvé</h2>
               <p style={{ color: colors.textSecondary, marginBottom: '30px' }}>Essayez d'ajuster vos filtres pour trouver ce que vous cherchez.</p>
               <button 
                 onClick={handleReset}
-                style={{ padding: '12px 30px', backgroundColor: colors.coral, color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}
+                style={{ padding: '12px 30px', backgroundColor: colors.coral, color: colors.bgSecondary, border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}
               >
                 Réinitialiser les filtres
               </button>
@@ -298,6 +305,7 @@ const Marketplace: React.FC = () => {
 const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getImageUrl: (m: any) => string | null, colors: any }> = ({ product, view, getImageUrl, colors }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(product.is_favorited || false);
   
   const gallery = product.gallery || [];
   const allImages = [
@@ -315,43 +323,63 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newStatus = !isFavorited;
+    setIsFavorited(newStatus);
+    
+    // Proactively implement the API call (even if endpoint is pending)
+    fetch(`http://127.0.0.1:8000/api/announcements/${product.id}/favorite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favorite: newStatus })
+    }).catch(err => console.error("Favorite toggle error:", err));
+  };
+
   if (view === 'list') {
     return (
-      <Link to={`/product/${product.id}`} style={{ display: 'flex', backgroundColor: 'white', borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s' }}>
+      <Link to={`/product/${product.id}`} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s' }}>
         <div style={{ width: '280px', height: '210px', position: 'relative', flexShrink: 0 }}>
           <img src={allImages[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', top: '15px', left: '15px', padding: '5px 12px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? '#8e44ad' : '#27ae60', color: 'white', fontSize: '11px', fontWeight: '900' }}>
+          <div style={{ position: 'absolute', top: '15px', left: '15px', padding: '5px 12px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success, color: colors.bgSecondary, fontSize: '11px', fontWeight: '900' }}>
             {product.listing_mode === 'sell' ? 'À VENDRE' : 'GRATUIT'}
           </div>
         </div>
         <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: colors.coral, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: colors.coral, color: colors.bgSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800' }}>
                 {product.user?.name?.charAt(0)}
               </div>
-              <span style={{ fontSize: '14px', fontWeight: '700' }}>{product.user?.name}</span>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: colors.textPrimary }}>{product.user?.name}</span>
             </div>
-            <span style={{ fontSize: '13px', color: colors.textMuted }}>il y a 2h</span>
+            <button 
+              onClick={toggleFavorite}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+            >
+              <Heart size={20} color={colors.coral} fill={isFavorited ? colors.coral : "none"} strokeWidth={2} />
+            </button>
           </div>
           <h3 style={{ fontSize: '20px', fontWeight: '800', color: colors.textPrimary, marginBottom: '12px' }}>{product.title}</h3>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <span style={{ padding: '5px 12px', backgroundColor: '#f3f4f6', borderRadius: '8px', fontSize: '12px', fontWeight: '600', color: colors.textSecondary }}>{product.condition}</span>
-            <span style={{ padding: '5px 12px', backgroundColor: '#f3f4f6', borderRadius: '8px', fontSize: '12px', fontWeight: '600', color: colors.textSecondary }}>{product.age_range}</span>
+            <span style={{ padding: '5px 12px', backgroundColor: colors.bgTertiary, borderRadius: '8px', fontSize: '12px', fontWeight: '600', color: colors.textSecondary }}>{product.condition}</span>
+            <span style={{ padding: '5px 12px', backgroundColor: colors.bgTertiary, borderRadius: '8px', fontSize: '12px', fontWeight: '600', color: colors.textSecondary }}>{product.age_range}</span>
           </div>
           <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '900', color: product.listing_mode === 'sell' ? colors.coral : '#27ae60' }}>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: product.listing_mode === 'sell' ? colors.coral : colors.success }}>
               {product.listing_mode === 'sell' ? `${Math.floor(Number(product.price))} MAD` : 'GRATUIT'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.textMuted, fontSize: '13px' }}>
-                <MapPin size={14} /> Agadir, Maroc
+                <MapPin size={14} weight="BoldDuotone" /> Agadir, Maroc
               </div>
               <div style={{ 
                 padding: '8px 20px', 
                 borderRadius: '12px', 
                 backgroundColor: colors.coral, 
-                color: '#ffffff', 
+                color: colors.bgSecondary, 
                 fontSize: '13px', 
                 fontWeight: '700',
                 cursor: 'pointer'
@@ -371,7 +399,7 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ 
-        backgroundColor: 'white', 
+        backgroundColor: colors.bgSecondary, 
         borderRadius: '20px', 
         overflow: 'hidden', 
         textDecoration: 'none', 
@@ -386,7 +414,7 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
       {/* Seller Row */}
       <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: colors.coral, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: colors.coral, color: colors.bgSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
             {product.user?.name?.charAt(0)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -398,7 +426,7 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
           padding: '6px 14px', 
           borderRadius: '10px', 
           backgroundColor: colors.coral, 
-          color: '#ffffff', 
+          color: colors.bgSecondary, 
           fontSize: '11px', 
           fontWeight: '700',
           cursor: 'pointer',
@@ -412,30 +440,30 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
       </div>
 
       {/* Image Carousel */}
-      <div style={{ position: 'relative', height: '200px', backgroundColor: '#f3f4f6' }}>
+      <div style={{ position: 'relative', height: '200px', backgroundColor: colors.bgTertiary }}>
         <img 
           src={allImages[currentImageIndex]} 
           alt={product.title} 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
         
-        <div style={{ position: 'absolute', top: '12px', left: '12px', padding: '5px 10px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? '#8e44ad' : '#27ae60', color: 'white', fontSize: '10px', fontWeight: '900' }}>
+        <div style={{ position: 'absolute', top: '12px', left: '12px', padding: '5px 10px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success, color: colors.bgSecondary, fontSize: '10px', fontWeight: '900' }}>
           {product.listing_mode === 'sell' ? 'À VENDRE' : 'GRATUIT'}
         </div>
         
-        <button onClick={(e) => e.preventDefault()} style={{ position: 'absolute', top: '10px', right: '10px', width: '34px', height: '34px', borderRadius: '50%', backgroundColor: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <Heart size={18} color={colors.coral} />
+        <button onClick={toggleFavorite} style={{ position: 'absolute', top: '10px', right: '10px', width: '34px', height: '34px', borderRadius: '50', backgroundColor: colors.bgSecondary, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <Heart size={18} color={colors.coral} fill={isFavorited ? colors.coral : "none"} strokeWidth={2} />
         </button>
 
         {allImages.length > 1 && (
           <>
-            <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', fontSize: '10px', fontWeight: '600' }}>
-              <Camera size={10} style={{ marginRight: '4px' }} /> {currentImageIndex + 1}/{allImages.length}
+            <div style={{ position: 'absolute', bottom: '10px', left: '10px', padding: '4px 8px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.5)', color: colors.bgSecondary, fontSize: '10px', fontWeight: '600' }}>
+              <Camera size={10} style={{ marginRight: '4px' }} strokeWidth={2} /> {currentImageIndex + 1}/{allImages.length}
             </div>
             {isHovered && (
               <>
-                <button onClick={prevImage} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
-                <button onClick={nextImage} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={20} /></button>
+                <button onClick={prevImage} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronLeft size={20} strokeWidth={2} /></button>
+                <button onClick={nextImage} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={20} strokeWidth={2} /></button>
               </>
             )}
           </>
@@ -445,18 +473,18 @@ const MarketplaceCard: React.FC<{ product: Product, view: 'grid' | 'list', getIm
       {/* Info Section */}
       <div style={{ padding: '15px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: colors.textMuted, fontSize: '11px', marginBottom: '6px' }}>
-          <MapPin size={12} /> <span>Agadir, Maroc</span>
+          <MapPin size={12} weight="BoldDuotone" /> <span>Agadir, Maroc</span>
         </div>
         <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.textPrimary, marginBottom: '10px', height: '40px', overflow: 'hidden' }}>{product.title}</h3>
         <div style={{ display: 'flex', gap: '6px', marginBottom: '15px' }}>
-          <span style={{ fontSize: '10px', padding: '4px 8px', backgroundColor: '#f3f4f7', borderRadius: '6px', color: colors.textSecondary, fontWeight: '700' }}>{product.condition}</span>
-          <span style={{ fontSize: '10px', padding: '4px 8px', backgroundColor: '#f3f4f7', borderRadius: '6px', color: colors.textSecondary, fontWeight: '700' }}>{product.age_range}</span>
+          <span style={{ fontSize: '10px', padding: '4px 8px', backgroundColor: colors.bgTertiary, borderRadius: '6px', color: colors.textSecondary, fontWeight: '700' }}>{product.condition}</span>
+          <span style={{ fontSize: '10px', padding: '4px 8px', backgroundColor: colors.bgTertiary, borderRadius: '6px', color: colors.textSecondary, fontWeight: '700' }}>{product.age_range}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: product.listing_mode === 'sell' ? colors.coral : '#27ae60' }}>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: product.listing_mode === 'sell' ? colors.coral : colors.success }}>
             {product.listing_mode === 'sell' ? `${Math.floor(Number(product.price))} MAD` : 'GRATUIT'}
           </div>
-          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: colors.coral, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
+          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: colors.coral, color: colors.bgSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
             {product.user?.name?.charAt(0)}
           </div>
         </div>

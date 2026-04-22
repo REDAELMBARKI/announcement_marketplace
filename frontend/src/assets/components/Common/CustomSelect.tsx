@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, Search, Check, X, ChevronDown } from 'lucide-react';
+import { ChevronRight, Search, Check } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface Option {
@@ -86,8 +86,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 padding: '6px 12px',
                 borderRadius: '20px',
                 border: active ? 'none' : `1px solid ${colors.border}`,
-                backgroundColor: active ? colors.coral : '#ffffff',
-                color: active ? '#ffffff' : colors.textSecondary,
+                backgroundColor: active ? colors.coral : colors.bgSecondary,
+                color: active ? colors.bgSecondary : colors.textSecondary,
                 fontSize: '12px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -113,13 +113,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           padding: '12px',
           borderRadius: '10px',
           border: `1px solid ${colors.border}`,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.bgSecondary,
           cursor: 'pointer',
           justifyContent: 'space-between'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, overflow: 'hidden' }}>
-          {icon && <span style={{ color: colors.textSecondary }}>{icon}</span>}
+          {icon && <span style={{ color: colors.textSecondary, display: 'flex', alignItems: 'center' }}>{icon}</span>}
           <span style={{ 
             fontSize: '14px', 
             color: value ? colors.textPrimary : colors.textMuted,
@@ -137,7 +137,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           color: colors.textMuted, 
           transform: isOpen ? 'rotate(90deg)' : 'none',
           transition: 'transform 0.2s'
-        }} />
+        }} strokeWidth={2} />
       </div>
 
       {isOpen && (
@@ -146,7 +146,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           top: 'calc(100% + 5px)',
           left: 0,
           right: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: colors.bgSecondary,
           borderRadius: '12px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
           zIndex: 1000,
@@ -155,9 +155,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           border: `1px solid ${colors.border}`
         }}>
           {searchable && (
-            <div style={{ padding: '10px', borderBottom: `1px solid ${colors.filterBorder}`, position: 'sticky', top: 0, backgroundColor: '#ffffff' }}>
+            <div style={{ padding: '10px', borderBottom: `1px solid ${colors.filterBorder}`, position: 'sticky', top: 0, backgroundColor: colors.bgSecondary }}>
               <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: colors.textMuted }} />
+                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: colors.textMuted }} strokeWidth={2} />
                 <input 
                   type="text"
                   placeholder="Rechercher..."
@@ -168,7 +168,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     padding: '8px 8px 8px 30px',
                     borderRadius: '8px',
                     border: `1px solid ${colors.border}`,
-                    fontSize: '13px'
+                    fontSize: '13px',
+                    backgroundColor: colors.bgTertiary,
+                    color: colors.textPrimary
                   }}
                 />
               </div>
@@ -206,10 +208,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      {active && <Check size={12} color="#ffffff" />}
+                      {active && <Check size={12} color={colors.bgSecondary} strokeWidth={2} />}
                     </div>
                   )}
-                  {opt.icon && <span>{opt.icon}</span>}
+                  {opt.icon && <span style={{ display: 'flex', alignItems: 'center' }}>{opt.icon}</span>}
                   <span style={{ flex: 1 }}>{opt.label}</span>
                 </div>
               );

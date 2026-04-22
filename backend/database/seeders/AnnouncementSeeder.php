@@ -235,6 +235,21 @@ class AnnouncementSeeder extends Seeder
                 'collection' => 'thumbnail',
                 'url' => 'https://picsum.photos/seed/' . Str::slug($productName) . '/400/300.jpg',
             ]);
+
+             Media::factory()->create([
+                'mediable_id' => $product->id,
+                'mediable_type' => Product::class,
+                'collection' => 'gallery',
+                'url' => 'https://picsum.photos/seed/' . Str::slug($productName . "1") . '/400/300.jpg',
+            ]);
+
+             Media::factory()->create([
+                'mediable_id' => $product->id,
+                'mediable_type' => Product::class,
+                'collection' => 'gallery',
+                'url' => 'https://picsum.photos/seed/' . Str::slug($productName . "2")  . '/400/300.jpg',
+            ]);
+
         }
     }
 

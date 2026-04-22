@@ -6,21 +6,58 @@ use App\Models\Product;
 use App\Models\ProductItem;
 use App\Models\Media;
 use App\Models\Category;
+use App\Models\Favorite;
 use App\Http\Resources\ProductResource;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 // Unified controller for managing both donations and sales announcements
 class AnnouncementController extends Controller
 {
-    public function __construct(
+     function __construct(
         protected ProductService $productService
     ) {}
+
+     function toggleFavorite(Request $request, $productId)
+    {
+        // For now, we'll use a hardcoded user_id or get it from auth if implemented
+        $userId = $request->input('user_id') ?? 1;
+        
+        $product = Product::findOrFail($productId);
+        
+        $favorite = Favorite::where('user_id', $userId)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            $product->decrement('favorites_count');
+            $message = 'Removed from favorites';
+            $isFavorited = false;
+        } else {
+            Favorite::create([
+                'user_id' => $userId,
+                'product_id' => $productId
+            ]);
+            $product->increment('favorites_count');
+            $message = 'Added to favorites';
+            $isFavorited = true;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'is_favorited' => $isFavorited,
+            'favorites_count' => $product->favorites_count
+        ]);
+    }
 
     /**
      * Fetch initialization data for the marketplace filters.
      */
-    public function getMarketplaceInitData()
+    function getMarketplaceInitData()
     {
         try {
             $categories = Category::whereNull('parent_id')
@@ -93,7 +130,7 @@ class AnnouncementController extends Controller
     /**
      * Fetch paginated listings with filtering.
      */
-    public function getMarketplaceListings(Request $request)
+     function getMarketplaceListings(Request $request)
     {
         try {
             $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories'])
@@ -174,7 +211,7 @@ class AnnouncementController extends Controller
     }
 
     // Create announcement (handles both donation and sale)
-    public function store(Request $request)
+     function store(Request $request)
     {
         $listingMode = $request->input('listing_mode', 'donate');
         
@@ -254,7 +291,7 @@ class AnnouncementController extends Controller
     }
 
     // Update announcement status
-    public function updateStatus(Request $request, $productId)
+     function updateStatus(Request $request, $productId)
     {
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:draft,active,reserved,sold,donated,closed'],
@@ -272,7 +309,7 @@ class AnnouncementController extends Controller
     }
 
     // Get user's announcements (both donations and sales)
-    public function getUserAnnouncements($userId)
+     function getUserAnnouncements($userId)
     {
         $products = $this->productService->getUserAnnouncements((int) $userId);
 
@@ -283,7 +320,7 @@ class AnnouncementController extends Controller
     }
 
     // Get user's donations only
-    public function getUserDonations($userId)
+     function getUserDonations($userId)
     {
         $products = $this->productService->getUserAnnouncements((int) $userId);
         $donations = $products->where('listing_mode', 'donate');
@@ -295,7 +332,7 @@ class AnnouncementController extends Controller
     }
 
     // Get user's sales only
-    public function getUserSales($userId)
+     function getUserSales($userId)
     {
         $products = $this->productService->getUserAnnouncements((int) $userId);
         $sales = $products->where('listing_mode', 'sell');
@@ -306,8 +343,8 @@ class AnnouncementController extends Controller
         ]);
     }
 
-    // Get all active announcements for public viewing
-    public function getAllAnnouncements()
+    // Get all active announcements for  viewing
+     function getAllAnnouncements()
     {
         $products = $this->productService->getActiveProducts();
 
@@ -318,7 +355,7 @@ class AnnouncementController extends Controller
     }
 
     // Get single announcement
-    public function show($id)
+     function show($id)
     {
         $product = $this->productService->getProductDetails((int) $id);
 
@@ -329,7 +366,7 @@ class AnnouncementController extends Controller
     }
 
     // Delete announcement
-    public function destroy($id)
+     function destroy($id)
     {
         $deleted = $this->productService->deleteAnnouncement((int) $id);
 
@@ -340,7 +377,7 @@ class AnnouncementController extends Controller
     }
 
     // Get all announcements by category
-    public function getCategoryAnnouncements($categoryId)
+     function getCategoryAnnouncements($categoryId)
     {
         $products = Product::with(['categories', 'thumbnail', 'gallery', 'user'])
             ->whereHas('categories', function ($query) use ($categoryId) {
@@ -357,7 +394,7 @@ class AnnouncementController extends Controller
     }
 
     // Get all announcements for admin
-    public function getAllAnnouncementsForAdmin()
+     function getAllAnnouncementsForAdmin()
     {
         $products = Product::with(['superCategory', 'subCategories', 'thumbnail', 'gallery', 'user', 'items'])
             ->orderByDesc('created_at')
@@ -369,7 +406,7 @@ class AnnouncementController extends Controller
         ]);
     }
 
-    private function linkMediaToProduct(array $mediaIds, Product $product)
+     function linkMediaToProduct(array $mediaIds, Product $product)
     {
         // Update media records to link them to the product and mark as permanent
         Media::whereIn('id', $mediaIds)
@@ -383,7 +420,7 @@ class AnnouncementController extends Controller
         // No need to set thumbnail automatically since collection is set during upload
     }
 
-    private function createProductItems(Request $request, Product $product)
+     function createProductItems(Request $request, Product $product)
     {
         // This would be used for collections - for now we'll create a basic item
         ProductItem::create([
@@ -401,7 +438,7 @@ class AnnouncementController extends Controller
         ]);
     }
 
-    private function parseListField($value): array
+     function parseListField($value): array
     {
         if (is_array($value)) {
             return array_values(array_filter(array_map('trim', $value), fn ($entry) => $entry !== ''));

@@ -1,4 +1,5 @@
 import React from "react";
+import { Leaf } from "@solar-icons/react";
 import "../../css/header.css";
 
 export default function Header_alt({ size = "large" }) {
@@ -9,8 +10,8 @@ export default function Header_alt({ size = "large" }) {
     <header className={headerClass}>
       <div className="navbar">
         <div className="logo">
-          <h1>
-            <a>LetUsDonate.uk</a> <i className="fa-solid fa-leaf"></i>
+          <h1 style={{ display: 'flex', alignItems: 'center' }}>
+            <a>LetUsDonate.uk</a> <Leaf size={28} weight="BoldDuotone" style={{ marginLeft: '8px' }} />
           </h1>
           <div className="header_content">
             <h2>Donating Clothes the Easy Way</h2>

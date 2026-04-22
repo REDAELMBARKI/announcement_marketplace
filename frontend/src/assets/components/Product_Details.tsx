@@ -1,25 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
-  MapPin, 
-  Heart, 
   MessageCircle, 
   Share2, 
   ChevronLeft,
-  ShoppingBag,
   Clock,
-  User,
-  Star
+  Star,
+  Heart
 } from "lucide-react";
+import { 
+  MapPoint as MapPin, 
+  Bag as ShoppingBag,
+  User
+} from "@solar-icons/react";
 import { Product, ApiResponse } from "./User/announcement/types";
+import { useTheme } from "../../context/ThemeContext";
 
 const Product_Details: React.FC = () => {
+  const { colors } = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
+
+  const toggleFavorite = () => {
+    const newStatus = !isFavorited;
+    setIsFavorited(newStatus);
+    
+    fetch(`http://127.0.0.1:8000/api/announcements/${id}/favorite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favorite: newStatus })
+    }).catch(err => console.error("Favorite toggle error:", err));
+  };
 
   const getImageUrl = (media: any) => {
     if (!media) return null;
@@ -59,7 +74,7 @@ const Product_Details: React.FC = () => {
   ].filter(Boolean) as string[];
 
   return (
-    <div className="product-details-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+    <div className="product-details-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px', backgroundColor: colors.bgPrimary }}>
       {/* Breadcrumb / Back button */}
       <button 
         onClick={() => navigate(-1)} 
@@ -69,25 +84,25 @@ const Product_Details: React.FC = () => {
           gap: '8px', 
           background: 'none', 
           border: 'none', 
-          color: '#4f46e5', 
+          color: colors.primary, 
           fontWeight: '600', 
           cursor: 'pointer',
           marginBottom: '20px'
         }}
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={20} strokeWidth={2} />
         Back to results
       </button>
 
       <div className="product-main" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
         {/* Left: Images */}
         <div className="image-section">
-          <div className="main-image" style={{ width: '100%', height: '500px', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#f3f4f6', marginBottom: '15px' }}>
+          <div className="main-image" style={{ width: '100%', height: '500px', borderRadius: '16px', overflow: 'hidden', backgroundColor: colors.bgTertiary, marginBottom: '15px' }}>
             {activeImage ? (
               <img src={activeImage} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <ShoppingBag size={100} color="#d1d5db" />
+                <ShoppingBag size={100} color={colors.textMuted} weight="BoldDuotone" />
               </div>
             )}
           </div>
@@ -101,11 +116,12 @@ const Product_Details: React.FC = () => {
                   width: '80px', 
                   height: '80px', 
                   borderRadius: '8px', 
-                  border: activeImage === img ? '2px solid #4f46e5' : '1px solid #e5e7eb',
+                  border: activeImage === img ? `2px solid ${colors.primary}` : `1px solid ${colors.border}`,
                   overflow: 'hidden',
                   padding: '0',
                   cursor: 'pointer',
-                  flexShrink: '0'
+                  flexShrink: '0',
+                  backgroundColor: colors.bgSecondary
                 }}
               >
                 <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -122,8 +138,8 @@ const Product_Details: React.FC = () => {
               borderRadius: '20px', 
               fontSize: '12px', 
               fontWeight: '700',
-              backgroundColor: product.listing_mode === 'sell' ? '#4f46e5' : '#10b981',
-              color: 'white',
+              backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success,
+              color: colors.bgSecondary,
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
             }}>
@@ -131,35 +147,35 @@ const Product_Details: React.FC = () => {
             </span>
             
             <div style={{ display: 'flex', gap: '15px' }}>
-              <button style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><Share2 size={20} /></button>
+              <button style={{ background: 'none', border: 'none', color: colors.textSecondary, cursor: 'pointer' }}><Share2 size={20} strokeWidth={2} /></button>
               <button 
-                onClick={() => setIsFavorited(!isFavorited)}
-                style={{ background: 'none', border: 'none', color: isFavorited ? '#ef4444' : '#6b7280', cursor: 'pointer' }}
+                onClick={toggleFavorite}
+                style={{ background: 'none', border: 'none', color: isFavorited ? colors.danger : colors.textSecondary, cursor: 'pointer' }}
               >
-                <Heart size={20} fill={isFavorited ? "#ef4444" : "none"} />
+                <Heart size={20} color={isFavorited ? colors.danger : colors.textSecondary} fill={isFavorited ? colors.danger : "none"} strokeWidth={2} />
               </button>
             </div>
           </div>
 
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#111827', marginTop: '15px', marginBottom: '10px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: colors.textPrimary, marginTop: '15px', marginBottom: '10px' }}>
             {product.title}
           </h1>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} /> Agadir, Morocco</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={16} /> Posted {new Date(product.created_at).toLocaleDateString()}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: colors.textSecondary, fontSize: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} weight="BoldDuotone" color={colors.iconCoral} /> Agadir, Morocco</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={16} strokeWidth={2} /> Posted {new Date(product.created_at).toLocaleDateString()}</div>
           </div>
 
-          <div style={{ fontSize: '36px', fontWeight: '800', color: '#111827', marginBottom: '25px' }}>
+          <div style={{ fontSize: '36px', fontWeight: '800', color: colors.textPrimary, marginBottom: '25px' }}>
             {product.listing_mode === 'sell' ? `${product.price} ${product.currency}` : 'FREE'}
-            {product.price_negotiable && <span style={{ fontSize: '14px', fontWeight: '500', color: '#6b7280', marginLeft: '10px' }}>(Negotiable)</span>}
+            {product.price_negotiable && <span style={{ fontSize: '14px', fontWeight: '500', color: colors.textSecondary, marginLeft: '10px' }}>(Negotiable)</span>}
           </div>
 
           <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
             <button style={{ 
               padding: '15px', 
-              backgroundColor: '#4f46e5', 
-              color: 'white', 
+              backgroundColor: colors.primary, 
+              color: colors.bgSecondary, 
               border: 'none', 
               borderRadius: '12px', 
               fontWeight: '700', 
@@ -175,9 +191,9 @@ const Product_Details: React.FC = () => {
             </button>
             <button style={{ 
               padding: '15px', 
-              backgroundColor: 'white', 
-              color: '#4f46e5', 
-              border: '2px solid #4f46e5', 
+              backgroundColor: colors.bgSecondary, 
+              color: colors.primary, 
+              border: `2px solid ${colors.primary}`, 
               borderRadius: '12px', 
               fontWeight: '700', 
               fontSize: '16px',
@@ -188,31 +204,31 @@ const Product_Details: React.FC = () => {
           </div>
 
           {/* Details Table */}
-          <div className="product-specs" style={{ backgroundColor: '#f9fafb', padding: '20px', borderRadius: '12px', marginBottom: '30px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '15px' }}>Product Details</h3>
+          <div className="product-specs" style={{ backgroundColor: colors.bgTertiary, padding: '20px', borderRadius: '12px', marginBottom: '30px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '15px', color: colors.textPrimary }}>Product Details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div>
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Condition</div>
-                <div style={{ fontWeight: '600' }}>{product.condition}</div>
+                <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Condition</div>
+                <div style={{ fontWeight: '600', color: colors.textPrimary }}>{product.condition}</div>
               </div>
               <div>
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Age Recommended</div>
-                <div style={{ fontWeight: '600' }}>{product.age_range}</div>
+                <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Age Recommended</div>
+                <div style={{ fontWeight: '600', color: colors.textPrimary }}>{product.age_range}</div>
               </div>
               <div>
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Brand</div>
-                <div style={{ fontWeight: '600' }}>{product.brand || 'No brand'}</div>
+                <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Brand</div>
+                <div style={{ fontWeight: '600', color: colors.textPrimary }}>{product.brand || 'No brand'}</div>
               </div>
               <div>
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Gender</div>
-                <div style={{ fontWeight: '600' }}>{product.gender || 'Unisexe'}</div>
+                <div style={{ color: colors.textSecondary, fontSize: '13px' }}>Gender</div>
+                <div style={{ fontWeight: '600', color: colors.textPrimary }}>{product.gender || 'Unisexe'}</div>
               </div>
             </div>
           </div>
 
           <div className="description">
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>Description</h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px', color: colors.textPrimary }}>Description</h3>
+            <p style={{ color: colors.textSecondary, lineHeight: '1.6', whiteSpace: 'pre-line' }}>
               {product.description || 'No description provided.'}
             </p>
           </div>
@@ -220,34 +236,35 @@ const Product_Details: React.FC = () => {
       </div>
 
       {/* Seller Section */}
-      <div className="seller-section" style={{ marginTop: '50px', padding: '30px', borderTop: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="seller-section" style={{ marginTop: '50px', padding: '30px', borderTop: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#e5e7eb', overflow: 'hidden' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: colors.bgTertiary, overflow: 'hidden' }}>
             {product.user?.avatar ? (
               <img src={product.user.avatar} alt="" style={{ width: '100%', height: '100%' }} />
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px', color: '#9ca3af' }}>
-                <User size={32} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px', color: colors.textMuted }}>
+                <User size={32} weight="BoldDuotone" />
               </div>
             )}
           </div>
           <div>
-            <div style={{ fontSize: '20px', fontWeight: '700' }}>{product.user?.name || 'Seller'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', fontSize: '14px' }}>
-              <Star size={14} fill="#f59e0b" />
+            <div style={{ fontSize: '20px', fontWeight: '700', color: colors.textPrimary }}>{product.user?.name || 'Seller'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: colors.warning, fontSize: '14px' }}>
+              <Star size={14} fill={colors.warning} strokeWidth={2} />
               <span style={{ fontWeight: '600' }}>4.8</span>
-              <span style={{ color: '#6b7280' }}>(24 reviews)</span>
+              <span style={{ color: colors.textSecondary }}>(24 reviews)</span>
             </div>
           </div>
         </div>
         
         <Link to={`/profile/${product.user?.id}`} style={{ 
           padding: '10px 20px', 
-          border: '1px solid #d1d5db', 
+          border: `1px solid ${colors.border}`, 
           borderRadius: '8px', 
           textDecoration: 'none', 
-          color: '#374151',
-          fontWeight: '600'
+          color: colors.textPrimary,
+          fontWeight: '600',
+          backgroundColor: colors.bgSecondary
         }}>
           View Profile
         </Link>

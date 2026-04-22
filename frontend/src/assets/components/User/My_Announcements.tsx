@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
-  Package, 
-  Edit3, 
-  Trash2, 
+  FileEdit as Edit3, 
+  Trash, 
   Eye, 
   Heart,
-  PlusCircle
+  Plus
 } from "lucide-react";
+import {
+  Box as Package
+} from "@solar-icons/react";
 import "../../../css/records.css";
 import { Product, ApiResponse } from "./announcement/types";
+import { useTheme } from "../../../context/ThemeContext";
 
 const My_Announcements: React.FC = () => {
+  const { colors } = useTheme();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -70,29 +74,29 @@ const My_Announcements: React.FC = () => {
   });
 
   return (
-    <main className="my-announcements">
-      <div className="records-container">
+    <main className="my-announcements" style={{ backgroundColor: colors.bgPrimary, minHeight: '100vh', padding: '20px' }}>
+      <div className="records-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div className="header-left">
-          <h2>My Announcements</h2>
-          <p className="subtitle">Manage your items for sale and donation</p>
+          <h2 style={{ color: colors.textPrimary }}>My Announcements</h2>
+          <p className="subtitle" style={{ color: colors.textSecondary }}>Manage your items for sale and donation</p>
         </div>
 
         <div className="return-right">
-          <Link to="/add_announcement" className="post_btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', backgroundColor: '#4f46e5', color: 'white', textDecoration: 'none' }}>
-            <PlusCircle size={18} />
+          <Link to="/add_announcement" className="post_btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', backgroundColor: colors.primary, color: colors.bgSecondary, textDecoration: 'none' }}>
+            <Plus size={18} strokeWidth={2} />
             Post New Item
           </Link>
         </div>
       </div>
 
-      <div className="filter-bar" style={{ display: 'flex', gap: '15px', marginBottom: '20px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '12px' }}>
+      <div className="filter-bar" style={{ display: 'flex', gap: '15px', marginBottom: '20px', padding: '15px', backgroundColor: colors.bgTertiary, borderRadius: '12px' }}>
         <div className="filter-group">
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#4b5563', marginBottom: '5px', display: 'block' }}>Listing Type</label>
+          <label style={{ fontSize: '14px', fontWeight: '600', color: colors.textSecondary, marginBottom: '5px', display: 'block' }}>Listing Type</label>
           <select 
             className="status-filter" 
             value={filter} 
             onChange={(e) => setFilter(e.target.value as any)}
-            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+            style={{ padding: '8px 12px', borderRadius: '6px', border: `1px solid ${colors.border}`, backgroundColor: colors.bgSecondary, color: colors.textPrimary }}
           >
             <option value="all">All Items</option>
             <option value="sell">For Sale</option>
@@ -101,12 +105,12 @@ const My_Announcements: React.FC = () => {
         </div>
 
         <div className="filter-group">
-          <label style={{ fontSize: '14px', fontWeight: '600', color: '#4b5563', marginBottom: '5px', display: 'block' }}>Status</label>
+          <label style={{ fontSize: '14px', fontWeight: '600', color: colors.textSecondary, marginBottom: '5px', display: 'block' }}>Status</label>
           <select 
             className="status-filter" 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db' }}
+            style={{ padding: '8px 12px', borderRadius: '6px', border: `1px solid ${colors.border}`, backgroundColor: colors.bgSecondary, color: colors.textPrimary }}
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -117,26 +121,26 @@ const My_Announcements: React.FC = () => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ backgroundColor: colors.bgSecondary, borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>Loading your announcements...</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: colors.textSecondary }}>Loading your announcements...</div>
         ) : filteredProducts.length > 0 ? (
-          <table className="table">
+          <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Product</th>
-                <th>Type</th>
-                <th>Price</th>
-                <th>Stats</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
+              <tr style={{ textAlign: 'left', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontSize: '13px' }}>
+                <th style={{ padding: '12px' }}>Product</th>
+                <th style={{ padding: '12px' }}>Type</th>
+                <th style={{ padding: '12px' }}>Price</th>
+                <th style={{ padding: '12px' }}>Stats</th>
+                <th style={{ padding: '12px' }}>Status</th>
+                <th style={{ padding: '12px' }}>Date</th>
+                <th style={{ padding: '12px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredProducts.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <tr key={p.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  <td style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }}>
                     <div className="product-img-wrapper">
                       {p.thumbnail ? (
                         <img 
@@ -145,80 +149,80 @@ const My_Announcements: React.FC = () => {
                           style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
                         />
                       ) : (
-                        <div style={{ width: '60px', height: '60px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
-                          <Package size={24} color="#9ca3af" />
+                        <div style={{ width: '60px', height: '60px', backgroundColor: colors.bgTertiary, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                          <Package size={24} color={colors.textMuted} weight="BoldDuotone" />
                         </div>
                       )}
                     </div>
                     <div>
-                      <div style={{ fontWeight: '600', color: '#111827' }}>{p.title}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{p.condition}</div>
+                      <div style={{ fontWeight: '600', color: colors.textPrimary }}>{p.title}</div>
+                      <div style={{ fontSize: '12px', color: colors.textSecondary }}>{p.condition}</div>
                     </div>
                   </td>
-                  <td>
+                  <td style={{ padding: '12px' }}>
                     <span className={`pill ${p.listing_mode}`} style={{ 
                       padding: '4px 10px', 
                       borderRadius: '20px', 
                       fontSize: '12px', 
                       fontWeight: '600',
-                      backgroundColor: p.listing_mode === 'sell' ? '#dcfce7' : '#fef9c3',
-                      color: p.listing_mode === 'sell' ? '#166534' : '#854d0e'
+                      backgroundColor: p.listing_mode === 'sell' ? colors.successLight + '33' : colors.warningLight + '33',
+                      color: p.listing_mode === 'sell' ? colors.success : colors.warning
                     }}>
                       {p.listing_mode === 'sell' ? 'Selling' : 'Donating'}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ padding: '12px' }}>
                     {p.listing_mode === 'sell' ? (
-                      <span style={{ fontWeight: '700', color: '#111827' }}>{p.price} {p.currency}</span>
+                      <span style={{ fontWeight: '700', color: colors.textPrimary }}>{p.price} {p.currency}</span>
                     ) : (
-                      <span style={{ color: '#9ca3af' }}>Free</span>
+                      <span style={{ color: colors.textMuted }}>Free</span>
                     )}
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '12px', color: '#6b7280', fontSize: '13px' }}>
-                      <span title="Views" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={14} /> {p.views_count}</span>
-                      <span title="Favorites" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Heart size={14} /> {p.favorites_count}</span>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ display: 'flex', gap: '12px', color: colors.textSecondary, fontSize: '13px' }}>
+                      <span title="Views" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={14} strokeWidth={2} /> {p.views_count}</span>
+                      <span title="Favorites" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Heart size={14} strokeWidth={2} /> {p.favorites_count}</span>
                     </div>
                   </td>
-                  <td>
+                  <td style={{ padding: '12px' }}>
                     <span className={`status-tag ${p.status}`} style={{
                       padding: '4px 8px',
                       borderRadius: '4px',
                       fontSize: '12px',
                       textTransform: 'capitalize',
-                      backgroundColor: p.status === 'active' ? '#e0f2fe' : '#f3f4f6',
-                      color: p.status === 'active' ? '#0369a1' : '#4b5563'
+                      backgroundColor: p.status === 'active' ? colors.infoBg : colors.bgTertiary,
+                      color: p.status === 'active' ? colors.infoText : colors.textSecondary
                     }}>
                       {p.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: '13px', color: '#6b7280' }}>
+                  <td style={{ fontSize: '13px', color: colors.textSecondary, padding: '12px' }}>
                     {new Date(p.created_at).toLocaleDateString()}
                   </td>
-                  <td>
+                  <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         onClick={() => navigate(`/product/${p.id}`)}
                         className="action-btn"
                         title="View details"
-                        style={{ padding: '6px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: 'white', cursor: 'pointer' }}
+                        style={{ padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '6px', backgroundColor: colors.bgSecondary, cursor: 'pointer' }}
                       >
-                        <Eye size={16} color="#4b5563" />
+                        <Eye size={16} color={colors.textSecondary} strokeWidth={2} />
                       </button>
                       <button 
                         className="action-btn"
                         title="Edit listing"
-                        style={{ padding: '6px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: 'white', cursor: 'pointer' }}
+                        style={{ padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '6px', backgroundColor: colors.bgSecondary, cursor: 'pointer' }}
                       >
-                        <Edit3 size={16} color="#4b5563" />
+                        <Edit3 size={16} color={colors.textSecondary} strokeWidth={2} />
                       </button>
                       <button 
                         onClick={() => handleDelete(p.id)}
                         className="action-btn delete"
                         title="Delete listing"
-                        style={{ padding: '6px', border: '1px solid #fee2e2', borderRadius: '6px', backgroundColor: '#fef2f2', cursor: 'pointer' }}
+                        style={{ padding: '6px', border: `1px solid ${colors.danger}33`, borderRadius: '6px', backgroundColor: colors.danger + '11', cursor: 'pointer' }}
                       >
-                        <Trash2 size={16} color="#dc2626" />
+                        <Trash size={16} color={colors.danger} strokeWidth={2} />
                       </button>
                     </div>
                   </td>
@@ -227,11 +231,11 @@ const My_Announcements: React.FC = () => {
             </tbody>
           </table>
         ) : (
-          <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: '#f9fafb', borderRadius: '12px', border: '2px dashed #e5e7eb' }}>
-            <Package size={48} color="#9ca3af" style={{ marginBottom: '16px' }} />
-            <h3 style={{ color: '#374151', marginBottom: '8px' }}>No announcements found</h3>
-            <p style={{ color: '#6b7280', marginBottom: '24px' }}>You haven't posted any items yet. Start sharing today!</p>
-            <Link to="/add_announcement" className="post_btn" style={{ padding: '10px 24px', borderRadius: '8px', backgroundColor: '#4f46e5', color: 'white', textDecoration: 'none' }}>
+          <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: colors.bgTertiary, borderRadius: '12px', border: `2px dashed ${colors.border}` }}>
+            <Package size={48} color={colors.textMuted} style={{ marginBottom: '16px' }} weight="BoldDuotone" />
+            <h3 style={{ color: colors.textPrimary, marginBottom: '8px' }}>No announcements found</h3>
+            <p style={{ color: colors.textSecondary, marginBottom: '24px' }}>You haven't posted any items yet. Start sharing today!</p>
+            <Link to="/add_announcement" className="post_btn" style={{ padding: '10px 24px', borderRadius: '8px', backgroundColor: colors.primary, color: colors.bgSecondary, textDecoration: 'none' }}>
               Publish your first announcement
             </Link>
           </div>
