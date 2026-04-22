@@ -30,20 +30,6 @@ function Header() {
           </Link>
         </div>
       </div>
-
-      <div className="search_row">
-        <div className="search_box">
-          <span aria-hidden="true">🔍</span>
-          <input
-            type="text"
-            placeholder="What are you looking for?"
-            aria-label="Search announcements"
-          />
-        </div>
-        <Link to="/add_announcement" className="search_cta">
-          Search
-        </Link>
-      </div>
     </header>
   );
 }

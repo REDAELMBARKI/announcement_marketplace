@@ -133,6 +133,8 @@ Route::get('/homepage', HomepageController::class)->name('homepage');
 
 
 // Announcements routes (handles both donations and sales)
+Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketplaceInitData']);
+Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketplaceListings']);
 Route::post('/announcements', [AnnouncementController::class, 'store']);
 Route::get('/announcements/{id}', [AnnouncementController::class, 'show']);
 Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);

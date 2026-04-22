@@ -17,6 +17,162 @@ class AnnouncementController extends Controller
         protected ProductService $productService
     ) {}
 
+    /**
+     * Fetch initialization data for the marketplace filters.
+     */
+    public function getMarketplaceInitData()
+    {
+        try {
+            $categories = Category::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(['id', 'name as label', 'icon', 'slug']);
+
+            $ageRanges = [
+                ['id' => 1, 'label' => '0-1 ans', 'value' => '0-1 ans'],
+                ['id' => 2, 'label' => '1-3 ans', 'value' => '1-3 ans'],
+                ['id' => 3, 'label' => '3-6 ans', 'value' => '3-6 ans'],
+                ['id' => 4, 'label' => '6-10 ans', 'value' => '6-10 ans'],
+                ['id' => 5, 'label' => '10-14 ans', 'value' => '10-14 ans'],
+            ];
+
+            $clothingSizes = [
+                ['id' => 1, 'label' => '3 mois', 'value' => '3m'],
+                ['id' => 2, 'label' => '6 mois', 'value' => '6m'],
+                ['id' => 3, 'label' => '1T', 'value' => '1t'],
+                ['id' => 4, 'label' => '2T', 'value' => '2t'],
+                ['id' => 5, 'label' => '4T', 'value' => '4t'],
+            ];
+
+            $shoeSizes = [
+                ['id' => 1, 'label' => '20 EU', 'value' => '20'],
+                ['id' => 2, 'label' => '24 EU', 'value' => '24'],
+                ['id' => 3, 'label' => '28 EU', 'value' => '28'],
+                ['id' => 4, 'label' => '32 EU', 'value' => '32'],
+            ];
+
+            $conditions = [
+                ['id' => 1, 'label' => 'Neuf', 'value' => 'Neuf', 'color' => '#00b894'],
+                ['id' => 2, 'label' => 'Très bon état', 'value' => 'Très bon état', 'color' => '#0984e3'],
+                ['id' => 3, 'label' => 'Bon état', 'value' => 'Bon état', 'color' => '#fdcb6e'],
+                ['id' => 4, 'label' => 'État correct', 'value' => 'État correct', 'color' => '#e17055'],
+            ];
+
+            $listingTypes = [
+                ['id' => 1, 'label' => 'À vendre', 'icon' => '🛒', 'value' => 'sell'],
+                ['id' => 2, 'label' => 'À donner / Gratuit', 'icon' => '🎁', 'value' => 'donate'],
+                ['id' => 3, 'label' => 'Échange', 'icon' => '🔄', 'value' => 'swap'],
+            ];
+
+            $cities = [
+                ['id' => 1, 'label' => 'Casablanca', 'districts' => [['id' => 101, 'label' => 'Maarif'], ['id' => 102, 'label' => 'Anfa']]],
+                ['id' => 2, 'label' => 'Rabat', 'districts' => [['id' => 201, 'label' => 'Agdal'], ['id' => 202, 'label' => 'Hay Riad']]],
+                ['id' => 3, 'label' => 'Marrakech', 'districts' => [['id' => 301, 'label' => 'Gueliz'], ['id' => 302, 'label' => 'Hivernage']]],
+                ['id' => 4, 'label' => 'Agadir', 'districts' => [['id' => 401, 'label' => 'Cité Dakhla'], ['id' => 402, 'label' => 'Bensergao']]],
+                ['id' => 5, 'label' => 'Tanger', 'districts' => [['id' => 501, 'label' => 'Malabata'], ['id' => 502, 'label' => 'Marshane']]],
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'categories' => $categories,
+                'cities' => $cities,
+                'ageRanges' => $ageRanges,
+                'clothingSizes' => $clothingSizes,
+                'shoeSizes' => $shoeSizes,
+                'conditions' => $conditions,
+                'listingTypes' => $listingTypes,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Fetch paginated listings with filtering.
+     */
+    public function getMarketplaceListings(Request $request)
+    {
+        try {
+            $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories'])
+                ->whereIn('status', ['sell', 'donate']);
+
+            // Search filter
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            // Category filter
+            if ($request->filled('category')) {
+                $query->where('super_category_id', $request->input('category'));
+            }
+
+            // Listing mode filter (sell/donate)
+            if ($request->filled('mode') && $request->input('mode') !== 'all') {
+                $query->where('listing_mode', $request->input('mode'));
+            }
+
+            // Age range filter
+            if ($request->filled('age_range')) {
+                $query->where('age_range', $request->input('age_range'));
+            }
+
+            // Gender filter
+            if ($request->filled('gender')) {
+                $query->where('gender', $request->input('gender'));
+            }
+
+            // Condition filter
+            if ($request->filled('condition')) {
+                $query->where('condition', $request->input('condition'));
+            }
+
+            // Price filters
+            if ($request->filled('min_price')) {
+                $query->where('price', '>=', $request->input('min_price'));
+            }
+            if ($request->filled('max_price')) {
+                $query->where('price', '<=', $request->input('max_price'));
+            }
+            if ($request->boolean('free_only')) {
+                $query->where('listing_mode', 'donate');
+            }
+
+            // Sorting
+            $sort = $request->input('sort', 'newest');
+            switch ($sort) {
+                case 'price_asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'newest':
+                default:
+                    $query->orderBy('created_at', 'desc');
+                    break;
+            }
+
+            $listings = $query->paginate($request->input('per_page', 12));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => ProductResource::collection($listings)->response()->getData(true)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Create announcement (handles both donation and sale)
     public function store(Request $request)
     {

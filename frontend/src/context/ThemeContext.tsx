@@ -32,6 +32,15 @@ const lightTheme = {
     accentGreen: "#2e7d32",
     accentMint: "#34b879",
     accentLightGreen: "#5ddca0",
+    coral: "#ff6b35",
+    coralHover: "#e85d25",
+    coralLight: "#fff3ee",
+    darkNavy: "#1a1a2e",
+    sidebarBorder: "#e8e8e8",
+    filterLabel: "#6b7280",
+    filterBg: "#fafafa",
+    filterBorder: "#eeeeee",
+    scrollbarTrack: "#f0f0f0",
     
     // Card colors
     cardBg: "#ffffff",
