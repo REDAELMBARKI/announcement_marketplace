@@ -73,9 +73,11 @@ Route::put('/user/{id}', [UserProfileController::class, 'update'])->name('user.u
  
 
 
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/signup', [AuthController::class, 'signup'])->name('signup');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/signup', [AuthController::class, 'signup']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api');
+
 
 // Media upload routes
 Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
@@ -98,20 +100,24 @@ Route::get('/categories', function () {
     ]);
 })->name('categories.index');
 
-// Admin routes
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('announcements.index');
-    Route::get('/charities',    [AdminController::class, 'getAllCharities'])->name('charities.index');
-    Route::get('/users',        [AdminController::class, 'getAllUsers'])->name('users.index');
-    Route::get('/stats',        [AdminController::class, 'getDashboardStats'])->name('stats');
+
+
+// Admin routes (JWT protected)
+Route::prefix('admin')->middleware('auth:api')->group(function () {
+    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
+    Route::get('/charities',    [AdminController::class, 'getAllCharities']);
+    Route::get('/users',        [AdminController::class, 'getAllUsers']);
+    Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
+    Route::get('/donations',    [AdminController::class, 'getAllDonations']);
 });
 
 // User Management Routes
-Route::prefix('user-management')->name('user-management.')->group(function () {
-    Route::get('/view-users', [ViewUserController::class, 'getViewUsers'])->name('view-users');
-    Route::get('/roles', [ViewUserController::class, 'getRoles'])->name('roles');
-    Route::put('/users/{id}', [ViewUserController::class, 'updateUser'])->name('users.update');
-    Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser'])->name('users.destroy');
+Route::prefix('user-management')->middleware('auth:api')->group(function () {
+    Route::get('/view-users', [ViewUserController::class, 'getViewUsers']);
+    Route::get('/roles', [ViewUserController::class, 'getRoles']);
+    Route::put('/users/{id}', [ViewUserController::class, 'updateUser']);
+    Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
+
 });
 
 Route::post('/remote-sessions', function (Request $request) {
@@ -151,8 +157,10 @@ Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncement
 // Charity announcements routes
 Route::get('/charities/{charityId}/announcements', [AnnouncementController::class, 'getCharityAnnouncements'])->name('charity.announcements');
 
+
 // Admin announcements routes
 Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('admin.announcements.all');
+
 
 // Reports routes
 Route::prefix('reports')->name('reports.')->group(function () {
