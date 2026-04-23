@@ -9,6 +9,7 @@ import {
   Tag,
   Plus,
   X,
+  ChevronRight,
 } from "lucide-react";
 import {
   UserRounded as Baby,
@@ -86,6 +87,7 @@ interface FormState {
   season: string;
   sizes: string[];
   colors: string[];
+  city: string;
   handover_method: string;
   pickup_address: string;
 }
@@ -147,6 +149,7 @@ const FALLBACK_CATEGORIES = [
 const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Rose", "Blanc", "Noir", "Multi"];
 const SIZES = ["3M", "6M", "12M", "18M", "2A", "3A", "4A", "5A", "6A", "8A", "10A", "12A"];
 const MATERIALS = ["Coton", "Laine", "Polyester", "Denim", "Cuir", "Synthetique"];
+const CITIES = ["Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", "Meknès", "Oujda", "Kénitra", "Tétouan"];
 
 export default function Add_Announcement() {
   const navigate = useNavigate();
@@ -183,6 +186,7 @@ export default function Add_Announcement() {
     price: "",
     currency: "MAD",
     price_negotiable: false,
+    city: "",
     pickup_address: "",
     handover_method: "both",
   });
@@ -261,6 +265,7 @@ export default function Add_Announcement() {
     }
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
+      if (!form.city) errors.city = "Choisissez une ville.";
       if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
     }
     return errors;
@@ -398,6 +403,7 @@ export default function Add_Announcement() {
     const payload = {
       ...form,
       user_id: user.id,
+      city: form.city,
       price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
       media_ids: mediaIds,
@@ -659,46 +665,46 @@ export default function Add_Announcement() {
 
       case "variants":
         return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
               Variantes & Caractéristiques
             </Typography>
 
-            <Grid container spacing={3}>
-              {[
-                { label: "Tailles", field: "sizes", options: SIZES },
-                { label: "Couleurs", field: "colors", options: COLORS },
-                { label: "Saison", field: "season", options: ["Toutes saisons", "Printemps / Été", "Automne / Hiver"], multiple: false },
-                { label: "Matière", field: "material", options: MATERIALS },
-                { label: "Genre", field: "gender", options: ["Fille", "Garçon", "Unisexe"], multiple: false },
-              ].map((variant, idx) => (
-                <Grid item xs={12} md={4} key={idx}>
-                  <CustomSelect
-                    label={variant.label}
-                    multiple={variant.multiple !== false}
-                    placeholder="Choisir..."
-                    options={variant.options.map(o => ({ label: o, value: o }))}
-                    value={(form as any)[variant.field]}
-                    onChange={(val) => updateField(variant.field as keyof FormState, val)}
-                    error={!!(fieldErrors as any)[variant.field]}
-                    helperText={(fieldErrors as any)[variant.field]}
-                    icon={<ChevronRight size={16} />} // Shows a ">" icon by default in CustomSelect or similar
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            {[
+              { label: "Tailles", field: "sizes", options: SIZES },
+              { label: "Couleurs", field: "colors", options: COLORS },
+              { label: "Saison", field: "season", options: ["Toutes saisons", "Printemps / Été", "Automne / Hiver"], multiple: false },
+              { label: "Matière", field: "material", options: MATERIALS },
+              { label: "Genre", field: "gender", options: ["Fille", "Garçon", "Unisexe"], multiple: false },
+            ].map((variant, idx) => (
+              <Box key={idx} sx={{ width: '100%' }}>
+                <CustomSelect
+                  label={variant.label}
+                  multiple={variant.multiple !== false}
+                  placeholder="Choisir..."
+                  options={variant.options.map(o => ({ id: o, label: o, value: o }))}
+                  value={(form as any)[variant.field]}
+                  onChange={(val) => updateField(variant.field as keyof FormState, val)}
+                  error={!!(fieldErrors as any)[variant.field]}
+                  helperText={(fieldErrors as any)[variant.field]}
+                  icon={<ChevronRight size={16} />} 
+                />
+              </Box>
+            ))}
           </Box>
         );
 
       case "price":
         return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
               Prix & Mode de transaction
             </Typography>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'nowrap' }}>
-              <Box sx={{ display: 'flex', gap: 1, bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2 }}>
+            {/* Mode de transaction - Single row */}
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#475569' }}>Mode de transaction</Typography>
+              <Box sx={{ display: 'flex', gap: 1, bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2, width: 'fit-content' }}>
                 <PillButton 
                   active={form.listing_mode === "donate"} 
                   onClick={() => updateField("listing_mode", "donate")}
@@ -714,13 +720,17 @@ export default function Add_Announcement() {
                   Vendre
                 </PillButton>
               </Box>
+            </Box>
 
-              {form.listing_mode === "sell" && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {form.listing_mode === "sell" && (
+              <>
+                {/* Price input - Single row alone */}
+                <Box sx={{ width: '100%' }}>
                   <TextField
+                    fullWidth
                     label="Prix"
                     type="number"
-                    size="small"
+                    size="medium"
                     value={form.price}
                     onChange={(e) => updateField("price", e.target.value)}
                     error={!!fieldErrors.price}
@@ -728,106 +738,112 @@ export default function Add_Announcement() {
                     InputProps={{
                       endAdornment: <InputAdornment position="end">MAD</InputAdornment>,
                     }}
-                    sx={{ width: 150 }}
                   />
                 </Box>
-              )}
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <input 
-                  type="checkbox" 
-                  id="negotiable"
-                  checked={form.price_negotiable}
-                  onChange={(e) => updateField("price_negotiable", e.target.checked)}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-                <label htmlFor="negotiable" style={{ cursor: 'pointer', fontWeight: 500, color: '#475569' }}>Prix négociable</label>
-              </Box>
-            </Box>
+                
+                {/* Negotiable checkbox - Single row alone */}
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <input 
+                    type="checkbox" 
+                    id="negotiable"
+                    checked={form.price_negotiable}
+                    onChange={(e) => updateField("price_negotiable", e.target.checked)}
+                    style={{ width: 22, height: 22, cursor: 'pointer' }}
+                  />
+                  <label htmlFor="negotiable" style={{ cursor: 'pointer', fontWeight: 600, color: '#1e293b', fontSize: '1rem' }}>
+                    Le prix est négociable
+                  </label>
+                </Box>
+              </>
+            )}
           </Box>
         );
 
       case "location":
         return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
               Localisation & Remise
             </Typography>
 
-            <Grid container spacing={3} alignItems="flex-end">
-              <Grid item xs={12} md={7}>
-                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#475569' }}>Mode de remise</Typography>
-                <Box sx={{ display: 'flex', gap: 1.5 }}>
-                  {[
-                    { label: "Remise en main propre", value: "pickup" },
-                    { label: "Livraison", value: "delivery" },
-                    { label: "Les deux", value: "both" }
-                  ].map((opt) => (
-                    <Box
-                      key={opt.value}
-                      onClick={() => updateField("handover_method", opt.value)}
-                      sx={{
-                        flex: 1,
-                        p: 1.5,
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: form.handover_method === opt.value ? '#3b82f6' : '#e2e8f0',
-                        bgcolor: form.handover_method === opt.value ? '#eff6ff' : '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': { borderColor: '#3b82f6' }
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: form.handover_method === opt.value ? '#1d4ed8' : '#475569' }}>
-                        {opt.label}
-                      </Typography>
+            {/* Mode de remise cards - Stacked vertically */}
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#475569' }}>Mode de remise</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {[
+                  { label: "Remise en main propre", value: "pickup" },
+                  { label: "Livraison", value: "delivery" },
+                  { label: "Les deux", value: "both" }
+                ].map((opt) => (
+                  <Box
+                    key={opt.value}
+                    onClick={() => updateField("handover_method", opt.value)}
+                    sx={{
+                      width: '100%',
+                      p: 2.5,
+                      borderRadius: 3,
+                      border: '2px solid',
+                      borderColor: form.handover_method === opt.value ? '#3b82f6' : '#e2e8f0',
+                      bgcolor: form.handover_method === opt.value ? '#eff6ff' : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      '&:hover': { borderColor: '#3b82f6', bgcolor: '#f8fafc' }
+                    }}
+                  >
+                    <Box sx={{ 
+                      width: 24, 
+                      height: 24, 
+                      borderRadius: '50%', 
+                      border: '2px solid',
+                      borderColor: form.handover_method === opt.value ? '#3b82f6' : '#cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#fff'
+                    }}>
+                      {form.handover_method === opt.value && (
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#3b82f6' }} />
+                      )}
                     </Box>
-                  ))}
-                </Box>
-              </Grid>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: form.handover_method === opt.value ? '#1d4ed8' : '#334155' }}>
+                      {opt.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
 
-              <Grid item xs={12} md={5}>
-                <TextField
-                  fullWidth
-                  label="Adresse de retrait / Ville"
-                  placeholder="Ex: Casablanca, Maarif"
-                  value={form.pickup_address}
-                  onChange={(e) => updateField("pickup_address", e.target.value)}
-                  error={!!fieldErrors.pickup_address}
-                  helperText={fieldErrors.pickup_address}
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
-                  }}
-                />
-              </Grid>
+            {/* Ville - Single row alone */}
+            <Box sx={{ width: '100%' }}>
+              <CustomSelect
+                label="Ville"
+                options={CITIES.map(city => ({ id: city, label: city, value: city }))}
+                value={form.city}
+                onChange={(val) => updateField("city", val)}
+                placeholder="Choisissez votre ville..."
+                error={!!fieldErrors.city}
+                helperText={fieldErrors.city}
+              />
+            </Box>
 
-              <Grid item xs={12}>
-                <Box sx={{ mt: 3, p: 3, bgcolor: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
-                    Récapitulatif de votre annonce
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">Titre</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{form.title || "Non défini"}</Typography>
-                    </Grid>
-                    <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">Catégorie</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{form.super_category_name || "Non définie"}</Typography>
-                    </Grid>
-                    <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">Mode de transaction</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{form.listing_mode === 'sell' ? 'Vente' : 'Don'}</Typography>
-                    </Grid>
-                    <Grid item xs={6} md={3}>
-                      <Typography variant="caption" color="text.secondary">Prix</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#3b82f6' }}>{form.listing_mode === 'sell' ? `${form.price} MAD` : 'Gratuit'}</Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Grid>
-            </Grid>
+            {/* Adresse exacte - Single row alone */}
+            <Box sx={{ width: '100%' }}>
+              <TextField
+                fullWidth
+                label="Adresse exacte"
+                placeholder="Ex: Rue 123, Quartier..."
+                value={form.pickup_address}
+                onChange={(e) => updateField("pickup_address", e.target.value)}
+                error={!!fieldErrors.pickup_address}
+                helperText={fieldErrors.pickup_address}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
+                }}
+              />
+            </Box>
           </Box>
         );
       default:
@@ -991,48 +1007,93 @@ export default function Add_Announcement() {
 
               <Divider sx={{ mb: 3, borderStyle: 'dashed' }} />
 
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {/* Category & Sub-categories */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Catégorie</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>{form.super_category_name || "-"}</Typography>
+                  {form.sub_category_names.length > 0 && (
+                    <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2, color: '#64748b' }}>
+                      {form.sub_category_names.map((name, i) => (
+                        <Box component="li" key={i} sx={{ fontSize: '0.75rem', fontWeight: 500, mb: 0.2 }}>
+                          {name}
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Brand */}
+                {form.brand && (
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>Catégorie</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.super_category_name || "-"}</Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Marque</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.brand}</Typography>
                   </Box>
-                </Grid>
-                <Grid item xs={6}>
+                )}
+
+                {/* Condition */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>État</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                    {form.condition === 'new_tag' ? 'Neuf avec étiquette' : 
+                     form.condition === 'new_no_tag' ? 'Neuf sans étiquette' :
+                     form.condition === 'very_good' ? 'Très bon état' : 
+                     form.condition === 'good' ? 'Bon état' : 
+                     form.condition === 'fair' ? 'Satisfaisant' : '-'}
+                  </Typography>
+                </Box>
+
+                {/* Sizes */}
+                {form.sizes.length > 0 && (
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>État</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                      {form.condition === 'new_tag' ? 'Neuf' : 
-                       form.condition === 'very_good' ? 'Très bon' : 
-                       form.condition === 'good' ? 'Bon état' : 
-                       form.condition === 'fair' ? 'Satisfaisant' : '-'}
-                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Tailles</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {form.sizes.map(size => (
+                        <Chip key={size} label={size} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, bgcolor: '#f1f5f9' }} />
+                      ))}
+                    </Box>
                   </Box>
-                </Grid>
-                <Grid item xs={6}>
+                )}
+
+                {/* Colors */}
+                {form.colors.length > 0 && (
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>Genre</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                      {form.gender === 'boy' ? 'Garçon' : 
-                       form.gender === 'girl' ? 'Fille' : 
-                       form.gender === 'unisex' ? 'Unisexe' : '-'}
-                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Couleurs</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.colors.join(', ')}</Typography>
                   </Box>
-                </Grid>
-                <Grid item xs={6}>
+                )}
+
+                {/* Season */}
+                {form.season && (
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>Tailles</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {form.sizes.length > 0 ? form.sizes.join(', ') : "-"}
-                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Saison</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.season}</Typography>
                   </Box>
-                </Grid>
-              </Grid>
+                )}
+
+                {/* Material */}
+                {form.material && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Matière</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.material}</Typography>
+                  </Box>
+                )}
+
+                {/* Handover Method */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Mode de remise</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                    {form.handover_method === 'pickup' ? 'Remise en main propre' : 
+                     form.handover_method === 'delivery' ? 'Livraison' : 
+                     form.handover_method === 'both' ? 'Main propre & Livraison' : '-'}
+                  </Typography>
+                </Box>
+              </Box>
 
               <Box sx={{ mt: 4, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <MapPin size={18} color="#64748b" />
                 <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                  {form.pickup_address || "Localisation..."}
+                  {form.city ? `${form.city}, ` : ""}{form.pickup_address || "Localisation..."}
                 </Typography>
               </Box>
             </Paper>
