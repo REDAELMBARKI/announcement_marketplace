@@ -1,38 +1,62 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import ziggyRoute from "../../../utils/route";
 import {
-  Camera,
-  Image,
-  MapPinned,
   Palette,
   Ruler,
   Shapes,
   Tag,
   Plus,
   X,
+  ChevronRight,
 } from "lucide-react";
 import {
-  Baby,
-  BookOpen,
-  Footprints,
+  UserRounded as Baby,
+  Book,
+  Walking as Footprints,
   HandHeart,
   Heart,
   MapPoint as MapPin,
   Box as Package,
-  Shirt,
-  ToyBrick,
+  TShirt as Shirt,
+  Gamepad as ToyBrick,
   Delivery as Truck,
 } from "@solar-icons/react";
 import {
-  Field,
+  TextField,
+  Button,
+  CircularProgress,
+  Box,
+  Typography,
+  Container,
+  Grid,
+  Paper,
+  InputAdornment,
+  IconButton,
+  Chip,
+  Divider,
+  Alert,
+} from "@mui/material";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import CloseIcon from "@mui/icons-material/Close";
+import CustomSelect from "../Common/CustomSelect";
+import {
   IconCardButton,
   PillButton,
-  SelectInput,
   Stepper,
-  TextArea,
-  TextInput,
-} from "./announcement/Shared.jsx";
+} from "./announcement/Shared";
 import "../../../css/add_announcement.css";
+
+// Sub-categories data
+const SUB_CATEGORIES_MAP: Record<string, string[]> = {
+  "Vêtements": ["Hauts & T-shirts", "Pantalons & Jeans", "Robes & Jupes", "Pulls & Cardigans", "Manteaux & Vestes", "Ensembles", "Pyjamas & Maillots", "Sous-vêtements", "Accessoires"],
+  "Chaussures": ["Baskets & Sneakers", "Bottes & Bottines", "Sandales & Tongs", "Chaussures de ville", "Chaussons"],
+  "Jouets": ["Éveil & Premier âge", "Jeux de société", "Poupées & Figurines", "Véhicules & Circuits", "Jeux de construction", "Jeux d'imitation", "Peluches", "Plein air"],
+  "Puériculture": ["Sommeil", "Repas", "Bain & Soins", "Sécurité", "Poussettes & Sièges auto", "Portage"],
+  "Livres & Éveil": ["Albums illustrés", "Contes & Histoires", "Livres sonores", "Livres à toucher", "Activités & Coloriages"],
+  "Autre": ["Mobilier", "Décoration", "Matériel de sport", "Divers"]
+};
 
 // Types
 interface Category {
@@ -45,6 +69,8 @@ interface Category {
 
 interface FormState {
   super_category_id: number | null;
+  super_category_name: string | null;
+  sub_category_names: string[];
   sub_category_ids: number[];
   title: string;
   description: string;
@@ -61,8 +87,15 @@ interface FormState {
   season: string;
   sizes: string[];
   colors: string[];
+  city: string;
   handover_method: string;
   pickup_address: string;
+}
+
+interface User {
+  id?: number;
+  name?: string;
+  email?: string;
 }
 
 // Helper to get icon by category name
@@ -71,8 +104,7 @@ const getCategoryIcon = (iconName: string): any => {
     'shirt': Shirt,
     'footprints': Footprints,
     'gamepad-2': ToyBrick,
-    'book-open': BookOpen,
-    'home': Baby,
+    'book-open': Book,
     'baby': Baby,
     'palette': Palette,
     'package': Package,
@@ -81,6 +113,7 @@ const getCategoryIcon = (iconName: string): any => {
   return iconMap[iconName] || Package;
 };
 
+// Types for field errors and status messages
 interface FieldErrors {
   [key: string]: string;
 }
@@ -90,9 +123,15 @@ interface StatusMessage {
   message: string;
 }
 
+interface UploadSlot {
+  status: 'idle' | 'uploading' | 'done' | 'error';
+  url: string | null;
+  id: number | null;
+}
+
 const BASE_STEPS = [
-  { key: "category", label: "Categorie" },
-  { key: "product", label: "Produit & Media" },
+  { key: "category", label: "Catégorie" },
+  { key: "product", label: "Produit & Média" },
   { key: "variants", label: "Variantes" },
   { key: "price", label: "Prix" },
   { key: "location", label: "Localisation" },
@@ -100,33 +139,37 @@ const BASE_STEPS = [
 
 // Fallback categories while loading
 const FALLBACK_CATEGORIES = [
-  { label: "Vetements", icon: Shirt },
-  { label: "Chaussures", icon: Footprints },
-  { label: "Jouets", icon: ToyBrick },
-  { label: "Puericulture", icon: Baby },
-  { label: "Livres & Eveil", icon: BookOpen },
-  { label: "Autre", icon: Package },
+  { id: 1001, name: "Vêtements", icon: Shirt },
+  { id: 1002, name: "Chaussures", icon: Footprints },
+  { id: 1003, name: "Jouets", icon: ToyBrick },
+  { id: 1004, name: "Puériculture", icon: Baby },
+  { id: 1005, name: "Livres & Éveil", icon: Book },
+  { id: 1006, name: "Autre", icon: Package },
 ];
 const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Rose", "Blanc", "Noir", "Multi"];
 const SIZES = ["3M", "6M", "12M", "18M", "2A", "3A", "4A", "5A", "6A", "8A", "10A", "12A"];
 const MATERIALS = ["Coton", "Laine", "Polyester", "Denim", "Cuir", "Synthetique"];
+const CITIES = ["Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", "Meknès", "Oujda", "Kénitra", "Tétouan"];
 
 export default function Add_Announcement() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const fileInputRef = useRef(null);
+  const user: User = JSON.parse(localStorage.getItem("user") || "{}");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [stepKey, setStepKey] = useState<string>("category");
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [mediaIds, setMediaIds] = useState<number[]>([]);
+  const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>(
+    Array(8).fill(null).map(() => ({ status: 'idle', url: null, id: null }))
+  );
   const [mainPhotoIndex, setMainPhotoIndex] = useState<number>(0);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const isUploading = useMemo(() => uploadSlots.some(s => s.status === 'uploading'), [uploadSlots]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
   const [form, setForm] = useState<FormState>({
     super_category_id: null,
+    super_category_name: null,
+    sub_category_names: [],
     sub_category_ids: [],    
     title: "",
     description: "",
@@ -141,29 +184,57 @@ export default function Add_Announcement() {
     material: "",
     listing_mode: "donate",
     price: "",
+    currency: "MAD",
     price_negotiable: false,
+    city: "",
     pickup_address: "",
     handover_method: "both",
   });
 
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(ziggyRoute('categories.index'));
+        if (response.data.status === "success") {
+          setCategories(response.data.categories);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const visibleSteps = useMemo(() => BASE_STEPS, []);
-  const mainPhoto = photos[mainPhotoIndex] || photos[0] || null;
 
   const stepIndex = visibleSteps.findIndex((step) => step.key === stepKey);
   const currentStepNumber = stepIndex + 1;
   const isLastStep = currentStepNumber === visibleSteps.length;
 
-  const canPublish = useMemo(() => {
-    return (
-      form.title.trim() &&
-      form.description.trim() &&
-      form.condition &&
-      form.pickup_address?.trim() &&
-      form.handover_method
-    );
-  }, [form]);
-
   const updateField = (key: keyof FormState, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
+  
+  const handleCategorySelect = (id: number, name: string) => {
+    setForm(prev => ({
+      ...prev,
+      super_category_id: id,
+      super_category_name: name,
+      sub_category_names: [], // Reset sub-categories when main category changes
+      sub_category_ids: []
+    }));
+    clearFieldError('super_category_id');
+  };
+
+  const handleSubCategoryChange = (selectedNames: string[]) => {
+    setForm(prev => ({
+      ...prev,
+      sub_category_names: selectedNames
+    }));
+    clearFieldError('sub_category_names');
+  };
+
   const clearFieldError = (key: string) =>
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
@@ -171,38 +242,22 @@ export default function Add_Announcement() {
       delete next[key];
       return next;
     });
-  const updateFieldWithValidation = (key: keyof FormState, value: any) => {
-    updateField(key, value);
-    clearFieldError(key);
-  };
-
-  const toggleItem = (key: keyof FormState, value: any) => {
-    setForm((prev) => {
-      const selected = prev[key] as any[];
-      return {
-        ...prev,
-        [key]: selected.includes(value)
-          ? selected.filter((entry) => entry !== value)
-          : [...selected, value],
-      };
-    });
-    clearFieldError(key);
-  };
 
   const validateStep = (targetStepKey = stepKey) => {
-    const errors = {};
-    if (targetStepKey === "category" && !form.super_category_id) {
-      errors.super_category_id = "Choisissez une categorie principale.";
+    const errors: FieldErrors = {};
+    if (targetStepKey === "category") {
+      if (!form.super_category_id) errors.super_category_id = "Choisissez une catégorie principale.";
+      if (form.sub_category_names.length === 0) errors.sub_category_names = "Choisissez une sous-catégorie.";
     }
     if (targetStepKey === "product") {
       if (!form.title.trim()) errors.title = "Le titre est obligatoire.";
       if (!form.description.trim()) errors.description = "La description est obligatoire.";
-      if (!form.condition) errors.condition = "Choisissez l'etat du produit.";
-      if (!photos.length) errors.photos = "Ajoutez au moins une photo.";
+      if (!form.condition) errors.condition = "Choisissez l'état du produit.";
+      if (!uploadSlots.some(s => s.status === 'done')) errors.photos = "Ajoutez au moins une photo.";
     }
     if (targetStepKey === "variants" && form.listing_type === "single") {
-      if (!form.sizes.length) errors.sizes = "Selectionnez au moins une taille.";
-      if (!form.colors.length) errors.colors = "Selectionnez au moins une couleur.";
+      if (!form.sizes.length) errors.sizes = "Sélectionnez au moins une taille.";
+      if (!form.colors.length) errors.colors = "Sélectionnez au moins une couleur.";
       if (!form.season) errors.season = "Choisissez une saison.";
     }
     if (targetStepKey === "price" && form.listing_mode === "sell" && !String(form.price).trim()) {
@@ -210,6 +265,8 @@ export default function Add_Announcement() {
     }
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
+      if (!form.city) errors.city = "Choisissez une ville.";
+      if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
     }
     return errors;
   };
@@ -239,80 +296,88 @@ export default function Add_Announcement() {
     }
   };
 
-  const uploadImages = async (files) => {
-    setIsUploading(true);
-    const uploadedMediaIds = [];
-    
+  const handleUpload = async (index: number, file: File) => {
+    // Set slot to uploading
+    setUploadSlots(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], status: 'uploading' };
+      return next;
+    });
+
     try {
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append('image', files[i]);
-        // First image is thumbnail, others are gallery
-        formData.append('collection', i === 0 ? 'thumbnail' : 'gallery');
-        
-        const response = await fetch('http://localhost:8000/api/media/upload', {
-          method: 'POST',
-          body: formData,
-          headers: { Accept: 'application/json' },
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('mediable_type', 'product');
+      // Set collection based on slot index (0 is thumbnail, others gallery)
+      formData.append('collection', index === 0 ? 'thumbnail' : 'gallery');
+
+      const response = await axios.post(ziggyRoute('media.upload'), formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.data.status === 'success') {
+        setUploadSlots(prev => {
+          const next = [...prev];
+          next[index] = { status: 'done', url: response.data.url, id: response.data.mediaId };
+          return next;
         });
-        
-        const result = await response.json();
-        if (result.status === 'success') {
-          uploadedMediaIds.push(result.mediaId);
-        } else {
-          throw new Error(result.message || 'Upload failed');
+        clearFieldError('photos');
+      } else {
+        throw new Error(response.data.message || 'Upload failed');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.errors 
+        ? Object.values(error.response.data.errors).flat().join(', ') 
+        : (error.response?.data?.message || error.message || 'Upload failed');
+      
+      console.error('Full upload error details:', error.response?.data || error);
+      
+      setUploadSlots(prev => {
+        const next = [...prev];
+        next[index] = { ...next[index], status: 'error' };
+        return next;
+      });
+    }
+  };
+
+  const onPhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, slotIndex?: number) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    if (slotIndex !== undefined) {
+      // Single slot upload
+      await handleUpload(slotIndex, files[0]);
+    } else {
+      // Multiple upload starting from first idle slot
+      let currentFileIndex = 0;
+      for (let i = 0; i < uploadSlots.length && currentFileIndex < files.length; i++) {
+        if (uploadSlots[i].status === 'idle' || uploadSlots[i].status === 'error') {
+          await handleUpload(i, files[currentFileIndex]);
+          currentFileIndex++;
         }
       }
-      
-      setMediaIds(uploadedMediaIds);
-      setPhotos(files);
-      return uploadedMediaIds;
-    } catch (error) {
-      setStatus({ type: 'error', message: 'Image upload failed. Please try again.' });
-      return [];
-    } finally {
-      setIsUploading(false);
     }
+    // Clear input
+    event.target.value = '';
   };
 
-  const onPhotoChange = async (event) => {
-    const incoming = Array.from(event.target.files || []);
-    const merged = [...photos, ...incoming].slice(0, 8);
-    
-    // Upload new images
-    const newMediaIds = await uploadImages(incoming);
-    if (newMediaIds.length > 0) {
-      setPhotos(merged);
-      if (mainPhotoIndex >= merged.length) {
-        setMainPhotoIndex(0);
-      }
-      clearFieldError('photos');
-    }
-  };
-
-  const removePhoto = async (indexToRemove) => {
-    // Delete temporary media if it exists
-    const mediaIdToRemove = mediaIds[indexToRemove];
-    if (mediaIdToRemove) {
+  const removePhoto = async (indexToRemove: number) => {
+    const slot = uploadSlots[indexToRemove];
+    if (slot.id) {
       try {
-        await fetch(`http://localhost:8000/api/media/temporary/${mediaIdToRemove}`, {
-          method: 'DELETE',
-        });
+        await axios.delete(ziggyRoute('media.delete-temporary', { mediaId: slot.id }));
       } catch (error) {
         console.error('Failed to delete temporary media:', error);
       }
     }
     
-    setPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
-    setMediaIds((prev) => prev.filter((_, index) => index !== indexToRemove));
-    setMainPhotoIndex((prevIndex) => {
-      if (indexToRemove === prevIndex) {
-        return 0;
-      }
-      if (indexToRemove < prevIndex) {
-        return prevIndex - 1;
-      }
-      return prevIndex;
+    setUploadSlots(prev => {
+      const next = [...prev];
+      next[indexToRemove] = { status: 'idle', url: null, id: null };
+      return next;
     });
   };
 
@@ -329,498 +394,721 @@ export default function Add_Announcement() {
       return;
     }
 
+    const mediaIds = uploadSlots.filter(s => s.id).map(s => s.id);
     if (mediaIds.length === 0) {
-      setStatus({ type: 'error', message: 'Please add at least one photo.' });
+      setStatus({ type: 'error', message: 'Veuillez ajouter au moins une photo.' });
       return;
     }
 
-    // Build payload as JSON to support arrays properly
     const payload = {
       ...form,
       user_id: user.id,
+      city: form.city,
+      price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
-      super_category_id: form.super_category_id, // Single super category
-      sub_category_ids: form.sub_category_ids,   // Multiple sub categories
-      media_ids: mediaIds, // Send as array, not JSON string
+      media_ids: mediaIds,
     };
 
     try {
-      const response = await fetch("http://localhost:8000/api/announcements", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { 
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        },
-      });
-      const result = await response.json();
-      if (result.status === "success") {
-        setStatus({ type: "success", message: "Annonce publiee avec succes." });
+      const response = await axios.post(ziggyRoute('announcements.store'), payload);
+      if (response.data.status === "success") {
+        setStatus({ type: "success", message: "Annonce publiée avec succès." });
         setTimeout(() => navigate("/my_announcements"), 1200);
         return;
       }
-      setStatus({ type: "error", message: result.message || "Erreur de validation." });
-    } catch (error) {
-      setStatus({ type: "error", message: "Erreur reseau." });
+      setStatus({ type: "error", message: response.data.message || "Erreur de validation." });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Erreur réseau.";
+      setStatus({ type: "error", message: errorMessage });
     }
   };
 
   const renderStep = () => {
-  if (stepKey === "category") {
-      // Get selected super category's sub-categories
-      const selectedSuperCategory = categories.find(cat => cat.id === form.super_category_id);
-      const subCategories = selectedSuperCategory?.children || [];
+    switch (stepKey) {
+      case "category":
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              Choisissez la catégorie
+            </Typography>
+            <Grid container spacing={2}>
+              {(categories.length > 0 ? categories : FALLBACK_CATEGORIES).map((cat: any) => {
+                const isFromApi = categories.length > 0;
+                const Icon = isFromApi ? getCategoryIcon(cat.icon) : cat.icon;
+                const label = isFromApi ? cat.name : cat.name; // Both fallback and api use 'name' now
+                const id = cat.id;
+                const isActive = form.super_category_id === id;
 
-      return (
-        <>
-          <h3>Qu'annoncez-vous aujourd'hui ?</h3>
-          
-          {/* Loading State */}
-          {categoriesLoading && (
-            <div className="aa-loading-categories">
-              <p>Chargement des categories...</p>
-            </div>
-          )}
-          
-          {/* Super Category - Single Select */}
-          <div className="aa-section">
-            <p className="subtitle">1. Selectionnez une categorie principale</p>
-            {fieldErrors.super_category_id ? <p className="aa-error-text">{fieldErrors.super_category_id}</p> : null}
-            
-            {categories.length > 0 ? (
-              <div className="aa-icon-grid">
-                {categories.map((category) => {
-                  const IconComponent = getCategoryIcon(category.icon);
-                  return (
+                return (
+                  <Grid item xs={12} sm={4} key={label}>
                     <IconCardButton
-                      key={category.id}
-                      icon={IconComponent}
-                      title={category.name}
-                      active={form.super_category_id === category.id}
-                      onClick={() => {
-                        updateFieldWithValidation("super_category_id", category.id);
-                        // Clear sub-categories when super category changes
-                        updateField("sub_category_ids", []);
-                      }}
+                      icon={Icon}
+                      title={label}
+                      active={isActive}
+                      onClick={() => handleCategorySelect(id, label)}
                     />
+                  </Grid>
+                );
+              })}
+            </Grid>
+            {fieldErrors.super_category_id && (
+              <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                {fieldErrors.super_category_id}
+              </Typography>
+            )}
+
+            {form.super_category_name && (
+              <Box className="aa-subcategories-container" sx={{ mt: 6 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                  <Box sx={{ width: 4, height: 24, bgcolor: '#3b82f6', borderRadius: 1 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                    Choisissez les sous-catégories
+                  </Typography>
+                </Box>
+                
+                <CustomSelect
+                  label="Sélectionner des sous-catégories"
+                  multiple={true}
+                  options={(SUB_CATEGORIES_MAP[form.super_category_name] || []).map((name, index) => ({
+                    id: `${form.super_category_id}-${index}`,
+                    label: name,
+                    value: name,
+                    icon: <Shapes size={16} />
+                  }))}
+                  value={form.sub_category_names}
+                  onChange={(val) => handleSubCategoryChange(val as string[])}
+                  error={!!fieldErrors.sub_category_names}
+                  helperText={fieldErrors.sub_category_names}
+                />
+              </Box>
+            )}
+          </Box>
+        );
+
+      case "product":
+        const uploadedCount = uploadSlots.filter(s => s.status !== 'idle').length;
+        const firstIdleIndex = uploadSlots.findIndex(s => s.status === 'idle');
+
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+              Détails du produit
+            </Typography>
+            
+            {/* Row 1: Titre and Marque - Equal-width inputs side by side taking the LEFT half of the row. */}
+            <Box sx={{ mb: 4, width: '100%' }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Titre de l'annonce"
+                      placeholder="Ex: Poussette"
+                      value={form.title}
+                      onChange={(e) => updateField("title", e.target.value)}
+                      error={!!fieldErrors.title}
+                      helperText={fieldErrors.title}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Marque (Optionnel)"
+                      value={form.brand}
+                      onChange={(e) => updateField("brand", e.target.value)}
+                      placeholder="Ex: Cybex"
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Row 2: Description - Full-width textarea alone on its own row */}
+            <Box sx={{ mb: 4, width: '100%' }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={8}
+                label="Description"
+                placeholder="Décrivez votre produit (état, marque, défauts éventuels...)"
+                value={form.description}
+                onChange={(e) => updateField("description", e.target.value)}
+                error={!!fieldErrors.description}
+                helperText={fieldErrors.description}
+              />
+            </Box>
+
+            {/* Row 3: État du produit - Full-width dropdown alone on its own row */}
+            <Box sx={{ mb: 4, width: '100%' }}>
+              <CustomSelect
+                label="État du produit"
+                options={[
+                  { label: "Neuf avec étiquette", value: "new_tag" },
+                  { label: "Neuf sans étiquette", value: "new_no_tag" },
+                  { label: "Très bon état", value: "very_good" },
+                  { label: "Bon état", value: "good" },
+                  { label: "Satisfaisant", value: "fair" },
+                ]}
+                value={form.condition}
+                onChange={(val) => updateField("condition", val)}
+                error={!!fieldErrors.condition}
+                helperText={fieldErrors.condition}
+              />
+            </Box>
+
+            {/* Row 4: Photos - Single large dashed-border upload box full width. One empty slot at a time. */}
+            <Box sx={{ mb: 4, width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                Photos
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {uploadSlots.map((slot, index) => {
+                  if (slot.status === 'idle') return null;
+                  return (
+                    <Box 
+                      key={index} 
+                      sx={{ 
+                        position: 'relative', 
+                        width: 110, 
+                        height: 110,
+                        borderRadius: 2,
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        bgcolor: '#f8fafc',
+                      }}
+                    >
+                      {slot.status === 'uploading' && <CircularProgress size={32} />}
+                      {slot.status === 'done' && slot.url && (
+                        <>
+                          <img src={slot.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => { e.stopPropagation(); removePhoto(index); }}
+                            sx={{ 
+                              position: 'absolute', 
+                              top: 4, 
+                              right: 4, 
+                              bgcolor: 'rgba(255,255,255,0.9)',
+                              padding: '2px',
+                              '&:hover': { bgcolor: 'white' }
+                            }}
+                          >
+                            <CloseIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                          {index === 0 && (
+                            <Box sx={{ 
+                              position: 'absolute', 
+                              bottom: 0, 
+                              left: 0, 
+                              right: 0, 
+                              bgcolor: 'rgba(59, 130, 246, 0.8)', 
+                              color: 'white', 
+                              fontSize: '0.65rem', 
+                              textAlign: 'center',
+                              py: 0.5,
+                              fontWeight: 600
+                            }}>
+                              Principale
+                            </Box>
+                          )}
+                        </>
+                      )}
+                      {slot.status === 'error' && (
+                        <Box sx={{ p: 1, textAlign: 'center' }}>
+                          <Typography variant="caption" color="error">Échec</Typography>
+                          <IconButton size="small" onClick={() => removePhoto(index)}><X size={14} /></IconButton>
+                        </Box>
+                      )}
+                    </Box>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="aa-icon-grid">
-                {FALLBACK_CATEGORIES.map(({ label, icon }, index) => (
-                  <IconCardButton
-                    key={label}
-                    icon={icon}
-                    title={label}
-                    active={form.super_category_id === index + 1}
+
+                {firstIdleIndex !== -1 && (
+                  <Box 
+                    sx={{ 
+                      width: uploadedCount === 0 ? '100%' : 110, 
+                      height: uploadedCount === 0 ? 200 : 110,
+                      borderRadius: 3,
+                      border: '2px dashed #cbd5e1',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#f8fafc',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': { borderColor: '#3b82f6', bgcolor: '#eff6ff' }
+                    }}
                     onClick={() => {
-                      updateFieldWithValidation("super_category_id", index + 1);
-                      updateField("sub_category_ids", []);
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.style.display = 'none';
+                      document.body.appendChild(input);
+                      input.onchange = (e) => {
+                        onPhotoChange(e as any, firstIdleIndex);
+                        document.body.removeChild(input);
+                      };
+                      input.click();
+                    }}
+                  >
+                    <AddPhotoAlternateIcon sx={{ fontSize: uploadedCount === 0 ? 48 : 32, color: '#94a3b8' }} />
+                    {uploadedCount === 0 && <Typography sx={{ color: '#64748b', fontWeight: 500 }}>Cliquez pour ajouter des photos</Typography>}
+                  </Box>
+                )}
+              </Box>
+              {fieldErrors.photos && <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>{fieldErrors.photos}</Typography>}
+            </Box>
+          </Box>
+        );
+
+      case "variants":
+        return (
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Variantes & Caractéristiques
+            </Typography>
+
+            {[
+              { label: "Tailles", field: "sizes", options: SIZES },
+              { label: "Couleurs", field: "colors", options: COLORS },
+              { label: "Saison", field: "season", options: ["Toutes saisons", "Printemps / Été", "Automne / Hiver"], multiple: false },
+              { label: "Matière", field: "material", options: MATERIALS },
+              { label: "Genre", field: "gender", options: ["Fille", "Garçon", "Unisexe"], multiple: false },
+            ].map((variant, idx) => (
+              <Box key={idx} sx={{ width: '100%' }}>
+                <CustomSelect
+                  label={variant.label}
+                  multiple={variant.multiple !== false}
+                  placeholder="Choisir..."
+                  options={variant.options.map(o => ({ id: o, label: o, value: o }))}
+                  value={(form as any)[variant.field]}
+                  onChange={(val) => updateField(variant.field as keyof FormState, val)}
+                  error={!!(fieldErrors as any)[variant.field]}
+                  helperText={(fieldErrors as any)[variant.field]}
+                  icon={<ChevronRight size={16} />} 
+                />
+              </Box>
+            ))}
+          </Box>
+        );
+
+      case "price":
+        return (
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Prix & Mode de transaction
+            </Typography>
+
+            {/* Mode de transaction - Single row */}
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#475569' }}>Mode de transaction</Typography>
+              <Box sx={{ display: 'flex', gap: 1, bgcolor: '#f1f5f9', p: 0.5, borderRadius: 2, width: 'fit-content' }}>
+                <PillButton 
+                  active={form.listing_mode === "donate"} 
+                  onClick={() => updateField("listing_mode", "donate")}
+                  sx={{ px: 3, py: 1, borderRadius: 1.5, fontWeight: 600 }}
+                >
+                  Donner
+                </PillButton>
+                <PillButton 
+                  active={form.listing_mode === "sell"} 
+                  onClick={() => updateField("listing_mode", "sell")}
+                  sx={{ px: 3, py: 1, borderRadius: 1.5, fontWeight: 600 }}
+                >
+                  Vendre
+                </PillButton>
+              </Box>
+            </Box>
+
+            {form.listing_mode === "sell" && (
+              <>
+                {/* Price input - Single row alone */}
+                <Box sx={{ width: '100%' }}>
+                  <TextField
+                    fullWidth
+                    label="Prix"
+                    type="number"
+                    size="medium"
+                    value={form.price}
+                    onChange={(e) => updateField("price", e.target.value)}
+                    error={!!fieldErrors.price}
+                    helperText={fieldErrors.price}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">MAD</InputAdornment>,
                     }}
                   />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sub Categories Container - Multi Select */}
-          {form.super_category_id && subCategories.length > 0 && (
-            <div className="aa-subcategories-container">
-              <div className="aa-subcategories-header">
-                <h4>Sous-categories pour {selectedSuperCategory?.name}</h4>
-                <span className="aa-subcategories-count">
-                  {form.sub_category_ids.length} selectionnee(s)
-                </span>
-              </div>
-              <p className="aa-subcategories-hint">Selectionnez une ou plusieurs sous-categories (optionnel)</p>
-              
-              <div className="aa-subcategories-grid">
-                {subCategories.map((subCategory) => (
-                  <label 
-                    key={subCategory.id} 
-                    className={`aa-subcategory-card ${form.sub_category_ids.includes(subCategory.id) ? 'selected' : ''}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.sub_category_ids.includes(subCategory.id)}
-                      onChange={() => toggleItem("sub_category_ids", subCategory.id)}
-                      className="aa-subcategory-input"
-                    />
-                    <span className="aa-subcategory-name">{subCategory.name}</span>
-                    {form.sub_category_ids.includes(subCategory.id) && (
-                      <span className="aa-subcategory-check">✓</span>
-                    )}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (stepKey === "product") {
-      return (
-        <>
-          <h3>Media & Details produit</h3>
-          <div className="aa-media-uploader">
-            {isUploading && (
-              <div className="aa-upload-status">
-                <p>Uploading images...</p>
-              </div>
-            )}
-            <div className="aa-photos-row">
-              {photos.map((photo, index) => (
-                <div key={`${photo.name}-${index}`} className={`aa-thumb ${index === 0 ? "main" : ""}`}>
-                  {index === 0 ? <span className="aa-main-tag">Principale</span> : null}
-                  <button type="button" className="aa-thumb-delete" onClick={() => removePhoto(index)}>
-                    <X size={14} strokeWidth={2} />
-                  </button>
-                  <img src={URL.createObjectURL(photo)} alt={photo.name} />
-                </div>
-              ))}
-
-              {photos.length < 8 && !isUploading ? (
-                <button
-                  type="button"
-                  className="aa-ghost-uploader"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera size={18} strokeWidth={2} />
-                  <Plus size={14} strokeWidth={2} />
-                </button>
-              ) : null}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="aa-hidden-input"
-              onChange={onPhotoChange}
-            />
-          </div>
-          {fieldErrors.photos ? <p className="aa-error-text">{fieldErrors.photos}</p> : null}
-          <div className="aa-two-col">
-            <Field label="Titre de l'annonce">
-              <TextInput
-                value={form.title}
-                placeholder="Ex : Manteau chaud garcon 4 ans"
-                onChange={(e) => updateFieldWithValidation("title", e.target.value)}
-              />
-              {fieldErrors.title ? <p className="aa-error-text">{fieldErrors.title}</p> : null}
-            </Field>
-            <Field label="Marque">
-              <TextInput
-                value={form.brand}
-                placeholder="Zara Kids, H&M, Kiabi, Sans marque..."
-                onChange={(e) => updateFieldWithValidation("brand", e.target.value)}
-              />
-            </Field>
-            <Field label="Description">
-              <TextArea
-                value={form.description}
-                placeholder="Details supplementaires..."
-                onChange={(e) => updateFieldWithValidation("description", e.target.value)}
-              />
-              {fieldErrors.description ? <p className="aa-error-text">{fieldErrors.description}</p> : null}
-            </Field>
-            <Field label="Genre">
-              <SelectInput
-                value={form.gender}
-                onChange={(e) => updateFieldWithValidation("gender", e.target.value)}
-                options={[
-                  { label: "— Choisir —", value: "" },
-                  { label: "Garcon", value: "garcon" },
-                  { label: "Fille", value: "fille" },
-                  { label: "Unisexe", value: "unisexe" },
-                ]}
-              />
-            </Field>
-            <Field label="Age recommande">
-              <SelectInput
-                value={form.age_range}
-                onChange={(e) => updateFieldWithValidation("age_range", e.target.value)}
-                options={[
-                  { label: "— Choisir —", value: "" },
-                  { label: "0-2 ans", value: "0-2 ans" },
-                  { label: "3-5 ans", value: "3-5 ans" },
-                  { label: "6-8 ans", value: "6-8 ans" },
-                  { label: "9-12 ans", value: "9-12 ans" },
-                ]}
-              />
-            </Field>
-          </div>
-          <div className="aa-pills-wrap">
-            {["Neuf avec etiquettes", "Tres bon etat", "Bon etat", "Etat correct"].map((value) => (
-              <PillButton
-                key={value}
-                active={form.condition === value}
-                onClick={() => updateFieldWithValidation("condition", value)}
-              >
-                {value}
-              </PillButton>
-            ))}
-          </div>
-          {fieldErrors.condition ? <p className="aa-error-text">{fieldErrors.condition}</p> : null}
-        </>
-      );
-    }
-
-    if (stepKey === "variants") {
-      return (
-        <>
-          <h3>Tailles & Variantes</h3>
-          <label className="aa-collection-toggle">
-            <input
-              type="checkbox"
-              checked={form.listing_type === "collection"}
-              onChange={(e) => updateField("listing_type", e.target.checked ? "collection" : "single")}
-            />
-            C'est un lot / collection
-          </label>
-          {form.listing_type === "single" ? (
-            <>
-              <div className="aa-pills-wrap">
-                {SIZES.map((size) => (
-                  <PillButton key={size} active={form.sizes.includes(size)} onClick={() => toggleItem("sizes", size)}>
-                    {size}
-                  </PillButton>
-                ))}
-              </div>
-              {fieldErrors.sizes ? <p className="aa-error-text">{fieldErrors.sizes}</p> : null}
-              <div className="aa-pills-wrap">
-                {COLORS.map((color) => (
-                  <PillButton key={color} active={form.colors.includes(color)} onClick={() => toggleItem("colors", color)}>
-                    <span className={`aa-color-dot ${color.toLowerCase().replace(/\s+/g, "-")}`} />
-                    {color}
-                  </PillButton>
-                ))}
-              </div>
-              {fieldErrors.colors ? <p className="aa-error-text">{fieldErrors.colors}</p> : null}
-              <div className="aa-pills-wrap">
-                {MATERIALS.map((material) => (
-                  <PillButton
-                    key={material}
-                    active={form.material === material}
-                    onClick={() => updateFieldWithValidation("material", material)}
-                  >
-                    {material}
-                  </PillButton>
-                ))}
-              </div>
-              {fieldErrors.material ? <p className="aa-error-text">{fieldErrors.material}</p> : null}
-              <div className="aa-two-col">
-                <Field label="Saison">
-                  <SelectInput
-                    value={form.season}
-                    onChange={(e) => updateFieldWithValidation("season", e.target.value)}
-                    options={[
-                      { label: "— Choisir —", value: "" },
-                      { label: "Toutes saisons", value: "all-season" },
-                      { label: "Ete", value: "ete" },
-                      { label: "Hiver", value: "hiver" },
-                    ]}
+                </Box>
+                
+                {/* Negotiable checkbox - Single row alone */}
+                <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <input 
+                    type="checkbox" 
+                    id="negotiable"
+                    checked={form.price_negotiable}
+                    onChange={(e) => updateField("price_negotiable", e.target.checked)}
+                    style={{ width: 22, height: 22, cursor: 'pointer' }}
                   />
-                  {fieldErrors.season ? <p className="aa-error-text">{fieldErrors.season}</p> : null}
-                </Field>
-              </div>
-            </>
-          ) : (
-            <p className="subtitle">Mode collection active: variantes detaillees masquees.</p>
-          )}
-        </>
-      );
-    }
+                  <label htmlFor="negotiable" style={{ cursor: 'pointer', fontWeight: 600, color: '#1e293b', fontSize: '1rem' }}>
+                    Le prix est négociable
+                  </label>
+                </Box>
+              </>
+            )}
+          </Box>
+        );
 
-    if (stepKey === "price") {
-      return (
-        <>
-          <h3>Prix & Type d’annonce</h3>
-          <div className="aa-two-buttons">
-            <button
-              type="button"
-              className={`aa-toggle-card ${form.listing_mode === "sell" ? "active" : ""}`}
-              onClick={() => updateField("listing_mode", "sell")}
-            >
-              Vendre avec un prix
-            </button>
-            <button
-              type="button"
-              className={`aa-toggle-card aa-donation-card ${form.listing_mode === "donate" ? "active" : ""}`}
-              onClick={() => {
-                updateField("listing_mode", "donate");
-                updateField("price", "");
-              }}
-            >
-              <Heart size={16} weight="BoldDuotone" /> Don gratuit
-            </button>
-          </div>
-          <div className={`aa-price-block ${form.listing_mode === "donate" ? "disabled" : ""}`}>
-            <Field label="Prix (MAD)">
-              <TextInput
-                type="number"
-                min="0"
-                value={form.price}
-                disabled={form.listing_mode === "donate"}
-                onChange={(e) => updateFieldWithValidation("price", e.target.value)}
-                placeholder="Ex : 80"
+      case "location":
+        return (
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Localisation & Remise
+            </Typography>
+
+            {/* Mode de remise cards - Stacked vertically */}
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#475569' }}>Mode de remise</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {[
+                  { label: "Remise en main propre", value: "pickup" },
+                  { label: "Livraison", value: "delivery" },
+                  { label: "Les deux", value: "both" }
+                ].map((opt) => (
+                  <Box
+                    key={opt.value}
+                    onClick={() => updateField("handover_method", opt.value)}
+                    sx={{
+                      width: '100%',
+                      p: 2.5,
+                      borderRadius: 3,
+                      border: '2px solid',
+                      borderColor: form.handover_method === opt.value ? '#3b82f6' : '#e2e8f0',
+                      bgcolor: form.handover_method === opt.value ? '#eff6ff' : '#fff',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      '&:hover': { borderColor: '#3b82f6', bgcolor: '#f8fafc' }
+                    }}
+                  >
+                    <Box sx={{ 
+                      width: 24, 
+                      height: 24, 
+                      borderRadius: '50%', 
+                      border: '2px solid',
+                      borderColor: form.handover_method === opt.value ? '#3b82f6' : '#cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#fff'
+                    }}>
+                      {form.handover_method === opt.value && (
+                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#3b82f6' }} />
+                      )}
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: form.handover_method === opt.value ? '#1d4ed8' : '#334155' }}>
+                      {opt.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+
+            {/* Ville - Single row alone */}
+            <Box sx={{ width: '100%' }}>
+              <CustomSelect
+                label="Ville"
+                options={CITIES.map(city => ({ id: city, label: city, value: city }))}
+                value={form.city}
+                onChange={(val) => updateField("city", val)}
+                placeholder="Choisissez votre ville..."
+                error={!!fieldErrors.city}
+                helperText={fieldErrors.city}
               />
-              {fieldErrors.price ? <p className="aa-error-text">{fieldErrors.price}</p> : null}
-            </Field>
-            <div className="aa-pills-wrap">
-              <PillButton active={form.price_negotiable} onClick={() => updateField("price_negotiable", true)}>
-                Oui, negociable
-              </PillButton>
-              <PillButton active={!form.price_negotiable} onClick={() => updateField("price_negotiable", false)}>
-                Prix fixe
-              </PillButton>
-            </div>
-          </div>
-        </>
-      );
-    }
+            </Box>
 
-    if (stepKey === "location") {
-      return (
-        <>
-          <h3>Localisation & Remise</h3>
-          <Field label="Adresse de retrait">
-            <TextInput
-              value={form.pickup_address}
-              placeholder="Ex : 123 Rue Mohammed, Marrakech"
-              onChange={(e) => updateFieldWithValidation("pickup_address", e.target.value)}
-            />
-            {fieldErrors.pickup_address ? <p className="aa-error-text">{fieldErrors.pickup_address}</p> : null}
-          </Field>
-          <div className="aa-icon-grid aa-delivery-grid">
-            <IconCardButton
-              icon={HandHeart}
-              title="En main propre"
-              subtitle="Remise en personne"
-              active={form.handover_method === "pickup"}
-              onClick={() => updateFieldWithValidation("handover_method", "pickup")}
-            />
-            <IconCardButton
-              icon={Truck}
-              title="Livraison"
-              subtitle="Envoi par coursier"
-              active={form.handover_method === "delivery"}
-              onClick={() => updateFieldWithValidation("handover_method", "delivery")}
-            />
-            <IconCardButton
-              icon={MapPin}
-              title="Les deux"
-              subtitle="Main propre ou livraison"
-              active={form.handover_method === "both"}
-              onClick={() => updateFieldWithValidation("handover_method", "both")}
-            />
-          </div>
-          {fieldErrors.handover_method ? <p className="aa-error-text">{fieldErrors.handover_method}</p> : null}
-        </>
-      );
+            {/* Adresse exacte - Single row alone */}
+            <Box sx={{ width: '100%' }}>
+              <TextField
+                fullWidth
+                label="Adresse exacte"
+                placeholder="Ex: Rue 123, Quartier..."
+                value={form.pickup_address}
+                onChange={(e) => updateField("pickup_address", e.target.value)}
+                error={!!fieldErrors.pickup_address}
+                helperText={fieldErrors.pickup_address}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
+                }}
+              />
+            </Box>
+          </Box>
+        );
+      default:
+        return null;
     }
-
-    return null;
   };
 
   return (
-    <main className="announcement-page">
-      <section className="announcement-shell">
-        <div className="announcement-card">
-          <Stepper
-            steps={visibleSteps}
-            currentStep={currentStepNumber}
-            onStepClick={(targetNumber) => {
-              const targetKey = visibleSteps[targetNumber - 1]?.key;
-              if (targetKey) {
-                setStepKey(targetKey);
-              }
-            }}
-          />
-          {status && <p className={`status ${status.type}`}>{status.message}</p>}
-          {renderStep()}
+    <Container maxWidth={false} sx={{ py: 0, px: 0 }}>
+      <Grid container spacing={0} sx={{ width: '100%', m: 0 }}>
+        {/* Left Column - Form (70%) - Sticky left edge, no padding */}
+        <Grid item xs={12} md={8.4} sx={{ 
+          flexBasis: { md: '70% !important' },
+          maxWidth: { md: '70% !important' },
+          width: { md: '70% !important' },
+          p: 0,
+          m: 0
+        }}>
+          <Paper elevation={0} sx={{ p: { xs: 2, md: 6 }, borderRadius: 0, borderRight: '1px solid #e2e8f0', minHeight: '100vh', width: '100%' }}>
+            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 700, mb: 4 }}>
+              Publier une annonce
+            </Typography>
 
-          <div className="actions">
-            <button
-              type="button"
-              className="secondary"
-              onClick={currentStepNumber === 1 ? () => navigate("/user_dashboard") : goPrev}
-            >
-              Retour
-            </button>
-            {!isLastStep ? (
-              <button type="button" className="primary" onClick={goNext}>
-                Suivant
-              </button>
-            ) : (
-              <button type="button" className="publish" disabled={!canPublish} onClick={submitAnnouncement}>
-                Publier l'annonce ✓
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="announcement-preview">
-          <h4>Apercu de l'annonce</h4>
-          <div className="preview-card">
-            <div className="preview-main-image">
-              {mainPhoto ? (
-                <>
-                  <span className="preview-main-badge">Principale</span>
-                  <img src={URL.createObjectURL(mainPhoto)} alt="Photo principale" />
-                </>
-              ) : (
-                <div className="preview-empty-image">
-                  <Image size={18} strokeWidth={2} />
-                  Photo principale
-                </div>
+            <Stepper 
+              steps={visibleSteps} 
+              currentStep={currentStepNumber} 
+              onStepClick={(targetNumber) => {
+                const targetKey = visibleSteps[targetNumber - 1]?.key;
+                if (targetKey) {
+                  setStepKey(targetKey);
+                }
+              }} 
+            />
+
+            <Box sx={{ mt: 4, minHeight: '400px', width: '100%' }}>
+              {status && (
+                <Box sx={{ 
+                  p: 2, 
+                  mb: 3, 
+                  borderRadius: 2, 
+                  bgcolor: status.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                  color: status.type === 'success' ? '#166534' : '#991b1b',
+                  border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                }}>
+                  {status.message}
+                </Box>
               )}
-            </div>
+              {renderStep()}
+            </Box>
 
-            <div className="preview-row">
-              <Tag size={16} strokeWidth={2} />
-              <p className="preview-price">
-                {form.listing_mode === "donate" ? "Don gratuit" : `${form.price || 0} MAD`}
-              </p>
-            </div>
+            <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
+              <Button
+                variant="outlined"
+                onClick={currentStepNumber === 1 ? () => navigate("/user_dashboard") : goPrev}
+                sx={{ borderRadius: 2, px: 4, textTransform: 'none', fontWeight: 600 }}
+              >
+                Retour
+              </Button>
+              
+              {!isLastStep ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={goNext}
+                  sx={{ borderRadius: 2, px: 4, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 600 }}
+                >
+                  Suivant
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={submitAnnouncement}
+                  disabled={isUploading}
+                  sx={{ borderRadius: 2, px: 4, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
+                >
+                  {isUploading ? <CircularProgress size={24} color="inherit" /> : "Publier l'annonce"}
+                </Button>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
 
-            <div className="preview-row">
-              <Shapes size={16} strokeWidth={2} />
-              <h5>{form.title || "Titre de l'annonce..."}</h5>
-            </div>
+        {/* Right Column - Preview (30%) - Sticky right edge, no padding */}
+        <Grid item xs={12} md={3.6} sx={{ 
+          flexBasis: { md: '30% !important' },
+          maxWidth: { md: '30% !important' },
+          width: { md: '30% !important' },
+          p: 0,
+          m: 0,
+          bgcolor: '#f8fafc' // Subtle background for the preview column
+        }}>
+          <Box sx={{ position: 'sticky', top: 0, width: '100%', height: '100vh', overflowY: 'auto', p: 4 }}>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, 
+                borderRadius: 4, 
+                border: '1px solid #e2e8f0', 
+                bgcolor: '#fff',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                width: '100%'
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 4, height: 18, bgcolor: '#3b82f6', borderRadius: 1 }} />
+                Aperçu de l'annonce
+              </Typography>
 
-            <p className="preview-description">{form.description || "Description..."}</p>
+              {/* Main Photo Preview */}
+              <Box sx={{ 
+                width: '100%', 
+                aspectRatio: '1/1', 
+                borderRadius: 3, 
+                bgcolor: '#f1f5f9',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 3,
+                position: 'relative',
+                border: '1px solid #e2e8f0'
+              }}>
+                {uploadSlots.find(s => s.status === 'done')?.url ? (
+                  <img 
+                    src={uploadSlots.find(s => s.status === 'done')!.url!}
+                    alt="Principale" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <Box sx={{ textAlign: 'center', color: '#94a3b8' }}>
+                    <AddPhotoAlternateIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Aucune photo</Typography>
+                  </Box>
+                )}
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 12, 
+                  left: 12, 
+                  bgcolor: form.listing_mode === 'sell' ? '#3b82f6' : '#10b981', 
+                  color: '#fff', 
+                  px: 1.5, 
+                  py: 0.5, 
+                  borderRadius: 1.5, 
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  textTransform: 'uppercase'
+                }}>
+                  {form.listing_mode === 'sell' ? `${form.price || 0} MAD` : 'GRATUIT'}
+                </Box>
+              </Box>
 
-            <div className="preview-meta">
-              <div className="preview-row">
-                <Shapes size={16} strokeWidth={2} />
-                <span>Categorie: {form.super_category_id ? categories.find(c => c.id === form.super_category_id)?.name : "Non defini"}</span>
-              </div>
-              <div className="preview-row">
-                <Baby size={16} weight="BoldDuotone" />
-                <span>Genre: {form.gender || "Non defini"}</span>
-              </div>
-              <div className="preview-row">
-                <Baby size={16} weight="BoldDuotone" />
-                <span>Age: {form.age_range || "Non defini"}</span>
-              </div>
-              <div className="preview-row">
-                <Ruler size={16} strokeWidth={2} />
-                <span>Tailles: {form.sizes.join(", ") || "Non defini"}</span>
-              </div>
-              <div className="preview-row">
-                <Palette size={16} strokeWidth={2} />
-                <span>Couleurs: {form.colors.join(", ") || "Non defini"}</span>
-              </div>
-              <div className="preview-row">
-                <MapPinned size={16} strokeWidth={2} />
-                <span>Adresse: {form.pickup_address || "Non defini"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1e293b', lineHeight: 1.3 }}>
+                {form.title || "Titre de l'annonce"}
+              </Typography>
+              
+              <Typography variant="body2" sx={{ color: '#64748b', mb: 3, minHeight: '3em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {form.description || "Votre description apparaîtra ici..."}
+              </Typography>
+
+              <Divider sx={{ mb: 3, borderStyle: 'dashed' }} />
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {/* Category & Sub-categories */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Catégorie</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>{form.super_category_name || "-"}</Typography>
+                  {form.sub_category_names.length > 0 && (
+                    <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2, color: '#64748b' }}>
+                      {form.sub_category_names.map((name, i) => (
+                        <Box component="li" key={i} sx={{ fontSize: '0.75rem', fontWeight: 500, mb: 0.2 }}>
+                          {name}
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Brand */}
+                {form.brand && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Marque</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.brand}</Typography>
+                  </Box>
+                )}
+
+                {/* Condition */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>État</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                    {form.condition === 'new_tag' ? 'Neuf avec étiquette' : 
+                     form.condition === 'new_no_tag' ? 'Neuf sans étiquette' :
+                     form.condition === 'very_good' ? 'Très bon état' : 
+                     form.condition === 'good' ? 'Bon état' : 
+                     form.condition === 'fair' ? 'Satisfaisant' : '-'}
+                  </Typography>
+                </Box>
+
+                {/* Sizes */}
+                {form.sizes.length > 0 && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Tailles</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {form.sizes.map(size => (
+                        <Chip key={size} label={size} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, bgcolor: '#f1f5f9' }} />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Colors */}
+                {form.colors.length > 0 && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Couleurs</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.colors.join(', ')}</Typography>
+                  </Box>
+                )}
+
+                {/* Season */}
+                {form.season && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Saison</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.season}</Typography>
+                  </Box>
+                )}
+
+                {/* Material */}
+                {form.material && (
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Matière</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.material}</Typography>
+                  </Box>
+                )}
+
+                {/* Handover Method */}
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Mode de remise</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                    {form.handover_method === 'pickup' ? 'Remise en main propre' : 
+                     form.handover_method === 'delivery' ? 'Livraison' : 
+                     form.handover_method === 'both' ? 'Main propre & Livraison' : '-'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{ mt: 4, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <MapPin size={18} color="#64748b" />
+                <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
+                  {form.city ? `${form.city}, ` : ""}{form.pickup_address || "Localisation..."}
+                </Typography>
+              </Box>
+            </Paper>
+
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#eff6ff', borderRadius: 3, border: '1px solid #dbeafe', display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, width: '100%', textAlign: 'center' }}>?</Typography>
+                </Box>
+              <Typography variant="caption" sx={{ color: '#1e40af', fontWeight: 500, lineHeight: 1.4 }}>
+                Besoin d'aide ? Consultez nos conseils pour une annonce réussie.
+              </Typography>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+    </Container>
   );
 }

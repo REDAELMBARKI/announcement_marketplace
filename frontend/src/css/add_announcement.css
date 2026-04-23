@@ -24,41 +24,166 @@
   box-shadow: 0 18px 40px rgba(18, 44, 88, 0.08);
 }
 
+/* Stepper Redesign */
 .aa-stepper {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.aa-step-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.aa-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  background-color: #f1f1f1;
+  color: #999;
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+  margin-bottom: 8px;
+}
+
+.aa-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Connectors */
+.aa-step-connector {
+  position: absolute;
+  top: 18px; /* half of circle height */
+  left: calc(-50% + 18px);
+  right: calc(50% + 18px);
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 1;
+  transition: background-color 0.3s ease;
+}
+
+.aa-step-container:first-child .aa-step-connector {
+  display: none;
+}
+
+/* States */
+.aa-step-container.active .aa-step-circle {
+  background-color: #fff;
+  border-color: #3b82f6; /* Blue */
+  color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.aa-step-container.active .aa-step-label {
+  color: #3b82f6;
+}
+
+.aa-step-container.done .aa-step-circle {
+  background-color: #10b981; /* Green */
+  border-color: #10b981;
+  color: #fff;
+}
+
+.aa-step-container.done .aa-step-label {
+  color: #10b981;
+}
+
+.aa-step-container.done + .aa-step-container .aa-step-connector,
+.aa-step-container.active .aa-step-connector {
+  background-color: #10b981;
+}
+
+.aa-step-container.future {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.aa-step-container.future .aa-step-circle {
+  background-color: #f1f1f1;
+  border-color: #e0e0e0;
+}
+
+/* Sub-categories container */
+.aa-subcategories-container {
+  margin-top: 24px;
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.aa-subcategories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
 }
 
-.aa-step {
-  border: 1px solid var(--border);
-  background: var(--bgSecondary);
-  border-radius: 10px;
-  padding: 8px;
-  color: var(--textSecondary);
+.aa-subcategories-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
 }
 
-.aa-step.active,
-.aa-step.done {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: #eef4ff;
+.aa-subcategories-count {
+  font-size: 12px;
+  color: #64748b;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
 }
 
-.aa-step-number {
-  display: inline-flex;
-  justify-content: center;
+.aa-subcategories-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+/* Image Upload Zone Redesign */
+.aa-ghost-uploader {
+  border: 2px dashed #cbd5e1 !important;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.aa-ghost-uploader:hover {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+.aa-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
   align-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-}
-
-.aa-step small {
-  display: block;
-  margin-top: 4px;
+  justify-content: center;
+  z-index: 10;
 }
 
 .subtitle {
