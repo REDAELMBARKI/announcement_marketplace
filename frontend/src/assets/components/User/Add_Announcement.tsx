@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -12,15 +12,15 @@ import {
   X,
 } from "lucide-react";
 import {
-  Baby,
-  BookOpen,
-  Footprints,
+  UserRounded as Baby,
+  Book,
+  Walking as Footprints,
   HandHeart,
   Heart,
   MapPoint as MapPin,
   Box as Package,
-  Shirt,
-  ToyBrick,
+  TShirt as Shirt,
+  Gamepad as ToyBrick,
   Delivery as Truck,
 } from "@solar-icons/react";
 import {
@@ -31,7 +31,7 @@ import {
   Stepper,
   TextArea,
   TextInput,
-} from "./announcement/Shared.jsx";
+} from "./announcement/Shared";
 import "../../../css/add_announcement.css";
 
 // Types
@@ -65,14 +65,19 @@ interface FormState {
   pickup_address: string;
 }
 
+interface User {
+  id?: number;
+  name?: string;
+  email?: string;
+}
+
 // Helper to get icon by category name
 const getCategoryIcon = (iconName: string): any => {
   const iconMap: Record<string, any> = {
     'shirt': Shirt,
     'footprints': Footprints,
     'gamepad-2': ToyBrick,
-    'book-open': BookOpen,
-    'home': Baby,
+    'book-open': Book,
     'baby': Baby,
     'palette': Palette,
     'package': Package,
@@ -81,6 +86,7 @@ const getCategoryIcon = (iconName: string): any => {
   return iconMap[iconName] || Package;
 };
 
+// Types for field errors and status messages
 interface FieldErrors {
   [key: string]: string;
 }
@@ -91,8 +97,8 @@ interface StatusMessage {
 }
 
 const BASE_STEPS = [
-  { key: "category", label: "Categorie" },
-  { key: "product", label: "Produit & Media" },
+  { key: "category", label: "Catégorie" },
+  { key: "product", label: "Produit & Média" },
   { key: "variants", label: "Variantes" },
   { key: "price", label: "Prix" },
   { key: "location", label: "Localisation" },
@@ -100,11 +106,11 @@ const BASE_STEPS = [
 
 // Fallback categories while loading
 const FALLBACK_CATEGORIES = [
-  { label: "Vetements", icon: Shirt },
+  { label: "Vêtements", icon: Shirt },
   { label: "Chaussures", icon: Footprints },
   { label: "Jouets", icon: ToyBrick },
-  { label: "Puericulture", icon: Baby },
-  { label: "Livres & Eveil", icon: BookOpen },
+  { label: "Puériculture", icon: Baby },
+  { label: "Livres & Éveil", icon: Book },
   { label: "Autre", icon: Package },
 ];
 const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Rose", "Blanc", "Noir", "Multi"];
@@ -113,8 +119,8 @@ const MATERIALS = ["Coton", "Laine", "Polyester", "Denim", "Cuir", "Synthetique"
 
 export default function Add_Announcement() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const fileInputRef = useRef(null);
+  const user: User = JSON.parse(localStorage.getItem("user") || "{}");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [stepKey, setStepKey] = useState<string>("category");
   const [status, setStatus] = useState<StatusMessage | null>(null);
@@ -141,10 +147,29 @@ export default function Add_Announcement() {
     material: "",
     listing_mode: "donate",
     price: "",
+    currency: "MAD",
     price_negotiable: false,
     pickup_address: "",
     handover_method: "both",
   });
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/categories");
+        const data = await response.json();
+        if (data.status === "success") {
+          setCategories(data.categories);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const visibleSteps = useMemo(() => BASE_STEPS, []);
   const mainPhoto = photos[mainPhotoIndex] || photos[0] || null;
@@ -190,7 +215,7 @@ export default function Add_Announcement() {
   };
 
   const validateStep = (targetStepKey = stepKey) => {
-    const errors = {};
+    const errors: FieldErrors = {};
     if (targetStepKey === "category" && !form.super_category_id) {
       errors.super_category_id = "Choisissez une categorie principale.";
     }
@@ -210,6 +235,7 @@ export default function Add_Announcement() {
     }
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
+      if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
     }
     return errors;
   };
@@ -239,15 +265,14 @@ export default function Add_Announcement() {
     }
   };
 
-  const uploadImages = async (files) => {
+  const uploadImages = async (files: File[]) => {
     setIsUploading(true);
-    const uploadedMediaIds = [];
+    const uploadedMediaIds: number[] = [];
     
     try {
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData();
         formData.append('image', files[i]);
-        // First image is thumbnail, others are gallery
         formData.append('collection', i === 0 ? 'thumbnail' : 'gallery');
         
         const response = await fetch('http://localhost:8000/api/media/upload', {
@@ -264,22 +289,22 @@ export default function Add_Announcement() {
         }
       }
       
-      setMediaIds(uploadedMediaIds);
-      setPhotos(files);
+      setMediaIds((prev) => [...prev, ...uploadedMediaIds]);
       return uploadedMediaIds;
-    } catch (error) {
-      setStatus({ type: 'error', message: 'Image upload failed. Please try again.' });
+    } catch (error: any) {
+      setStatus({ type: 'error', message: error.message || 'Erreur lors du téléchargement des images.' });
       return [];
     } finally {
       setIsUploading(false);
     }
   };
 
-  const onPhotoChange = async (event) => {
+  const onPhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const incoming = Array.from(event.target.files || []);
+    if (incoming.length === 0) return;
+
     const merged = [...photos, ...incoming].slice(0, 8);
     
-    // Upload new images
     const newMediaIds = await uploadImages(incoming);
     if (newMediaIds.length > 0) {
       setPhotos(merged);
@@ -290,8 +315,7 @@ export default function Add_Announcement() {
     }
   };
 
-  const removePhoto = async (indexToRemove) => {
-    // Delete temporary media if it exists
+  const removePhoto = async (indexToRemove: number) => {
     const mediaIdToRemove = mediaIds[indexToRemove];
     if (mediaIdToRemove) {
       try {
@@ -306,12 +330,8 @@ export default function Add_Announcement() {
     setPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
     setMediaIds((prev) => prev.filter((_, index) => index !== indexToRemove));
     setMainPhotoIndex((prevIndex) => {
-      if (indexToRemove === prevIndex) {
-        return 0;
-      }
-      if (indexToRemove < prevIndex) {
-        return prevIndex - 1;
-      }
+      if (indexToRemove === prevIndex) return 0;
+      if (indexToRemove < prevIndex) return prevIndex - 1;
       return prevIndex;
     });
   };
@@ -330,18 +350,16 @@ export default function Add_Announcement() {
     }
 
     if (mediaIds.length === 0) {
-      setStatus({ type: 'error', message: 'Please add at least one photo.' });
+      setStatus({ type: 'error', message: 'Veuillez ajouter au moins une photo.' });
       return;
     }
 
-    // Build payload as JSON to support arrays properly
     const payload = {
       ...form,
       user_id: user.id,
+      price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
-      super_category_id: form.super_category_id, // Single super category
-      sub_category_ids: form.sub_category_ids,   // Multiple sub categories
-      media_ids: mediaIds, // Send as array, not JSON string
+      media_ids: mediaIds,
     };
 
     try {
@@ -355,13 +373,13 @@ export default function Add_Announcement() {
       });
       const result = await response.json();
       if (result.status === "success") {
-        setStatus({ type: "success", message: "Annonce publiee avec succes." });
+        setStatus({ type: "success", message: "Annonce publiée avec succès." });
         setTimeout(() => navigate("/my_announcements"), 1200);
         return;
       }
       setStatus({ type: "error", message: result.message || "Erreur de validation." });
     } catch (error) {
-      setStatus({ type: "error", message: "Erreur reseau." });
+      setStatus({ type: "error", message: "Erreur réseau." });
     }
   };
 
@@ -475,7 +493,7 @@ export default function Add_Announcement() {
                 <div key={`${photo.name}-${index}`} className={`aa-thumb ${index === 0 ? "main" : ""}`}>
                   {index === 0 ? <span className="aa-main-tag">Principale</span> : null}
                   <button type="button" className="aa-thumb-delete" onClick={() => removePhoto(index)}>
-                    <X size={14} strokeWidth={2} />
+                    <X size={14} />
                   </button>
                   <img src={URL.createObjectURL(photo)} alt={photo.name} />
                 </div>
@@ -487,8 +505,8 @@ export default function Add_Announcement() {
                   className="aa-ghost-uploader"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Camera size={18} strokeWidth={2} />
-                  <Plus size={14} strokeWidth={2} />
+                  <Camera size={18} />
+                  <Plus size={14} />
                 </button>
               ) : null}
             </div>
@@ -814,7 +832,7 @@ export default function Add_Announcement() {
                 <span>Couleurs: {form.colors.join(", ") || "Non defini"}</span>
               </div>
               <div className="preview-row">
-                <MapPinned size={16} strokeWidth={2} />
+                <MapPin size={16} weight="BoldDuotone" />
                 <span>Adresse: {form.pickup_address || "Non defini"}</span>
               </div>
             </div>
