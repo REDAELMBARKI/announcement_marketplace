@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, Search, Check } from 'lucide-react';
+import { ChevronRight, Search, Check, X } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface Option {
@@ -20,6 +20,8 @@ interface CustomSelectProps {
   icon?: React.ReactNode;
   searchable?: boolean;
   renderType?: 'dropdown' | 'pills' | 'checkbox' | 'radio';
+  error?: boolean;
+  helperText?: string;
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -31,7 +33,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   placeholder = "Choisir...",
   icon,
   searchable = false,
-  renderType = 'dropdown'
+  renderType = 'dropdown',
+  error,
+  helperText
 }) => {
   const { colors } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
@@ -104,6 +108,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+      {label && <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: colors.textPrimary, marginBottom: '8px' }}>{label}</label>}
       <div 
         onClick={() => setIsOpen(!isOpen)}
         style={{
@@ -112,26 +117,54 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           gap: '10px',
           padding: '12px',
           borderRadius: '10px',
-          border: `1px solid ${colors.border}`,
+          border: `1px solid ${error ? '#d32f2f' : colors.border}`,
           backgroundColor: colors.bgSecondary,
           cursor: 'pointer',
           justifyContent: 'space-between'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, overflow: 'hidden', flexWrap: 'wrap' }}>
           {icon && <span style={{ color: colors.textSecondary, display: 'flex', alignItems: 'center' }}>{icon}</span>}
-          <span style={{ 
-            fontSize: '14px', 
-            color: value ? colors.textPrimary : colors.textMuted,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>
-            {multiple && Array.isArray(value) && value.length > 0 
-              ? `${value.length} sélectionné(s)` 
-              : options.find(o => (o.value || o.id) === value)?.label || placeholder
-            }
-          </span>
+          {multiple && Array.isArray(value) && value.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {value.map(val => {
+                const opt = options.find(o => (o.value || o.id) === val);
+                return (
+                  <div key={val} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 8px',
+                    backgroundColor: colors.bgTertiary,
+                    borderRadius: '6px',
+                    border: `1px solid ${colors.border}`,
+                    fontSize: '12px',
+                    color: colors.textPrimary
+                  }}>
+                    {opt?.label || val}
+                    <X 
+                      size={12} 
+                      style={{ cursor: 'pointer' }} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(val);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <span style={{ 
+              fontSize: '14px', 
+              color: value ? colors.textPrimary : colors.textMuted,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {options.find(o => (o.value || o.id) === value)?.label || placeholder}
+            </span>
+          )}
         </div>
         <ChevronRight size={16} style={{ 
           color: colors.textMuted, 
@@ -139,6 +172,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           transition: 'transform 0.2s'
         }} strokeWidth={2} />
       </div>
+
+      {helperText && <span style={{ color: '#d32f2f', fontSize: '12px', marginTop: '4px', display: 'block' }}>{helperText}</span>}
 
       {isOpen && (
         <div style={{

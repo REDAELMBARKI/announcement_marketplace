@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { Button, TextField, CircularProgress, Box } from "@mui/material";
 
 interface Step {
   key: string;
@@ -18,16 +19,24 @@ export function Stepper({ steps, currentStep, onStepClick }: StepperProps) {
         const stepNumber = index + 1;
         const isActive = currentStep === stepNumber;
         const isDone = currentStep > stepNumber;
+        const isFuture = stepNumber > currentStep;
+        
         return (
-          <button
-            key={step.key}
-            type="button"
-            className={`aa-step ${isActive ? "active" : ""} ${isDone ? "done" : ""}`}
-            onClick={() => onStepClick(stepNumber)}
+          <div 
+            key={step.key} 
+            className={`aa-step-container ${isActive ? "active" : ""} ${isDone ? "done" : ""} ${isFuture ? "future" : ""}`}
           >
-            <span className="aa-step-number">{stepNumber}</span>
-            <small>{step.label}</small>
-          </button>
+            <div className="aa-step-connector" />
+            <button
+              type="button"
+              className="aa-step-circle"
+              onClick={() => !isFuture && onStepClick(stepNumber)}
+              disabled={isFuture}
+            >
+              {isDone ? "✓" : stepNumber}
+            </button>
+            <span className="aa-step-label">{step.label}</span>
+          </div>
         );
       })}
     </div>
@@ -41,64 +50,61 @@ interface FieldProps {
 
 export function Field({ label, children }: FieldProps) {
   return (
-    <label className="aa-field">
-      <span>{label}</span>
+    <Box className="aa-field" sx={{ mb: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#475569' }}>
+        {label}
+      </Typography>
       {children}
-    </label>
+    </Box>
   );
 }
 
-export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input className="aa-input" {...props} />;
-}
+// We'll use MUI components directly in Add_Announcement.tsx for more control, 
+// but we'll keep these helpers if they're still needed or update them to wrap MUI.
 
-export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className="aa-input aa-textarea" {...props} />;
-}
+import { Typography } from "@mui/material";
 
-interface SelectInputProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  options: { label: string; value: string | number }[];
-}
-
-export function SelectInput({ options, ...props }: SelectInputProps) {
+export function IconCardButton({ icon: Icon, title, subtitle, active, ...props }: any) {
   return (
-    <select className="aa-input" {...props}>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-interface PillButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  active: boolean;
-  children: ReactNode;
-}
-
-export function PillButton({ active, children, ...props }: PillButtonProps) {
-  return (
-    <button type="button" className={`aa-pill ${active ? "active" : ""}`} {...props}>
-      {children}
+    <button 
+      type="button" 
+      className={`aa-icon-card ${active ? "active" : ""}`} 
+      {...props}
+      style={{
+        cursor: 'pointer',
+        width: '100%',
+        height: '100%',
+        minHeight: '100px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        padding: '16px',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        backgroundColor: active ? '#eff6ff' : '#fff',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      {Icon && <Icon size={24} weight={active ? "BoldDuotone" : "Linear"} />}
+      <strong>{title}</strong>
+      {subtitle ? <small>{subtitle}</small> : null}
     </button>
   );
 }
 
-interface IconCardButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon: any; // Using any because icons from different libs have different props
-  title: string;
-  subtitle?: string;
-  active: boolean;
-}
-
-export function IconCardButton({ icon: Icon, title, subtitle, active, ...props }: IconCardButtonProps) {
+export function PillButton({ active, children, ...props }: any) {
   return (
-    <button type="button" className={`aa-icon-card ${active ? "active" : ""}`} {...props}>
-      {/* We pass both solar and lucide props, most will ignore what they don't use */}
-      <Icon size={22} weight="BoldDuotone" strokeWidth={2} />
-      <strong>{title}</strong>
-      {subtitle ? <small>{subtitle}</small> : null}
+    <button 
+      type="button" 
+      className={`aa-pill ${active ? "active" : ""}`} 
+      {...props}
+      style={{
+        cursor: 'pointer'
+      }}
+    >
+      {children}
     </button>
   );
 }

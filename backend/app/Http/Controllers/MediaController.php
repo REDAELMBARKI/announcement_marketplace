@@ -3,54 +3,76 @@
 namespace App\Http\Controllers;
 
 use App\Models\Media;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-// Controller for handling media uploads
 class MediaController extends Controller
 {
-    // Upload image and store as temporary media
+    /**
+     * Upload a single image (temporary).
+     */
     public function upload(Request $request)
     {
-        $validated = $request->validate([
-            'image' => ['required', 'image', 'max:4096'],
-            'collection' => ['nullable', 'string', 'in:thumbnail,gallery'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'image' => ['required', 'image', 'max:4096'],
+                'collection' => ['nullable', 'string', 'in:thumbnail,gallery'],
+                'mediable_type' => ['required', 'string', 'in:product,user,category'],
+            ]);
 
-        if (!$request->hasFile('image')) {
+            if (!$request->hasFile('image')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No image file provided.',
+                ], 400);
+            }
+
+            $image = $request->file('image');
+            $collection = $validated['collection'] ?? 'gallery';
+            
+            // Store the image
+            $folder = strtolower($validated['mediable_type']) . 's'; // "product" → "products" 
+            $path = $image->store($folder, 'public');
+
+            if (!$path) {
+                throw new \Exception('Failed to store image on disk.');
+            }
+            
+            // Create temporary media record
+            $media = Media::create([
+                'mediable_id' => null, 
+                'mediable_type' => null, 
+                'disk' => 'public',
+                'path' => $path,
+                'url' => url('storage/' . $path),
+                'file_name' => $image->getClientOriginalName(),
+                'mime_type' => $image->getMimeType(),
+                'size' => $image->getSize(),
+                'collection' => $collection,
+                'sort_order' => 0,
+                'is_temporary' => true, 
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Image uploaded successfully.',
+                'mediaId' => $media->id,
+                'url' => $media->url,
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'No image file provided.',
-            ], 400);
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        $image = $request->file('image');
-        $collection = $validated['collection'] ?? 'gallery';
-        
-        // Store the image
-        $path = $image->store('temp_media', 'public');
-        
-        // Create temporary media record
-        $media = Media::create([
-            'mediable_id' => null, // Will be set when announcement is created
-            'mediable_type' => null, // Will be set when announcement is created
-            'disk' => 'public',
-            'path' => $path,
-            'url' => url('storage/' . $path),
-            'file_name' => $image->getClientOriginalName(),
-            'mime_type' => $image->getMimeType(),
-            'size' => $image->getSize(),
-            'collection' => $collection,
-            'sort_order' => 0,
-            'is_temporary' => true, // Mark as temporary initially
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Image uploaded successfully.',
-            'mediaId' => $media->id,
-            'url' => $media->url,
-        ], 201);
     }
 
     // Upload multiple images at once
@@ -101,30 +123,31 @@ class MediaController extends Controller
         ], 201);
     }
 
-    // Link temporary media to an announcement
+    /**
+     * Link temporary media to an announcement (product).
+     */
     public function linkToAnnouncement(Request $request)
     {
         $validated = $request->validate([
-            'announcement_id' => ['required', 'integer'],
+            'announcement_id' => ['required', 'exists:products,id'],
             'media_ids' => ['required', 'array'],
-            'media_ids.*' => ['required', 'integer'],
+            'media_ids.*' => ['exists:media,id'],
         ]);
 
-        $announcementId = $validated['announcement_id'];
-        $mediaIds = $validated['media_ids'];
+        $product = Product::findOrFail($validated['announcement_id']);
 
-        // Update media records to link them to the announcement
-        Media::whereIn('id', $mediaIds)
-            ->where('is_temporary', true) // Only update temporary media
-            ->update([
-                'mediable_id' => $announcementId,
-                'mediable_type' => 'App\Models\Product',
-                'is_temporary' => false, // Mark as permanent when linked
+        foreach ($validated['media_ids'] as $mediaId) {
+            $media = Media::findOrFail($mediaId);
+            $media->update([
+                'mediable_id' => $product->id,
+                'mediable_type' => Product::class,
+                'is_temporary' => false,
             ]);
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Media linked to announcement successfully.',
+            'message' => 'Media linked successfully.',
         ]);
     }
 
