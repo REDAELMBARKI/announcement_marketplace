@@ -109,15 +109,20 @@ Route::prefix('admin')->middleware('auth:api')->group(function () {
     Route::get('/users',        [AdminController::class, 'getAllUsers']);
     Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
     Route::get('/donations',    [AdminController::class, 'getAllDonations']);
+    Route::get('/inventory',    [AdminController::class, 'getAllInventory']);
+    Route::get('/sustainability-report', [AdminController::class, 'getSustainabilityReport']);
+    Route::post('/charities',   [AdminController::class, 'addCharity']);
+    Route::put('/charities/{id}', [AdminController::class, 'updateCharity']);
+    Route::delete('/charities/{id}', [AdminController::class, 'deleteCharity']);
 });
 
 // User Management Routes
 Route::prefix('user-management')->middleware('auth:api')->group(function () {
     Route::get('/view-users', [ViewUserController::class, 'getViewUsers']);
     Route::get('/roles', [ViewUserController::class, 'getRoles']);
+    Route::get('/charities-list', [ViewUserController::class, 'getCharitiesList']);
     Route::put('/users/{id}', [ViewUserController::class, 'updateUser']);
     Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
-
 });
 
 Route::post('/remote-sessions', function (Request $request) {

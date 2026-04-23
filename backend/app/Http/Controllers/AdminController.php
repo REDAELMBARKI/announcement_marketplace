@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\Admin\AdminAddCharityDTO;
 use App\Services\Admin\AdminDashboardServiceInterface;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 //controller for managing donations, charities, users, and dashboard stats
 class AdminController extends Controller
@@ -30,17 +33,6 @@ class AdminController extends Controller
         ]);
     }
 
-    //getting all charities (extracted from products with listing_mode = 'donate' and status = 'donated')
-    public function getAllCharities()
-    {
-        $charities = $this->adminDashboardService->getAllCharities();
-
-        return $this->successResponse($charities, [
-            'status' => 'success',
-            'charities' => $charities,
-        ]);
-    }
-
     // get all users 
     public function getAllUsers()
     {
@@ -60,6 +52,28 @@ class AdminController extends Controller
         return $this->successResponse($stats, [
             'status' => 'success',
             'stats' => $stats,
+        ]);
+    }
+
+    // get all inventory items
+    public function getAllInventory()
+    {
+        $inventory = $this->adminDashboardService->getAllInventory();
+
+        return $this->successResponse($inventory, [
+            'status' => 'success',
+            'inventory' => $inventory,
+        ]);
+    }
+
+    // get sustainability report
+    public function getSustainabilityReport()
+    {
+        $report = $this->adminDashboardService->getSustainabilityReport();
+
+        return $this->successResponse($report, [
+            'status' => 'success',
+            'report' => $report,
         ]);
     }
 }

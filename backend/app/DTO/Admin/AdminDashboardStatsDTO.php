@@ -12,6 +12,7 @@ class AdminDashboardStatsDTO
         public int $totalUsers,
         public int $activeProducts,
         public array $donationDates,
+        public array $userDates = [],
     ) {}
 
     public function toArray(): array
@@ -24,6 +25,7 @@ class AdminDashboardStatsDTO
             'totalUsers' => $this->totalUsers,
             'activeProducts' => $this->activeProducts,
             'donationDates' => $this->donationDates,
+            'userDates' => $this->userDates,
         ];
     }
 }
