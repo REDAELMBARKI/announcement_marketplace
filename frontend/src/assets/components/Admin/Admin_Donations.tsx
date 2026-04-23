@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import api from "../../../services/api";
 
 export function Admin_Donations() {
   const [donations, setDonations] = useState([]);
@@ -33,19 +34,22 @@ export function Admin_Donations() {
 
   // Fetch all donations
   useEffect(() => {
-    fetch("http://localhost:8000/api/donations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setDonations(data.donations);
-          setFilteredDonations(data.donations);
+    const fetchDonations = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get("/admin/donations");
+        if (response.data.status === "success") {
+          setDonations(response.data.donations);
+          setFilteredDonations(response.data.donations);
         }
+      } catch (err) {
+        console.error("Error fetching donations:", err);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Network error:", err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchDonations();
   }, []);
 
   // Filter donations based on search and status

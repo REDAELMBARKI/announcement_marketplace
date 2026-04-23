@@ -22,7 +22,9 @@ export default function Login() {
       console.log("Login response:", res.status, data);
       
 
-      if (res.status === 2000 && (data.status === "success" || data.success === true)) {
+
+      if (res.status === 200  && (data.status === "success" || data.success === true)) {
+
         const token = data?.data?.token || data?.token || null;
         const user = data?.data?.user || data?.user;
 

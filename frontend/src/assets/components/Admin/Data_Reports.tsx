@@ -4,6 +4,7 @@ import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
 import "../../../css/data_reports.css";
 import Papa from "papaparse";
+import api from "../../../services/api";
 
 // This allows admin to generate and download data reports
 export function Data_Reports() {
@@ -27,31 +28,21 @@ export function Data_Reports() {
     const fetchData = async () => {
       setLoading(true);
 
-      const fetchSafe = async (url) => {
-        try {
-          const res = await fetch(url);
-          const text = await res.text();
-          return JSON.parse(text);
-        } catch {
-          console.error("API failed:", url);
-          return null;
-        }
-      };
+      try {
+        const [donRes, userRes, charityRes] = await Promise.all([
+          api.get("/admin/donations"),
+          api.get("/admin/users"),
+          api.get("/admin/charities"),
+        ]);
 
-      const donRes = await fetchSafe("http://127.0.0.1:8000/api/donations");
-      const userRes = await fetchSafe("http://127.0.0.1:8000/api/admin/users");
-      const charityRes = await fetchSafe(
-        "http://127.0.0.1:8000/api/admin/charities",
-      );
-
-      console.log("RAW USERS RESPONSE:", userRes);
-      console.log("RAW CHARITIES RESPONSE:", charityRes);
-
-      if (donRes?.status === "success") setDonations(donRes.donations);
-      if (userRes?.status === "success") setUsers(userRes.users);
-      if (charityRes?.status === "success") setCharities(charityRes.charities);
-
-      setLoading(false);
+        if (donRes.data.status === "success") setDonations(donRes.data.donations);
+        if (userRes.data.status === "success") setUsers(userRes.data.users);
+        if (charityRes.data.status === "success") setCharities(charityRes.data.charities);
+      } catch (err) {
+        console.error("API failed:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

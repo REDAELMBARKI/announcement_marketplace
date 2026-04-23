@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import api from "../../../services/api";
 
 export function Admin_Inventory() {
   const [inventory, setInventory] = useState([]);
@@ -28,36 +29,35 @@ export function Admin_Inventory() {
     // }
   }, [navigate]);
 
-  // Fetch approved donations → inventory
+  // Fetch inventory from backend
   useEffect(() => {
-    fetch("http://localhost:8000/api/donations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          const approvedItems = [];
-
-          data.donations.forEach((donation) => {
-            if ((donation.donation_status || "").toLowerCase() === "approved") {
-              donation.items?.forEach((item) => {
-                approvedItems.push({
-                  inventory_ID: donation.donation_ID,
-                  donor_ID: donation.donor?.user_ID,
-                  item: item.item_name,
-                  category: item.item_category?.toLowerCase(),
-                  size: item.item_size || "N/A",
-                  image: item.item_image,
-                  donation_date: donation.donation_date,
-                });
-              });
-            }
-          });
-
-          setInventory(approvedItems);
-          setFilteredInventory(approvedItems);
+    const fetchInventory = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get("/admin/inventory");
+        if (response.data.status === "success") {
+          const items = response.data.inventory.map(item => ({
+            inventory_ID: item.id,
+            item: item.name,
+            category: item.category.toLowerCase(),
+            quantity: item.quantity,
+            condition: item.condition,
+            recommended_age: item.recommended_age,
+            gender: item.gender,
+            donation_date: item.created_at,
+            image: item.image_url
+          }));
+          setInventory(items);
+          setFilteredInventory(items);
         }
+      } catch (error) {
+        console.error("Error fetching inventory:", error);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+
+    fetchInventory();
   }, []);
 
   const handleFilterChange = (e) => {
