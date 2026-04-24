@@ -257,7 +257,7 @@ class AnnouncementController extends Controller
             ->whereHas('categories', function ($query) use ($charityId) {
                 $query->where('categories.id', $charityId);
             })
-            ->where('status', 'active')
+            ->whereIn('status', ['sell', 'donate'])
             ->orderByDesc('created_at')
             ->get();
 

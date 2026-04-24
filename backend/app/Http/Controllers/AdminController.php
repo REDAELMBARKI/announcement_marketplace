@@ -96,7 +96,7 @@ class AdminController extends Controller
         $totalProducts = Product::count();
         $totalDonations = Product::where('listing_mode', 'donate')->where('status', 'donated')->count();
         $totalUsers = \App\Models\User::count();
-        $totalActiveProducts = Product::where('status', 'active')->count();
+        $totalActiveProducts = Product::whereIn('status', ['sell', 'donate'])->count();
         
         // Get recent donation dates from donated products
         $recentDonations = Product::where('listing_mode', 'donate')

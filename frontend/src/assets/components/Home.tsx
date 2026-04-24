@@ -89,8 +89,12 @@ function Home() {
         }
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch homepage data:', err);
-        setError('Failed to load data. Please try again later.');
+        console.error('Detailed fetch error:', err);
+        if (err.response) {
+          console.error('Response data:', err.response.data);
+          console.error('Response status:', err.response.status);
+        }
+        setError(`Failed to load data: ${err.message}. Check console for details.`);
       } finally {
         setLoading(false);
       }

@@ -14,12 +14,19 @@ class HomepageController extends Controller
         private readonly HomepageService $service
     ) {}
 
-    public function __invoke(GetHomepageDataRequest $request): JsonResponse
+    public function __invoke(GetHomepageDataRequest $request): \Illuminate\Http\JsonResponse|HomepageResource
     {
-        $homepageData = $this->service->getHomepageData($request);
-
-        return response()->json(
-            new HomepageResource($homepageData)
-        );
+        try {
+            $homepageData = $this->service->getHomepageData($request);
+            return new HomepageResource($homepageData);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Homepage API Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

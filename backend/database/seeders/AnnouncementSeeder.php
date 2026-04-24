@@ -46,6 +46,7 @@ class AnnouncementSeeder extends Seeder
         DB::table('favorites')->delete();
         DB::table('reviews')->delete();
         DB::table('addresses')->delete();
+        DB::table('media')->delete();
         DB::table('product_tag')->delete();
         DB::table('subcategory_product')->delete();
         DB::table('products')->delete();
@@ -180,7 +181,7 @@ class AnnouncementSeeder extends Seeder
 
     private function createProducts(): void
     {
-        $categories = Category::all();
+        $categories = Category::whereNotNull('parent_id')->get();
         $users = User::all();
 
         // Realistic Moroccan kids product names
@@ -199,6 +200,7 @@ class AnnouncementSeeder extends Seeder
         foreach ($productNames as $index => $productName) {
             $category = $categories[$index % $categories->count()];
             $user = $users[$index % $users->count()];
+            $parentCategory = Category::find($category->parent_id);
 
             $mode = fake()->randomElement(['sell', 'donate']);
             $product = Product::factory()->create([
@@ -206,16 +208,16 @@ class AnnouncementSeeder extends Seeder
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
                 'price' => fake()->randomFloat(2, 50, 500),
                 'listing_mode' => $mode,
-                'status' => $mode, // status is now 'sell' or 'donate' instead of 'active'
+                'status' => $mode, // Use the mode as status (sell or donate)
                 'user_id' => $user->id,
-                'super_category_id' => $category->id,
+                'super_category_id' => $parentCategory->id,
                 'views_count' => fake()->numberBetween(10, 1000),
                 'favorites_count' => fake()->numberBetween(0, 50),
                 'condition' => fake()->randomElement(['Neuf', 'Très bon état', 'Bon état']),
                 'age_range' => fake()->randomElement(['0-2 ans', '2-5 ans', '5-8 ans', '8-12 ans']),
             ]);
 
-            // Link to category
+            // Link to category (sub-category)
             $product->categories()->attach($category->id);
 
             // Create Moroccan address
@@ -280,6 +282,7 @@ class AnnouncementSeeder extends Seeder
                     Review::factory()->create([
                         'product_id' => $product->id,
                         'reviewer_id' => $user->id,
+                        'reviewed_id' => $product->user_id,
                         'rating' => fake()->numberBetween(4, 5), // Mostly positive reviews
                         'comment' => $reviewComments[array_rand($reviewComments)],
                     ]);

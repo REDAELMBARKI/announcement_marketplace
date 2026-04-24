@@ -7,6 +7,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class HomepageResource extends JsonResource
 {
+    public static $wrap = null;
+
     public function toArray(Request $request): array
     {
         return [
@@ -14,7 +16,7 @@ class HomepageResource extends JsonResource
             'featured_categories' => $this->resource->featuredCategories,
             'popular_products' => $this->resource->popularProducts,
             'new_arrivals' => $this->resource->newArrivals,
-            'products_by_category' => $this->resource->productsByCategory,
+            'products_by_category' => (object)$this->resource->productsByCategory,
             'trending_tags' => $this->resource->trendingTags,
             'top_sellers' => $this->resource->topSellers,
             'recent_reviews' => $this->resource->recentReviews,
