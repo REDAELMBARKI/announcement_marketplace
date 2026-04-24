@@ -146,10 +146,17 @@ const FALLBACK_CATEGORIES = [
   { id: 1005, name: "Livres & Éveil", icon: Book },
   { id: 1006, name: "Autre", icon: Package },
 ];
-const COLORS = ["Rouge", "Bleu", "Vert", "Jaune", "Rose", "Blanc", "Noir", "Multi"];
-const SIZES = ["3M", "6M", "12M", "18M", "2A", "3A", "4A", "5A", "6A", "8A", "10A", "12A"];
-const MATERIALS = ["Coton", "Laine", "Polyester", "Denim", "Cuir", "Synthetique"];
-const CITIES = ["Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", "Meknès", "Oujda", "Kénitra", "Tétouan"];
+
+interface FilterAttributes {
+  cities: string[];
+  ageRanges: string[];
+  clothingSizes: string[];
+  shoeSizes: string[];
+  conditions: { label: string; value: string }[];
+  listingTypes: string[];
+  materials: string[];
+  colors: string[];
+}
 
 export default function Add_Announcement() {
   const navigate = useNavigate();
@@ -165,7 +172,18 @@ export default function Add_Announcement() {
   const [mainPhotoIndex, setMainPhotoIndex] = useState<number>(0);
   const isUploading = useMemo(() => uploadSlots.some(s => s.status === 'uploading'), [uploadSlots]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
+  const [attributes, setAttributes] = useState<FilterAttributes>({
+    cities: [],
+    ageRanges: [],
+    clothingSizes: [],
+    shoeSizes: [],
+    conditions: [],
+    listingTypes: [],
+    materials: [],
+    colors: []
+  });
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [form, setForm] = useState<FormState>({
     super_category_id: null,
     super_category_name: null,
@@ -191,21 +209,32 @@ export default function Add_Announcement() {
     handover_method: "both",
   });
 
-  // Fetch categories from API
+  // Fetch initial data from API
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchInitData = async () => {
       try {
-        const response = await axios.get(ziggyRoute('categories.index'));
+        const response = await axios.get(ziggyRoute('marketplace.init'));
+        console.log(response)
         if (response.data.status === "success") {
-          setCategories(response.data.categories);
+          setCategories(response.data.categories || []);
+          setAttributes({
+            cities: response.data.cities || [],
+            ageRanges: response.data.ageRanges || [],
+            clothingSizes: response.data.clothingSizes || [],
+            shoeSizes: response.data.shoeSizes || [],
+            conditions: response.data.conditions || [],
+            listingTypes: response.data.listingTypes || [],
+            materials: response.data.materials || [],
+            colors: response.data.colors || []
+          });
         }
       } catch (error) {
-        console.error("Failed to fetch categories:", error);
+        console.error("Failed to fetch initial data:", error);
       } finally {
-        setCategoriesLoading(false);
+        setLoading(false);
       }
     };
-    fetchCategories();
+    fetchInitData();
   }, []);
 
   const visibleSteps = useMemo(() => BASE_STEPS, []);
@@ -540,13 +569,7 @@ export default function Add_Announcement() {
             <Box sx={{ mb: 4, width: '100%' }}>
               <CustomSelect
                 label="État du produit"
-                options={[
-                  { label: "Neuf avec étiquette", value: "new_tag" },
-                  { label: "Neuf sans étiquette", value: "new_no_tag" },
-                  { label: "Très bon état", value: "very_good" },
-                  { label: "Bon état", value: "good" },
-                  { label: "Satisfaisant", value: "fair" },
-                ]}
+                options={attributes.conditions}
                 value={form.condition}
                 onChange={(val) => updateField("condition", val)}
                 error={!!fieldErrors.condition}
@@ -664,6 +687,8 @@ export default function Add_Announcement() {
         );
 
       case "variants":
+        const sizesOptions = (form.super_category_name === "Chaussures" ? attributes.shoeSizes : attributes.clothingSizes);
+        
         return (
           <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
             <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
@@ -671,18 +696,18 @@ export default function Add_Announcement() {
             </Typography>
 
             {[
-              { label: "Tailles", field: "sizes", options: SIZES },
-              { label: "Couleurs", field: "colors", options: COLORS },
+              { label: "Tailles", field: "sizes", options: sizesOptions },
+              { label: "Couleurs", field: "colors", options: attributes.colors },
               { label: "Saison", field: "season", options: ["Toutes saisons", "Printemps / Été", "Automne / Hiver"], multiple: false },
-              { label: "Matière", field: "material", options: MATERIALS },
-              { label: "Genre", field: "gender", options: ["Fille", "Garçon", "Unisexe"], multiple: false },
+              { label: "Matière", field: "material", options: attributes.materials },
+              { label: "Âge recommandé", field: "age_range", options: attributes.ageRanges, multiple: false },
             ].map((variant, idx) => (
               <Box key={idx} sx={{ width: '100%' }}>
                 <CustomSelect
                   label={variant.label}
                   multiple={variant.multiple !== false}
                   placeholder="Choisir..."
-                  options={variant.options.map(o => ({ id: o, label: o, value: o }))}
+                  options={variant.options.map(o => (typeof o === 'string' ? { id: o, label: o, value: o } : o))}
                   value={(form as any)[variant.field]}
                   onChange={(val) => updateField(variant.field as keyof FormState, val)}
                   error={!!(fieldErrors as any)[variant.field]}
@@ -820,7 +845,7 @@ export default function Add_Announcement() {
             <Box sx={{ width: '100%' }}>
               <CustomSelect
                 label="Ville"
-                options={CITIES.map(city => ({ id: city, label: city, value: city }))}
+                options={attributes.cities}
                 value={form.city}
                 onChange={(val) => updateField("city", val)}
                 placeholder="Choisissez votre ville..."

@@ -100,6 +100,8 @@ class AnnouncementService
             'shoeSizes' => $attributes->get('shoeSizes', []),
             'conditions' => $attributes->get('conditions', []),
             'listingTypes' => $attributes->get('listingTypes', []),
+            'materials' => $attributes->get('materials', []),
+            'colors' => $attributes->get('colors', []),
         ];
     }
 
