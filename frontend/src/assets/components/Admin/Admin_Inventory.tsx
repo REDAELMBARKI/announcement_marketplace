@@ -20,6 +20,25 @@ export function Admin_Inventory() {
   };
 
   const navigate = useNavigate();
+  const importantItemOptions = [
+    "shirt",
+    "t-shirt",
+    "trouser",
+    "jacket",
+    "jeans",
+    "dress",
+    "shoes",
+    "sneakers",
+    "bag",
+    "laptop",
+    "phone",
+    "book",
+    "furniture",
+    "toy",
+    "kitchen",
+    "sports",
+    "other",
+  ];
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -77,6 +96,19 @@ export function Admin_Inventory() {
     setFilteredInventory(filtered);
   };
 
+  const categoryOptions = Array.from(
+    new Set(inventory.map((item) => item.category).filter(Boolean)),
+  ).sort();
+
+  const itemOptions = Array.from(
+    new Set([
+      ...importantItemOptions,
+      ...inventory
+        .map((item) => item.item?.toLowerCase()?.trim())
+        .filter(Boolean),
+    ]),
+  ).sort();
+
   const handleReset = () => {
     setFilters({ category: "", type: "" });
     setFilteredInventory(inventory);
@@ -101,19 +133,20 @@ export function Admin_Inventory() {
           onChange={handleFilterChange}
         >
           <option value="">All Categories</option>
-          <option value="womens">Women's</option>
-          <option value="mens">Men's</option>
-          <option value="girls">Girls</option>
-          <option value="boys">Boys</option>
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
         </select>
 
         <select name="type" value={filters.type} onChange={handleFilterChange}>
           <option value="">All Items</option>
-          <option value="shirt">Shirt</option>
-          <option value="trouser">Trouser</option>
-          <option value="jacket">Jacket</option>
-          <option value="shoe">Shoes</option>
-          <option value="other">Other</option>
+          {itemOptions.map((itemType) => (
+            <option key={itemType} value={itemType}>
+              {itemType}
+            </option>
+          ))}
         </select>
 
         <button className="filter-button" onClick={handleReset}>

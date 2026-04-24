@@ -11,20 +11,15 @@ export function View_Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [charities, setCharities] = useState([]);
-  const [roles, setRoles] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const [assignedCharity, setAssignedCharity] = useState("");
   const [userRole, setUserRole] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
     fetchUsers();
-    fetchCharities();
-    fetchRoles();
   }, []);
 
   const navigate = useNavigate();
@@ -53,23 +48,8 @@ export function View_Users() {
     }
   };
 
-  const fetchCharities = async () => {
-    try {
-      const response = await api.get("/user-management/charities-list");
-      if (response.data.status === "success") setCharities(response.data.charities);
-    } catch (err) {
-      console.error("Error fetching charities:", err);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const response = await api.get("/user-management/roles");
-      if (response.data.status === "success") setRoles(response.data.roles);
-    } catch (err) {
-      console.error("Error fetching roles:", err);
-    }
-  };
+  const normalizeRole = (roleName) =>
+    (roleName || "").toLowerCase() === "donor" ? "user" : (roleName || "").toLowerCase();
 
   useEffect(() => {
     let results = users;
@@ -80,7 +60,7 @@ export function View_Users() {
     }
     if (roleFilter.trim()) {
       results = results.filter(
-        (u) => (u.role_name || "").toLowerCase() === roleFilter.toLowerCase(),
+        (u) => normalizeRole(u.role_name) === roleFilter.toLowerCase(),
       );
     }
     setFilteredUsers(results);
@@ -89,7 +69,6 @@ export function View_Users() {
   const handleEdit = (user) => {
     setSelectedUser(user);
     setUserRole(user.role_name || "");
-    setAssignedCharity(user.charity_ID || "");
     setShowEditModal(true);
   };
 
@@ -121,8 +100,6 @@ export function View_Users() {
 
     const updateData = {};
     if (userRole === "admin") updateData.role_name = "admin";
-    if (selectedUser.role_name === "charity_staff")
-      updateData.charity_id = assignedCharity;
 
     try {
       const response = await api.put(
@@ -183,11 +160,8 @@ export function View_Users() {
           onChange={(e) => setRoleFilter(e.target.value)}
         >
           <option value="">All Roles</option>
-          {roles.map((role: any) => (
-            <option key={role.role_ID} value={role.role_name}>
-              {role.role_name}
-            </option>
-          ))}
+          <option value="admin">Admin</option>
+          <option value="user">Users</option>
         </select>
         <button className="filter-button" onClick={handleFilterReset}>
           Reset
@@ -206,7 +180,6 @@ export function View_Users() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Assigned Charity</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -217,8 +190,7 @@ export function View_Users() {
                       <td>{user.user_ID}</td>
                       <td>{user.user_name}</td>
                       <td>{user.user_email}</td>
-                      <td>{user.role_name}</td>
-                      <td>{user.charity_name || "N/A"}</td>
+                      <td>{normalizeRole(user.role_name) === "user" ? "user" : user.role_name}</td>
                       <td>
                         {user.role_name === "charity_staff" && (
                           <button onClick={() => handleEdit(user)}>Edit</button>
@@ -233,7 +205,7 @@ export function View_Users() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6">No users found.</td>
+                    <td colSpan="5">No users found.</td>
                   </tr>
                 )}
               </tbody>
@@ -250,21 +222,6 @@ export function View_Users() {
             <form onSubmit={handleUpdateUser}>
               {selectedUser.role_name === "charity_staff" && (
                 <>
-                  <div className="form-group">
-                    <label>Assign to Charity:</label>
-                    <select
-                      value={assignedCharity}
-                      onChange={(e) => setAssignedCharity(e.target.value)}
-                      required
-                    >
-                      <option value="">Select Charity</option>
-                      {charities.map((c) => (
-                        <option key={c.charity_ID} value={c.charity_ID}>
-                          {c.charity_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div className="form-group">
                     <label>Change role to Admin:</label>
                     <select

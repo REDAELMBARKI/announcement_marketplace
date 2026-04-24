@@ -55,6 +55,43 @@ class AdminController extends Controller
         ]);
     }
 
+    public function getAnnouncementTypeSplit()
+    {
+        return $this->successResponse($this->adminDashboardService->getAnnouncementTypeSplit());
+    }
+
+    public function getAnnouncementFunnel()
+    {
+        return $this->successResponse($this->adminDashboardService->getAnnouncementFunnel());
+    }
+
+    public function getTopCategories()
+    {
+        return $this->successResponse($this->adminDashboardService->getTopCategories());
+    }
+
+    public function getUserRetention()
+    {
+        return $this->successResponse($this->adminDashboardService->getUserRetention());
+    }
+
+    public function getHourlyActivity()
+    {
+        return $this->successResponse($this->adminDashboardService->getHourlyActivity());
+    }
+
+    public function getPendingModeration(Request $request)
+    {
+        $limit = max(1, min(20, (int) $request->query('limit', 5)));
+        $items = $this->adminDashboardService->getPendingModerationAnnouncements($limit);
+        $totalPending = $this->adminDashboardService->getDashboardStats()['pending_moderation'] ?? count($items);
+
+        return $this->successResponse([
+            'items' => $items,
+            'total' => (int) $totalPending,
+        ]);
+    }
+
     // get all inventory items
     public function getAllInventory()
     {
