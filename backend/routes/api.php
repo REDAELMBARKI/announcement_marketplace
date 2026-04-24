@@ -108,9 +108,14 @@ Route::prefix('admin')->middleware('auth:api')->group(function () {
     Route::get('/charities',    [AdminController::class, 'getAllCharities']);
     Route::get('/users',        [AdminController::class, 'getAllUsers']);
     Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
+    Route::get('/stats/type-split', [AdminController::class, 'getAnnouncementTypeSplit']);
+    Route::get('/stats/funnel', [AdminController::class, 'getAnnouncementFunnel']);
+    Route::get('/stats/categories', [AdminController::class, 'getTopCategories']);
+    Route::get('/stats/user-retention', [AdminController::class, 'getUserRetention']);
+    Route::get('/stats/hourly-activity', [AdminController::class, 'getHourlyActivity']);
+    Route::get('/moderation/pending', [AdminController::class, 'getPendingModeration']);
     Route::get('/donations',    [AdminController::class, 'getAllDonations']);
     Route::get('/inventory',    [AdminController::class, 'getAllInventory']);
-    Route::get('/sustainability-report', [AdminController::class, 'getSustainabilityReport']);
     Route::post('/charities',   [AdminController::class, 'addCharity']);
     Route::put('/charities/{id}', [AdminController::class, 'updateCharity']);
     Route::delete('/charities/{id}', [AdminController::class, 'deleteCharity']);
@@ -169,8 +174,14 @@ Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnoun
 
 // Reports routes
 Route::prefix('reports')->name('reports.')->group(function () {
-    Route::get('/donations', [ReportController::class, 'donations'])->name('donations');
     Route::get('/users', [ReportController::class, 'users'])->name('users');
-    Route::get('/sustainability', [ReportController::class, 'sustainability'])->name('sustainability');
-    Route::get('/charities', [ReportController::class, 'charities'])->name('charities');
+    Route::get('/top-users', [ReportController::class, 'topUsers'])->name('top-users');
+    Route::get('/user-activity', [ReportController::class, 'userActivity'])->name('user-activity');
+    Route::get('/location', [ReportController::class, 'usersByCity'])->name('location');
+    Route::get('/sales', [ReportController::class, 'sales'])->name('sales');
+    Route::get('/donations', [ReportController::class, 'donations'])->name('donations');
+    Route::get('/listings-performance', [ReportController::class, 'listingsPerformance'])->name('listings-performance');
+    Route::get('/inventory', [ReportController::class, 'inventoryByCategory'])->name('inventory');
+    Route::get('/time-based', [ReportController::class, 'timeBased'])->name('time-based');
+    Route::get('/all', [ReportController::class, 'all'])->name('all');
 });
