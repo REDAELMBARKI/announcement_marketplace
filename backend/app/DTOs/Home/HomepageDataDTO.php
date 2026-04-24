@@ -10,7 +10,6 @@ readonly class HomepageDataDTO
         public array $popularProducts,
         public array $newArrivals,
         public array $productsByCategory,
-        public array $donationCauses,
         public array $trendingTags,
         public array $topSellers,
         public array $recentReviews,

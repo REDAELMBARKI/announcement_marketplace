@@ -15,7 +15,6 @@ class HomepageResource extends JsonResource
             'popular_products' => $this->resource->popularProducts,
             'new_arrivals' => $this->resource->newArrivals,
             'products_by_category' => $this->resource->productsByCategory,
-            'donation_causes' => $this->resource->donationCauses,
             'trending_tags' => $this->resource->trendingTags,
             'top_sellers' => $this->resource->topSellers,
             'recent_reviews' => $this->resource->recentReviews,

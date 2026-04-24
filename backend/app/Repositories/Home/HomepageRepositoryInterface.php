@@ -12,7 +12,6 @@ interface HomepageRepositoryInterface
     public function getNewArrivals(): Collection;
     public function getProductsByCategory(int $categoryId, int $limit = 10): Collection;
     public function getAllProductsByCategory(): array;
-    public function getDonationCauses(): Collection;
     public function getTrendingTags(): Collection;
     public function getTopSellers(): Collection;
     public function getRecentReviews(): Collection;

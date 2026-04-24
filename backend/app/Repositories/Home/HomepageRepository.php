@@ -115,23 +115,6 @@ class HomepageRepository implements HomepageRepositoryInterface
         return $result;
     }
 
-    public function getDonationCauses(): Collection
-    {
-        return Product::select([
-            'id', 'title', 'description', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
-        ])
-            ->with(['user:id,name', 'addresses' => function ($query) {
-                $query->select(['addressable_id', 'addressable_type', 'city', 'district'])
-                    ->where('addressable_type', Product::class);
-            }])
-            ->where('listing_mode', 'donate')
-            ->where('status', 'active')
-            ->orderBy('created_at', 'asc')
-            ->limit(10)
-            ->get();
-    }
-
     public function getTrendingTags(): Collection
     {
         return Tag::select(['tags.id', 'tags.name', 'tags.slug'])
@@ -151,7 +134,7 @@ class HomepageRepository implements HomepageRepositoryInterface
                 $query->where('status', 'active');
             }])
             ->leftJoin('reviews', 'users.id', '=', 'reviews.reviewed_id')
-            ->selectRaw('users.*, AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as total_reviews')
+            ->selectRaw('AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as total_reviews')
             ->groupBy('users.id', 'users.name')
             ->orderBy('avg_rating', 'desc')
             ->orderBy('total_reviews', 'desc')
