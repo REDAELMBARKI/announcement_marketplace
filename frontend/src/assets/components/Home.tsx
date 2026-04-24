@@ -21,6 +21,7 @@ import {
   Bag as ShoppingBag,
   MapPoint as MapPin,
 } from "@solar-icons/react";
+import MarketplaceCard from "./MarketplaceCard";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
@@ -68,6 +69,8 @@ function Home() {
   const trendingScrollRef = useRef(null);
   const marketScrollRef = useRef(null);
   const collectionsScrollRef = useRef(null);
+  const nearbyScrollRef = useRef(null);
+  const freeScrollRef = useRef(null);
   const categoryRefs = useRef({});
 
   // Hero Slider State
@@ -143,9 +146,23 @@ function Home() {
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
+  const scrollNearby = (direction) => {
+    const container = nearbyScrollRef.current;
+    if (!container) return;
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
+
+  const scrollFree = (direction) => {
+    const container = freeScrollRef.current;
+    if (!container) return;
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
+
   const getCategoryColor = (categoryId) => {
-    const catColors = ['#667eea', '#f093fb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
-    return catColors[categoryId % catColors.length] || '#667eea';
+    const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', colors.error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
+    return catColors[categoryId % catColors.length] || colors.primary;
   };
 
   const getCategoryEmoji = (categoryName) => {
@@ -178,6 +195,55 @@ function Home() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Helper to map API product to MarketplaceCard props
+  const mapToMarketplace = (item) => ({
+    id: item.id,
+    seller: {
+      name: item.user?.name || 'Parent',
+      avatar: item.user?.name?.charAt(0) || 'U',
+      avatarUrl: item.user?.avatar
+    },
+    timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+    is_boosted: item.views_count > 500, // example logic
+    image: item.thumbnail?.url || item.image || '??',
+    title: item.title,
+    city: item.addresses?.[0]?.city || 'Maroc',
+    district: item.addresses?.[0]?.district || '',
+    condition: item.condition,
+    age_range: item.age_range,
+    price: item.price
+  });
+
+  const popularProducts = useMemo(() => 
+    homepageData?.popular_products?.map(mapToMarketplace) || [], 
+    [homepageData?.popular_products]
+  );
+
+  const newArrivals = useMemo(() => 
+    homepageData?.new_arrivals?.map(mapToMarketplace) || [], 
+    [homepageData?.new_arrivals]
+  );
+
+  const nearbyProducts = useMemo(() => 
+    homepageData?.nearby_products?.map(mapToMarketplace) || [], 
+    [homepageData?.nearby_products]
+  );
+
+  const freeItems = useMemo(() => 
+    homepageData?.free_items?.map(mapToMarketplace) || [], 
+    [homepageData?.free_items]
+  );
+
+  const productsByCategory = useMemo(() => {
+    const result = {};
+    if (homepageData?.products_by_category) {
+      Object.keys(homepageData.products_by_category).forEach(catId => {
+        result[catId] = homepageData.products_by_category[catId].map(mapToMarketplace);
+      });
+    }
+    return result;
+  }, [homepageData?.products_by_category]);
 
   if (loading) {
     return (
@@ -322,21 +388,9 @@ function Home() {
               <div className="scroll-container no-scrollbar">
                 <button className="scroll-btn left" onClick={() => scrollCategory(cat.id, 'left')}><ChevronLeft size={20} /></button>
                 <div className="category-scroll-row" ref={el => categoryRefs.current[cat.id] = el}>
-                  {homepageData?.products_by_category?.[cat.id]?.map((item) => (
-                    <div key={item.id} className="compact-product-card">
-                      <Link to={`/product/${item.id}`} className="card-image-wrap">
-                        {item.thumbnail?.url ? <img src={item.thumbnail.url} alt={item.title} /> : <div className="placeholder">??</div>}
-                        <div className="card-badges">
-                          {item.price ? <span className="price-badge">£{item.price}</span> : <span className="free-badge">FREE</span>}
-                        </div>
-                      </Link>
-                      <div className="card-info">
-                        <h4 className="card-title">{item.title}</h4>
-                        <div className="card-meta">
-                          <span className="location"><MapPin size={10} /> {item.addresses?.[0]?.city || 'UK'}</span>
-                          <span className="condition-tag">{item.condition || 'Used'}</span>
-                        </div>
-                      </div>
+                  {productsByCategory[cat.id]?.map((itemProps) => (
+                    <div key={itemProps.id} className="home-card-wrapper">
+                      <MarketplaceCard item={itemProps} />
                     </div>
                   ))}
                   <Link to={`/category/${cat.slug}`} className="view-more-card">
@@ -388,25 +442,9 @@ function Home() {
         </div>
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={trendingScrollRef}>
-            {homepageData?.popular_products?.map((item) => (
-              <div key={item.id} className="editorial-product-card">
-                <div className="card-image-wrap">
-                  <Link to={`/product/${item.id}`}>
-                    {item.thumbnail?.url ? <img src={item.thumbnail.url} alt={item.title} /> : <div className="placeholder">??</div>}
-                  </Link>
-                  <div className="seller-overlap">
-                    <img src={item.user?.avatar || `https://ui-avatars.com/api/?name=${item.user?.name || 'U'}`} alt={item.user?.name} />
-                  </div>
-                  <div className="price-tag-float">£{item.price || 0}</div>
-                </div>
-                <div className="card-content">
-                  <span className="card-eyebrow">{item.super_category_name}</span>
-                  <h4 className="card-title">{item.title}</h4>
-                  <div className="card-footer">
-                    <span><MapPin size={12} /> {item.addresses?.[0]?.city || 'UK'}</span>
-                    <button className="wishlist-btn"><Heart size={16} /></button>
-                  </div>
-                </div>
+            {popularProducts.map((itemProps) => (
+              <div key={itemProps.id} className="home-card-wrapper">
+                <MarketplaceCard item={itemProps} />
               </div>
             ))}
           </div>
@@ -466,30 +504,64 @@ function Home() {
         </div>
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={marketScrollRef}>
-            {homepageData?.new_arrivals?.map((item) => (
-              <div key={item.id} className="editorial-product-card">
-                <div className="card-image-wrap">
-                  <Link to={`/product/${item.id}`}>
-                    {item.thumbnail?.url ? <img src={item.thumbnail.url} alt={item.title} /> : <div className="placeholder">??</div>}
-                  </Link>
-                  <div className="seller-overlap">
-                    <img src={item.user?.avatar || `https://ui-avatars.com/api/?name=${item.user?.name || 'U'}`} alt={item.user?.name} />
-                  </div>
-                  <div className="price-tag-float">{item.price ? `£${item.price}` : 'FREE'}</div>
-                </div>
-                <div className="card-content">
-                  <span className="card-eyebrow">{item.super_category_name}</span>
-                  <h4 className="card-title">{item.title}</h4>
-                  <div className="card-footer">
-                    <span><MapPin size={12} /> {item.addresses?.[0]?.city || 'UK'}</span>
-                    <button className="wishlist-btn"><Heart size={16} /></button>
-                  </div>
-                </div>
+            {newArrivals.map((itemProps) => (
+              <div key={itemProps.id} className="home-card-wrapper">
+                <MarketplaceCard item={itemProps} />
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Nearby Products */}
+      {nearbyProducts.length > 0 && (
+        <section className="trending-row-section tt-container">
+          <div className="section-header-editorial with-nav">
+            <div>
+              <h2 className="editorial-title">Nearby Treasures</h2>
+              <p>Find great deals from parents in your city.</p>
+            </div>
+            <div className="row-nav">
+              <button onClick={() => scrollNearby('left')}><ChevronLeft /></button>
+              <button onClick={() => scrollNearby('right')}><ChevronRight /></button>
+            </div>
+          </div>
+          <div className="scroll-container no-scrollbar">
+            <div className="trending-scroll-row" ref={nearbyScrollRef}>
+              {nearbyProducts.map((itemProps) => (
+                <div key={itemProps.id} className="home-card-wrapper">
+                  <MarketplaceCard item={itemProps} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Free Items */}
+      {freeItems.length > 0 && (
+        <section className="trending-row-section tt-container">
+          <div className="section-header-editorial with-nav">
+            <div>
+              <h2 className="editorial-title">Free for All</h2>
+              <p>Generous donations looking for a new home.</p>
+            </div>
+            <div className="row-nav">
+              <button onClick={() => scrollFree('left')}><ChevronLeft /></button>
+              <button onClick={() => scrollFree('right')}><ChevronRight /></button>
+            </div>
+          </div>
+          <div className="scroll-container no-scrollbar">
+            <div className="trending-scroll-row" ref={freeScrollRef}>
+              {freeItems.map((itemProps) => (
+                <div key={itemProps.id} className="home-card-wrapper">
+                  <MarketplaceCard item={itemProps} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Trust & Safety Band */}
       <section className="trust-band" style={{ backgroundColor: colors.bgSecondary }}>

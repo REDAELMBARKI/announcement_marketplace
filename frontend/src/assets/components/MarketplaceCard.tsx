@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPoint as MapPin, Gift, ChatLine } from "@solar-icons/react";
 import { useTheme } from '../../context/ThemeContext';
@@ -15,7 +15,7 @@ import {
   IconButton
 } from '@mui/material';
 
-const MarketplaceCard = ({ item }) => {
+const MarketplaceCard = memo(({ item }) => {
   const { colors } = useTheme();
 
   return (
@@ -43,6 +43,7 @@ const MarketplaceCard = ({ item }) => {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Avatar 
+            src={item.seller.avatarUrl}
             sx={{ 
               width: 36, 
               height: 36, 
@@ -205,6 +206,6 @@ const MarketplaceCard = ({ item }) => {
       </CardContent>
     </Card>
   );
-};
+});
 
 export default MarketplaceCard;

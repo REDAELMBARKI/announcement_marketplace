@@ -441,95 +441,6 @@ section {
   .scroll-btn.right { right: 10px; }
 }
 
-/* Compact Product Card */
-.compact-product-card {
-  flex: 0 0 220px;
-  background: var(--bgPrimary);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px var(--shadow);
-  transition: var(--transition-smooth);
-}
-
-.compact-product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px var(--shadow);
-}
-
-.card-image-wrap {
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-  display: block;
-}
-
-.card-image-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.compact-product-card:hover img {
-  transform: scale(1.08);
-}
-
-.card-badges {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
-}
-
-.price-badge, .free-badge {
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.price-badge {
-  background: white;
-  color: black;
-}
-
-.free-badge {
-  background: var(--coral);
-  color: white;
-}
-
-.card-info {
-  padding: 16px;
-}
-
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--textPrimary);
-}
-
-.card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: var(--textSecondary);
-}
-
-.condition-tag {
-  background: var(--bgTertiary);
-  padding: 2px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
 /* View More Card */
 .view-more-card {
   flex: 0 0 180px;
@@ -622,93 +533,6 @@ section {
 .tile-info span {
   font-size: 0.85rem;
   color: var(--textSecondary);
-}
-
-/* Editorial Product Card (Trending/New) */
-.editorial-product-card {
-  flex: 0 0 300px;
-  background: var(--bgPrimary);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px var(--shadow);
-  transition: var(--transition-smooth);
-}
-
-.editorial-product-card:hover {
-  transform: translateY(-8px);
-}
-
-.editorial-product-card .card-image-wrap {
-  height: 300px; /* Square image */
-}
-
-.seller-overlap {
-  position: absolute;
-  bottom: -15px;
-  left: 15px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 3px solid var(--bgPrimary);
-  overflow: hidden;
-  z-index: 4;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.seller-overlap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.price-tag-float {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: white;
-  color: black;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  z-index: 3;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.editorial-product-card .card-content {
-  padding: 24px 20px 20px;
-}
-
-.card-eyebrow {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--coral);
-  margin-bottom: 6px;
-}
-
-.editorial-product-card .card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.wishlist-btn {
-  background: none;
-  border: none;
-  color: var(--textSecondary);
-  cursor: pointer;
-  transition: var(--transition-smooth);
-}
-
-.wishlist-btn:hover {
-  color: var(--coral);
-  transform: scale(1.1);
 }
 
 /* How It Works Editorial */
@@ -994,11 +818,28 @@ section {
   color: var(--textSecondary);
 }
 
-/* Utils */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.home-card-wrapper {
+  flex: 0 0 280px;
+  padding: 10px 0;
 }
+
+/* Utils - Custom scrollbar that fades into background */
+.no-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.no-scrollbar::-webkit-scrollbar-track {
+  background: var(--bgPrimary);
+}
+
+.no-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--bgPrimary);
+  border-radius: 10px;
+}
+
 .no-scrollbar {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bgPrimary) var(--bgPrimary);
 }
