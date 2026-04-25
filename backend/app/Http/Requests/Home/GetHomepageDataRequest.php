@@ -23,16 +23,16 @@ class GetHomepageDataRequest extends FormRequest
 
     public function getCity(): ?string
     {
-        return $this->validated('city');
+        return $this->validated('city') ?? $this->get('city');
     }
 
     public function getAge(): ?string
     {
-        return $this->validated('age');
+        return $this->validated('age') ?? $this->get('age');
     }
 
     public function getCategoryId(): ?int
     {
-        return $this->validated('category_id');
+        return $this->validated('category_id') ?? $this->get('category_id');
     }
 }

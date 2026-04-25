@@ -37,7 +37,9 @@ class ProductResource extends JsonResource
             'colors' => $this->colors,
             'views_count' => $this->views_count,
             'favorites_count' => $this->favorites_count,
-            'is_favorited' => $this->favorites()->where('user_id', $request->input('user_id') ?? 1)->exists(),
+            'is_favorited' => $this->when($request->has('user_id'), function() use ($request) {
+                return $this->favorites()->where('user_id', $request->input('user_id'))->exists();
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
