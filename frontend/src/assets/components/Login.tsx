@@ -24,31 +24,22 @@ export default function Login() {
       if (res.status === 200 && data.status === "success") {
         const user = data.user;
 
-        // For Debug- log user object to verify charity_ID
+        // For Debug- log user object to verify role
         console.log("Logged in user object:", user);
 
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("role", String(user.role_id));
+        localStorage.setItem("role", user.role?.name || "user");
 
-        const role = String(user.role_id);
+        const roleName = user.role?.name || "user";
 
-        if (role === "12") {
+        if (roleName === "Admin") {
           navigate("/admin_dashboard");
-        } else if (role === "11") {
-          if (!user.charity_ID) {
-            console.warn(
-              "No charity_ID found for this user. Charity dashboard will not load.",
-            );
-            setError(
-              "Login failed: Your account does not have an associated charity.",
-            );
-            return;
-          }
-          navigate("/charity_dashboard");
-        } else if (role === "10") {
+        } else if (roleName === "Moderator") {
+          navigate("/moderator_dashboard");
+        } else if (roleName === "User") {
           navigate("/user_dashboard");
         } else {
-          console.log("Unknown role_id:", role);
+          console.log("Unknown role:", roleName);
           setError("Login failed: Unknown role assigned to account");
         }
       } else {

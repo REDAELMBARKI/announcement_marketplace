@@ -2,21 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
 {
-    protected $table = 'Role';
-    protected $primaryKey = 'role_ID';
-    public $timestamps = false;
+    use HasFactory;
 
     protected $fillable = [
-        'role_name',
-        'role_description',
+        'name',
+        'slug',
+        'description',
     ];
 
-    public function users()
+    /**
+     * Get the users for the role.
+     */
+    public function users(): HasMany
     {
-        return $this->hasMany(DomainUser::class, 'role_ID', 'role_ID');
+        return $this->hasMany(User::class);
     }
 }

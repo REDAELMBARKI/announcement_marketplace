@@ -58,11 +58,11 @@ class AnnouncementSeeder extends Seeder
     {
         // Create 5 specific Moroccan users
         $users = [
-            ['name' => 'Fatima Alami', 'email' => 'fatima@example.com', 'rating' => 4.8],
-            ['name' => 'Youssef Benkiran', 'email' => 'youssef@example.com', 'rating' => 4.5],
-            ['name' => 'Amina Rachidi', 'email' => 'amina@example.com', 'rating' => 4.9],
-            ['name' => 'Karim El Mardi', 'email' => 'karim@example.com', 'rating' => 4.7],
-            ['name' => 'Sofia Mansouri', 'email' => 'sofia@example.com', 'rating' => 4.6],
+            ['name' => 'Fatima Alami', 'email' => 'fatima@example.com', 'rating' => 4.8, 'role_id' => 2],
+            ['name' => 'Youssef Benkiran', 'email' => 'youssef@example.com', 'rating' => 4.5, 'role_id' => 2],
+            ['name' => 'Amina Rachidi', 'email' => 'amina@example.com', 'rating' => 4.9, 'role_id' => 2],
+            ['name' => 'Karim El Mardi', 'email' => 'karim@example.com', 'rating' => 4.7, 'role_id' => 2],
+            ['name' => 'Sofia Mansouri', 'email' => 'sofia@example.com', 'rating' => 4.6, 'role_id' => 2],
         ];
 
         foreach ($users as $userData) {
@@ -70,6 +70,7 @@ class AnnouncementSeeder extends Seeder
                 'name' => $userData['name'],
                 'email' => $userData['email'],
                 'rating' => $userData['rating'],
+                'role_id' => $userData['role_id'],
             ]);
         }
     }

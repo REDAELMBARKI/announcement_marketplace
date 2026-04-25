@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Role;
-use App\Models\DomainUser;
-use App\Models\Donor;
 use App\Models\User;
 
 class DatabaseSeeder extends Seeder
@@ -16,16 +14,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Run the announcement seeder first
+        // Run seeders in order
         $this->call([
-                     FilterAttributeSeeder::class
-                    ,AnnouncementSeeder::class]);
+            RoleSeeder::class,
+            FilterAttributeSeeder::class,
+            AnnouncementSeeder::class,
+        ]);
         
-        // Keep default user just in case
+        // Create admin user
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'role_id' => 1, // Admin role
+        ]);
+        
+        // Create regular user
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
+            'role_id' => 2, // User role
         ]);
     }
 }

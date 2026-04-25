@@ -28,7 +28,6 @@ return new class extends Migration
                 'gallery',      // product extra photos
                 'document',     // any file attachment
             ])->default('gallery');
-
             $table->unsignedInteger('sort_order')->default(0); // ordering within gallery
             $table->boolean('is_temporary')->default(false); // for temporary uploads   
             $table->timestamps();
