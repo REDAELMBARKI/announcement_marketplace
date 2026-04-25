@@ -12,10 +12,14 @@ use App\Observers\FavoriteObserver;
 use App\Observers\ProductObserver;
 use App\Observers\ReviewObserver;
 use App\Observers\UserObserver;
+use App\Repositories\Admin\AdminDashboardRepository;
+use App\Repositories\Admin\AdminDashboardRepositoryInterface;
 use App\Repositories\Home\HomepageRepository;
 use App\Repositories\Home\HomepageRepositoryInterface;
 use App\Repositories\ProductRepository;
 use App\Repositories\ProductRepositoryInterface;
+use App\Services\Admin\AdminDashboardService;
+use App\Services\Admin\AdminDashboardServiceInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(HomepageRepositoryInterface::class, HomepageRepository::class);
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
+        $this->app->bind(AdminDashboardRepositoryInterface::class, AdminDashboardRepository::class);
+        $this->app->bind(AdminDashboardServiceInterface::class, AdminDashboardService::class);
     }
 
     /**

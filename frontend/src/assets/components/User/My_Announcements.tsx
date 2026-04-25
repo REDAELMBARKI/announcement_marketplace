@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../../services/api";
 import route from "../../../utils/route";
 import { 
   FileEdit as Edit3, 
@@ -24,38 +24,48 @@ const My_Announcements: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'sell' | 'donate'>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-  const getImageUrl = (media: any) => {
+  const getImageUrl = (media: Product["thumbnail"]) => {
     if (!media) return null;
-    if (media.url && media.url.startsWith('http')) return media.url;
-    return `http://127.0.0.1:8000/storage/${media.file_path.replace("public/", "")}`;
+    if (media.url && media.url.startsWith("http")) return media.url;
+    const path = media.file_path || media.path;
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const clean = path.replace(/^public\//, "").replace(/^\/+/, "");
+    const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://127.0.0.1:8000";
+    return `${base}/storage/${clean}`;
   };
 
   useEffect(() => {
-    if (!user?.id) {
+    const raw = localStorage.getItem("user");
+    if (!raw) {
+      navigate("/login");
+      return;
+    }
+    const parsed = JSON.parse(raw) as { id?: number };
+    if (!parsed?.id) {
       navigate("/login");
       return;
     }
 
-    axios.get(route('user.announcements', { userId: user.id }).toString())
+    setLoading(true);
+    api
+      .get(route("user.announcements", { userId: parsed.id }).toString())
       .then((res) => {
         if (res.data.status === "success") {
           const productsArray = res.data.products?.data || res.data.products;
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
-        setLoading(false);
       })
       .catch((err) => {
         console.error("Fetch announcements error:", err);
-        setLoading(false);
-      });
-  }, [user.id, navigate]);
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
       try {
-        const res = await axios.delete(route('announcements.destroy', { id }).toString());
+        const res = await api.delete(route("announcements.destroy", { id }).toString());
         if (res.data.status === "success") {
           setProducts(products.filter((p) => p.id !== id));
         }
@@ -110,11 +120,14 @@ const My_Announcements: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: '6px', border: `1px solid ${colors.border}`, backgroundColor: colors.bgSecondary, color: colors.textPrimary }}
           >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
+            <option value="all">All statuses</option>
+            <option value="sell">Sell (live)</option>
+            <option value="donate">Donate (live)</option>
+            <option value="draft">Draft</option>
+            <option value="reserved">Reserved</option>
             <option value="sold">Sold</option>
             <option value="donated">Donated</option>
-            <option value="reserved">Reserved</option>
+            <option value="closed">Closed</option>
           </select>
         </div>
       </div>
@@ -188,8 +201,8 @@ const My_Announcements: React.FC = () => {
                       borderRadius: '4px',
                       fontSize: '12px',
                       textTransform: 'capitalize',
-                      backgroundColor: p.status === 'active' ? colors.infoBg : colors.bgTertiary,
-                      color: p.status === 'active' ? colors.infoText : colors.textSecondary
+                      backgroundColor: ['sell', 'donate'].includes(p.status) ? colors.infoBg : colors.bgTertiary,
+                      color: ['sell', 'donate'].includes(p.status) ? colors.infoText : colors.textSecondary
                     }}>
                       {p.status}
                     </span>

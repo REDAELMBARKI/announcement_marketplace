@@ -2,123 +2,115 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\User;
+use App\DTO\Admin\AdminAddCharityDTO;
+use App\Services\Admin\AdminDashboardServiceInterface;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 //controller for managing donations, charities, users, and dashboard stats
 class AdminController extends Controller
 {
+    public function __construct(
+        private readonly AdminDashboardServiceInterface $adminDashboardService
+    ) {}
+
+    private function successResponse($data, array $legacy = [])
+    {
+        return response()->json(array_merge([
+            'success' => true,
+            'data' => $data,
+        ], $legacy));
+    }
+
     // getting all donations (extracted from products with listing_mode = 'donate')
     public function getAllDonations()
     {
-        // Get products that are donations
-        $donations = Product::where('listing_mode', 'donate')
-            ->where('status', '!=', 'draft')
-            ->with(['user', 'categories', 'addresses', 'thumbnail'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $formattedDonations = $this->adminDashboardService->getAllDonations();
 
-        // Transform products into donation format
-        $formattedDonations = $donations->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'title' => $product->title,
-                'description' => $product->description,
-                'donation_date' => $product->created_at->format('Y-m-d'),
-                'donor' => $product->user,
-                'items' => $product->items ?? [],
-                'charity' => $product->categories->first() ?? null,
-                'status' => $product->status,
-                'created_at' => $product->created_at,
-                'updated_at' => $product->updated_at,
-            ];
-        });
-
-        return response()->json([
+        return $this->successResponse($formattedDonations, [
             'status' => 'success',
-            'donations' => $formattedDonations
-        ]);
-    }
-
-    //getting all charities (extracted from products with listing_mode = 'donate' and status = 'donated')
-    public function getAllCharities()
-    {
-        // Get products that are donated and have charity info
-        $charityProducts = Product::where('listing_mode', 'donate')
-            ->where('status', 'donated')
-            ->with(['categories', 'user'])
-            ->get();
-
-        // Extract unique charities from donated products
-        $charities = $charityProducts->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->categories->first()?->name ?? 'Unknown Charity',
-                'description' => $product->description,
-                'donation_date' => $product->created_at->format('Y-m-d'),
-                'donor' => $product->user,
-                'status' => $product->status,
-                'created_at' => $product->created_at,
-                'updated_at' => $product->updated_at,
-            ];
-        })->unique('id');
-
-        return response()->json([
-            'status' => 'success',
-            'charities' => $charities->values()
+            'donations' => $formattedDonations,
         ]);
     }
 
     // get all users 
     public function getAllUsers()
     {
-        try{
-            //fetch all users  
-            $users = User::all();
-            return response()->json([
-                'status' => 'success',
-                'users' => $users
-            ]);
+        $users = $this->adminDashboardService->getAllUsers();
 
-        }catch(\Exception $e) {
-            return response()->json([
-                'error'=> $e->getMessage()
-            ], 500);
-            
-        }
+        return $this->successResponse($users, [
+            'status' => 'success',
+            'users' => $users,
+        ]);
     }
 
     // metrics for all the charts
     public function getDashboardStats()
     {
-        // Get statistics from Product model
-        $totalProducts = Product::count();
-        $totalDonations = Product::where('listing_mode', 'donate')->where('status', 'donated')->count();
-        $totalUsers = \App\Models\User::count();
-        $totalActiveProducts = Product::where('status', 'active')->count();
-        
-        // Get recent donation dates from donated products
-        $recentDonations = Product::where('listing_mode', 'donate')
-            ->where('status', 'donated')
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->pluck('created_at')
-            ->map(function ($date) {
-                return $date->format('Y-m-d');
-            });
+        $stats = $this->adminDashboardService->getDashboardStats();
 
-        return response()->json([
+        return $this->successResponse($stats, [
             'status' => 'success',
-            'stats' => [
-                'totalProducts'       => $totalProducts,
-                'totalDonations'     => $totalDonations,
-                'totalCO2Saved'      => round($totalDonations * 1.5, 1),
-                'activeCharities'    => $totalDonations, // Using donated products as proxy for charities
-                'totalUsers'         => $totalUsers,
-                'activeProducts'      => $totalActiveProducts,
-                'donationDates'      => $recentDonations,
-            ],
+            'stats' => $stats,
+        ]);
+    }
+
+    public function getAnnouncementTypeSplit()
+    {
+        return $this->successResponse($this->adminDashboardService->getAnnouncementTypeSplit());
+    }
+
+    public function getAnnouncementFunnel()
+    {
+        return $this->successResponse($this->adminDashboardService->getAnnouncementFunnel());
+    }
+
+    public function getTopCategories()
+    {
+        return $this->successResponse($this->adminDashboardService->getTopCategories());
+    }
+
+    public function getUserRetention()
+    {
+        return $this->successResponse($this->adminDashboardService->getUserRetention());
+    }
+
+    public function getHourlyActivity()
+    {
+        return $this->successResponse($this->adminDashboardService->getHourlyActivity());
+    }
+
+    public function getPendingModeration(Request $request)
+    {
+        $limit = max(1, min(20, (int) $request->query('limit', 5)));
+        $items = $this->adminDashboardService->getPendingModerationAnnouncements($limit);
+        $totalPending = $this->adminDashboardService->getDashboardStats()['pending_moderation'] ?? count($items);
+
+        return $this->successResponse([
+            'items' => $items,
+            'total' => (int) $totalPending,
+        ]);
+    }
+
+    // get all inventory items
+    public function getAllInventory()
+    {
+        $inventory = $this->adminDashboardService->getAllInventory();
+
+        return $this->successResponse($inventory, [
+            'status' => 'success',
+            'inventory' => $inventory,
+        ]);
+    }
+
+    // get sustainability report
+    public function getSustainabilityReport()
+    {
+        $report = $this->adminDashboardService->getSustainabilityReport();
+
+        return $this->successResponse($report, [
+            'status' => 'success',
+            'report' => $report,
         ]);
     }
 }

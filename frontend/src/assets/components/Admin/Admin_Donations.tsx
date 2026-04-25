@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import api from "../../../services/api";
 
 export function Admin_Donations() {
   const [donations, setDonations] = useState([]);
   const [filteredDonations, setFilteredDonations] = useState([]);
   const [search, setSearch] = useState("");
+  const [modeFilter, setModeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -33,22 +35,25 @@ export function Admin_Donations() {
 
   // Fetch all donations
   useEffect(() => {
-    fetch("http://localhost:8000/api/donations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setDonations(data.donations);
-          setFilteredDonations(data.donations);
+    const fetchDonations = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get("/admin/donations");
+        if (response.data.status === "success") {
+          setDonations(response.data.donations);
+          setFilteredDonations(response.data.donations);
         }
+      } catch (err) {
+        console.error("Error fetching donations:", err);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Network error:", err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchDonations();
   }, []);
 
-  // Filter donations based on search and status
+  // Filter donations based on search, listing mode and status
   useEffect(() => {
     const filtered = donations.filter((d) => {
       const item = d.items?.[0] ?? {};
@@ -62,18 +67,23 @@ export function Admin_Donations() {
         itemName.includes(search.toLowerCase()) ||
         itemCategory.includes(search.toLowerCase());
 
+      const modeMatch = modeFilter
+        ? (d.listing_mode || "").toLowerCase() === modeFilter.toLowerCase()
+        : true;
+
       const statusMatch = statusFilter
         ? (d.donation_status || "").toLowerCase() === statusFilter.toLowerCase()
         : true;
 
-      return searchMatch && statusMatch;
+      return searchMatch && modeMatch && statusMatch;
     });
 
     setFilteredDonations(filtered);
-  }, [search, statusFilter, donations]);
+  }, [search, modeFilter, statusFilter, donations]);
 
   const handleReset = () => {
     setSearch("");
+    setModeFilter("");
     setStatusFilter("");
     setFilteredDonations(donations);
   };
@@ -92,7 +102,7 @@ export function Admin_Donations() {
     <main>
       <div className="records-container">
         <div className="header-left">
-          <h2>Total Donations</h2>
+          <h2>Announcements</h2>
         </div>
         <div className="return-right">
           <li>
@@ -109,6 +119,16 @@ export function Admin_Donations() {
           onChange={(e) => setSearch(e.target.value)}
           className="search-input"
         />
+
+        <select
+          value={modeFilter}
+          onChange={(e) => setModeFilter(e.target.value)}
+          className="status-filter"
+        >
+          <option value="">Donate / Sell</option>
+          <option value="donate">Donate</option>
+          <option value="sell">Sell</option>
+        </select>
 
         <select
           value={statusFilter}
@@ -130,12 +150,12 @@ export function Admin_Donations() {
         <table className="table">
           <thead>
             <tr>
-              <th>Donation ID</th>
+              <th>Announcement ID</th>
               <th>Donor ID</th>
               <th>Item</th>
               <th>Category</th>
               <th>Image</th>
-              <th>Date Donated</th>
+              <th>Date Posted</th>
               <th>Status</th>
             </tr>
           </thead>

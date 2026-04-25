@@ -26,6 +26,7 @@ class Product extends Model
         'currency',
         'price_negotiable',
         'pickup_address',
+        'contact_phone',
         'handover_method',
         'status',
         'condition',

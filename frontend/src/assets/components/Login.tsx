@@ -21,14 +21,23 @@ export default function Login() {
       const data = res.data;
       console.log("Login response:", res.status, data);
       
-      if (res.status === 200 && data.status === "success") {
-        const user = data.user;
+
+
+      if (res.status === 200  && (data.status === "success" || data.success === true)) {
+
+        const token = data?.data?.token || data?.token || null;
+        const user = data?.data?.user || data?.user;
+
 
         // For Debug- log user object to verify charity_ID
         console.log("Logged in user object:", user);
 
+        if (token) {
+          localStorage.setItem("token", token);
+        }
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", String(user.role_id));
+        localStorage.setItem("admin", String(user.role_id === 12));
 
         const role = String(user.role_id);
 

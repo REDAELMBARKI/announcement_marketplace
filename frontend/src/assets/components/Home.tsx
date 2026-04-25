@@ -175,21 +175,22 @@ function Home() {
     <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
       <section className="hero_v2" style={{ backgroundColor: colors.bgSecondary }}>
         <div className="hero_copy">
-          <p className="eyebrow" style={{ color: colors.coral }}>PRE-LOVED KIDS CLOTHES</p>
+          <p className="eyebrow" style={{ color: colors.coral }}>LOCAL BUY · SELL · DONATE</p>
           <h1 style={{ color: colors.textPrimary }}>
-            Find Great Deals.
+            List anything.
             <br />
-            Help Local Families.
+            Talk directly on the phone.
           </h1>
           <p className="tagline" style={{ color: colors.textSecondary }}>
-            Buy affordable kids clothes or donate to families in need.
+            Sell products you no longer need or donate items to someone who wants them — then agree handover with a
+            quick phone call.
           </p>
           <div className="hero_actions">
             <Link to="/marketplace" className="hero_primary" style={{ backgroundColor: colors.coral, color: colors.bgSecondary }}>
-              Browse Items
+              Browse listings
             </Link>
-            <Link to="/donate" className="hero_secondary" style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
-              Donate Now
+            <Link to="/add_announcement" className="hero_secondary" style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
+              Post an announcement
             </Link>
           </div>
         </div>
@@ -225,13 +226,15 @@ function Home() {
           ⭐
         </span>
         <div style={{ flex: 1 }}>
-          <h3 style={{ color: colors.textPrimary, margin: 0 }}>Summer Clothing Drive - ends July 31</h3>
-          <p style={{ color: colors.textSecondary, margin: '5px 0' }}>Donate summer essentials for kids heading back to school.</p>
+          <h3 style={{ color: colors.textPrimary, margin: 0 }}>Community spotlight — foundations & local sellers</h3>
+          <p style={{ color: colors.textSecondary, margin: '5px 0' }}>
+            Support verified foundations or message sellers and donors directly by phone to arrange collection.
+          </p>
           <div className="countdown-timer" style={{ fontWeight: '700', color: colors.coral }}>
             {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
           </div>
         </div>
-        <Link to="/sign_up" style={{ padding: '10px 20px', backgroundColor: colors.coral, color: colors.bgSecondary, borderRadius: '8px', textDecoration: 'none', fontWeight: '700' }}>Donate now</Link>
+        <Link to="/sign_up" style={{ padding: '10px 20px', backgroundColor: colors.coral, color: colors.bgSecondary, borderRadius: '8px', textDecoration: 'none', fontWeight: '700' }}>Join free</Link>
       </section>
 
       {homepageData?.featured_categories?.map((category) => (
@@ -498,46 +501,25 @@ function Home() {
       </section>
 
       <section className="tt-how-it-works upgraded">
-        <h3>How TinyTrove Works</h3>
+        <h3>How LetUsDonateUK works</h3>
         <div className="tt-how-grid">
           <article>
             <span>01</span>
-            <h4>Gather Gear</h4>
-            <p>Find gently used outfits and toys your kids have outgrown.</p>
+            <h4>List in minutes</h4>
+            <p>Add photos and a short description for anything you want to sell or donate.</p>
           </article>
           <article>
             <span>02</span>
-            <h4>Choose Your Path</h4>
-            <p>Sell them for cash or donate them instantly to a verified cause.</p>
+            <h4>Connect by phone</h4>
+            <p>Buyers and donors call your number so you can agree price, time, and place without endless messaging.</p>
           </article>
           <article>
             <span>03</span>
-            <h4>Make an Impact</h4>
-            <p>Every item sold extends its life and supports children in need.</p>
-    </article>
-  </div>
-</section>
-
-<section className="tt-how-it-works upgraded">
-  <h3>How TinyTrove Works</h3>
-  <div className="tt-how-grid">
-    <article>
-      <span>01</span>
-      <h4>Gather Gear</h4>
-      <p>Find gently used outfits and toys your kids have outgrown.</p>
-    </article>
-    <article>
-      <span>02</span>
-      <h4>Choose Your Path</h4>
-      <p>Sell them for cash or donate them instantly to a verified cause.</p>
-    </article>
-    <article>
-      <span>03</span>
-      <h4>Make an Impact</h4>
-      <p>Every item sold extends its life and supports children in need.</p>
-    </article>
-  </div>
-</section>
+            <h4>Hand over locally</h4>
+            <p>Meet nearby for pickup or delivery — simple, human, and transparent.</p>
+          </article>
+        </div>
+      </section>
 
 <section className="testimonials">
   <h3>Trusted by local parents</h3>
@@ -555,10 +537,10 @@ function Home() {
 
 <section className="tt-main-footer">
   <div>
-    <h4>TinyTrove</h4>
+    <h4>LetUsDonateUK</h4>
     <p>
-      Buy and donate pre-loved kids essentials while supporting verified local
-      causes.
+      A marketplace for selling or donating everyday items, with phone contact so members can arrange things quickly
+      and safely.
     </p>
   </div>
   <div>

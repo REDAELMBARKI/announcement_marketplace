@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
+import api from "../../../services/api";
 
 // This component allows admin to add a new charity along with its staff account
 export function Add_Charity() {
@@ -46,16 +47,10 @@ export function Add_Charity() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/api/charities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await api.post("/admin/charities", formData);
 
-      const data = await res.json();
-
-      if (data.status === "success") {
-        setStatus({ type: "success", message: data.message });
+      if (response.data.status === "success") {
+        setStatus({ type: "success", message: response.data.message });
         setFormData({
           charity_name: "",
           charity_address: "",
@@ -66,10 +61,11 @@ export function Add_Charity() {
           staff_password: "",
         });
       } else {
-        setStatus({ type: "error", message: data.message });
+        setStatus({ type: "error", message: response.data.message });
       }
-    } catch (err) {
-      setStatus({ type: "error", message: "Network error. Please try again." });
+    } catch (err: any) {
+      const message = err.response?.data?.message || "Network error. Please try again.";
+      setStatus({ type: "error", message: message });
     }
     setTimeout(() => setStatus(null), 4000);
   };

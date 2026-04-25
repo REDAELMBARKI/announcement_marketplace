@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\DomainUser;
-use App\Models\Donor;
-use App\Models\Role;
-use App\Models\CharityStaff;
+use App\Models\User;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -21,34 +19,39 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        //find user by email
-        $user = DomainUser::where('user_email', $request->email)->first();
+        // unified auth on users table
+        $user = User::where('email', $request->email)->first();
 
-        if ($user && Hash::check($request->password, $user->user_password)) {
-
-            $userData = $user->toArray();
-
-            //attach donor data
-            $donor = Donor::where('user_ID', $user->user_ID)->first();
-            if ($donor) {
-                $userData['donor'] = $donor;
+        if ($user && Hash::check($request->password, $user->password)) {
+            $avatarUrl = null;
+            if (! empty($user->avatar_path)) {
+                $avatarUrl = asset('storage/'.ltrim($user->avatar_path, '/'));
             }
 
-            //attach charity staff data
-            if ($user->role_id == 11) {
-                $charityStaff = CharityStaff::where('user_ID', $user->user_ID)->first();
-                if ($charityStaff) {
-                    $userData['charity_ID'] = $charityStaff->charity_ID;
-                }
-            }
+            $userData = [
+                'id' => $user->id,
+                'user_name' => $user->name,
+                'user_email' => $user->email,
+                'role_id' => $user->role_id,
+                'avatar_url' => $avatarUrl,
+            ];
+
+            $token = JWTAuth::fromUser($user);
 
             return response()->json([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'user' => $userData,
+                ],
                 'status' => 'success',
                 'user'   => $userData,
+                'token' => $token,
             ]);
         }
 
         return response()->json([
+            'success' => false,
             'status'  => 'error',
             'message' => 'Invalid credentials',
         ], 401);
@@ -64,40 +67,52 @@ class AuthController extends Controller
         ]);
 
         //manual duplicate check
-        if (DomainUser::where('user_email', $request->email)->exists()) {
+        if (User::where('email', $request->email)->exists()) {
             return response()->json([
+                'success' => false,
                 'status'  => 'error',
                 'message' => 'An account with this email already exists.',
             ], 409);
         }
 
-        //get donor role
-        $donorRole = Role::where('role_name', 'donor')->first();
-
-        // Create user
-        $user = DomainUser::create([
-            'user_name'     => $request->fullName,
-            'user_email'    => $request->email,
-            'user_password' => Hash::make($request->password),
-            'role_id'       => $donorRole->role_id,
+        // default role 10 = donor (frontend-compatible)
+        $user = User::create([
+            'name' => $request->fullName,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => 10,
         ]);
 
-        // creates donor record
-        Donor::create([
-            'user_ID' => $user->user_ID,
-            'donor_address' => null,
-        ]);
+        $userData = [
+            'id' => $user->id,
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'role_id' => $user->role_id,
+        ];
 
         return response()->json([
+            'success' => true,
+            'data' => $userData,
             'status' => 'success',
-            'user'   => $user,
+            'user'   => $userData,
         ]);
     }
 
     //logout
     public function logout()
     {
+        try {
+            JWTAuth::parseToken()->invalidate(true);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid token',
+            ], 401);
+        }
+
         return response()->json([
+            'success' => true,
+            'data' => null,
             'status' => 'success',
             'message' => 'Logged out successfully',
         ]);

@@ -8,7 +8,8 @@ export interface User {
 
 export interface Media {
   id: number;
-  file_path: string;
+  file_path?: string;
+  path?: string;
   url?: string;
   collection?: string;
   is_temporary: boolean;
@@ -49,8 +50,9 @@ export interface Product {
   currency: string;
   price_negotiable: boolean;
   pickup_address?: string;
+  contact_phone?: string | null;
   handover_method: 'pickup' | 'delivery' | 'both';
-  status: 'draft' | 'active' | 'reserved' | 'sold' | 'donated' | 'closed';
+  status: 'draft' | 'active' | 'sell' | 'donate' | 'reserved' | 'sold' | 'donated' | 'closed';
   condition: string;
   gender: string;
   age_range: string;

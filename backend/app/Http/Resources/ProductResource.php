@@ -26,6 +26,7 @@ class ProductResource extends JsonResource
             'currency' => $this->currency,
             'price_negotiable' => (bool) $this->price_negotiable,
             'pickup_address' => $this->pickup_address,
+            'contact_phone' => $this->contact_phone,
             'handover_method' => $this->handover_method,
             'status' => $this->status,
             'condition' => $this->condition,

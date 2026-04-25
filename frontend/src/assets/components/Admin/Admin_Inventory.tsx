@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import api from "../../../services/api";
 
 export function Admin_Inventory() {
   const [inventory, setInventory] = useState([]);
@@ -19,6 +20,25 @@ export function Admin_Inventory() {
   };
 
   const navigate = useNavigate();
+  const importantItemOptions = [
+    "shirt",
+    "t-shirt",
+    "trouser",
+    "jacket",
+    "jeans",
+    "dress",
+    "shoes",
+    "sneakers",
+    "bag",
+    "laptop",
+    "phone",
+    "book",
+    "furniture",
+    "toy",
+    "kitchen",
+    "sports",
+    "other",
+  ];
 
   useEffect(() => {
     const admin = localStorage.getItem("admin");
@@ -28,36 +48,35 @@ export function Admin_Inventory() {
     // }
   }, [navigate]);
 
-  // Fetch approved donations → inventory
+  // Fetch inventory from backend
   useEffect(() => {
-    fetch("http://localhost:8000/api/donations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          const approvedItems = [];
-
-          data.donations.forEach((donation) => {
-            if ((donation.donation_status || "").toLowerCase() === "approved") {
-              donation.items?.forEach((item) => {
-                approvedItems.push({
-                  inventory_ID: donation.donation_ID,
-                  donor_ID: donation.donor?.user_ID,
-                  item: item.item_name,
-                  category: item.item_category?.toLowerCase(),
-                  size: item.item_size || "N/A",
-                  image: item.item_image,
-                  donation_date: donation.donation_date,
-                });
-              });
-            }
-          });
-
-          setInventory(approvedItems);
-          setFilteredInventory(approvedItems);
+    const fetchInventory = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get("/admin/inventory");
+        if (response.data.status === "success") {
+          const items = response.data.inventory.map(item => ({
+            inventory_ID: item.id,
+            item: item.name,
+            category: item.category.toLowerCase(),
+            quantity: item.quantity,
+            condition: item.condition,
+            recommended_age: item.recommended_age,
+            gender: item.gender,
+            donation_date: item.created_at,
+            image: item.image_url
+          }));
+          setInventory(items);
+          setFilteredInventory(items);
         }
+      } catch (error) {
+        console.error("Error fetching inventory:", error);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+
+    fetchInventory();
   }, []);
 
   const handleFilterChange = (e) => {
@@ -76,6 +95,19 @@ export function Admin_Inventory() {
 
     setFilteredInventory(filtered);
   };
+
+  const categoryOptions = Array.from(
+    new Set(inventory.map((item) => item.category).filter(Boolean)),
+  ).sort();
+
+  const itemOptions = Array.from(
+    new Set([
+      ...importantItemOptions,
+      ...inventory
+        .map((item) => item.item?.toLowerCase()?.trim())
+        .filter(Boolean),
+    ]),
+  ).sort();
 
   const handleReset = () => {
     setFilters({ category: "", type: "" });
@@ -101,19 +133,20 @@ export function Admin_Inventory() {
           onChange={handleFilterChange}
         >
           <option value="">All Categories</option>
-          <option value="womens">Women's</option>
-          <option value="mens">Men's</option>
-          <option value="girls">Girls</option>
-          <option value="boys">Boys</option>
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
         </select>
 
         <select name="type" value={filters.type} onChange={handleFilterChange}>
           <option value="">All Items</option>
-          <option value="shirt">Shirt</option>
-          <option value="trouser">Trouser</option>
-          <option value="jacket">Jacket</option>
-          <option value="shoe">Shoes</option>
-          <option value="other">Other</option>
+          {itemOptions.map((itemType) => (
+            <option key={itemType} value={itemType}>
+              {itemType}
+            </option>
+          ))}
         </select>
 
         <button className="filter-button" onClick={handleReset}>
