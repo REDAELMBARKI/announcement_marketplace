@@ -36,6 +36,7 @@ backend/storage/framework/cache/data/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/bootstrap/cache/*.php
+backend/database/marketDB.sqlite
 
 # Optional root-level Laravel if ever added
 /storage/*.key
@@ -115,3 +116,4 @@ Thumbs.db
 *.pyc
 *.pyo
 *.log
+

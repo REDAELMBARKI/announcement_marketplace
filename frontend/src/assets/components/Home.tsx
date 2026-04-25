@@ -1,9 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { 
   Eye, 
   ChevronLeft, 
   ChevronRight, 
+  ArrowRight,
+  TrendingUp,
+  Zap,
+  Star,
+  ShieldCheck,
+  Mail,
+  Palette,
 } from "lucide-react";
 import {
   Shop as Store,
@@ -11,24 +18,117 @@ import {
   Heart,
   Bag as ShoppingBag,
   MapPoint as MapPin,
+  Gamepad,
+  TShirt,
+  Book,
+  Home2,
+  UserRounded,
+  Walking,
+  Box,
+  UsersGroupRounded,
 } from "@solar-icons/react";
-import TrendingCard from "./TrendingCard";
 import MarketplaceCard from "./MarketplaceCard";
+import { Product } from "./User/announcement/types";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
 
+interface User {
+  id: number;
+  name: string;
+  avatar?: string;
+}
+
+interface Address {
+  city: string;
+  district?: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon?: string | null;
+  thumbnail?: { url: string };
+  products_count?: number;
+}
+
+
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  reviewer?: User;
+}
+
+interface Stats {
+  total_products: number;
+  total_users: number;
+  total_donations: number;
+}
+
+interface HeroSlide {
+  id: number;
+  thumbnail?: any;
+  headline: string;
+  subline: string;
+  cta1_text: string;
+  cta1_link: string;
+  cta2_text: string;
+  cta2_link: string;
+}
+
+interface BannerStep {
+  num: string;
+  title: string;
+  description: string;
+}
+
+interface Banner {
+  id: number;
+  type: 'split' | 'simple';
+  title: string;
+  subtitle?: string;
+  thumbnail?: any;
+  badge_text?: string;
+  cta_text?: string;
+  cta_link?: string;
+  steps?: BannerStep[];
+}
+
+interface HomepageData {
+  stats: Stats;
+  featured_categories: Category[];
+  popular_products: Product[];
+  new_arrivals: Product[];
+  products_by_category: Record<number, Product[]>;
+  recent_reviews: Review[];
+  nearby_products: Product[];
+  free_items: Product[];
+  hero_sliders: HeroSlide[];
+  banners: Banner[];
+}
 
 function Home() {
   const { colors } = useTheme();
-  const [homepageData, setHomepageData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showMoreCategories, setShowMoreCategories] = useState(false);
-  const trendingScrollRef = useRef(null);
-  const marketScrollRef = useRef(null);
-  const donationCausesScrollRef = useRef(null);
-  const categoryRefs = useRef({});
+  const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Refs
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
+  const marketScrollRef = useRef<HTMLDivElement>(null);
+  const collectionsScrollRef = useRef<HTMLDivElement>(null);
+  const nearbyScrollRef = useRef<HTMLDivElement>(null);
+  const freeScrollRef = useRef<HTMLDivElement>(null);
+  const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Hero Slider State
+  const [activeSlide, setActiveSlide] = useState<number>(0);
+  const [slideProgress, setSlideProgress] = useState<number>(0);
+
+  // Tabs State
+  const [activeCategoryTab, setActiveCategoryTab] = useState<number | null>(null);
 
   // Fetch homepage data from API
   useEffect(() => {
@@ -36,11 +136,18 @@ function Home() {
       try {
         setLoading(true);
         const data = await homeApi.getHomepageData({});
-        setHomepageData(data);
+        setHomepageData(data as HomepageData);
+        if (data?.featured_categories?.length > 0) {
+          setActiveCategoryTab(data.featured_categories[0].id);
+        }
         setError(null);
-      } catch (err) {
-        console.error('Failed to fetch homepage data:', err);
-        setError('Failed to load data. Please try again later.');
+      } catch (err: any) {
+        console.error('Detailed fetch error:', err);
+        if (err.response) {
+          console.error('Response data:', err.response.data);
+          console.error('Response status:', err.response.status);
+        }
+        setError(`Failed to load data: ${err.message}. Check console for details.`);
       } finally {
         setLoading(false);
       }
@@ -49,94 +156,94 @@ function Home() {
     fetchHomepageData();
   }, []);
 
-  const scrollTrending = (direction) => {
+  // Hero Auto-advance
+  useEffect(() => {
+    const duration = 5000;
+    const interval = 100;
+    const step = (interval / duration) * 100;
+    const slidesCount = homepageData?.hero_sliders?.length || 0;
+
+    if (slidesCount === 0) return;
+
+    const timer = setInterval(() => {
+      setSlideProgress(prev => {
+        if (prev >= 100) {
+          setActiveSlide(s => (s + 1) % slidesCount);
+          return 0;
+        }
+        return prev + step;
+      });
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [activeSlide, homepageData?.hero_sliders]);
+
+  const scrollTrending = (direction: 'left' | 'right') => {
     const container = trendingScrollRef.current;
     if (!container) return;
-    
-    const scrollAmount = 300;
-    if (direction === 'left') {
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else if (direction === 'right') {
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollDonationCauses = (direction) => {
-    const container = donationCausesScrollRef.current;
-    if (!container) return;
-    
-    const scrollAmount = 300;
-    if (direction === 'left') {
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else if (direction === 'right') {
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const scrollCategory = (categoryId, direction) => {
+  const scrollCategory = (categoryId: number, direction: 'left' | 'right') => {
     const container = categoryRefs.current[categoryId];
     if (!container) return;
-    
-    const scrollAmount = 300;
-    if (direction === 'left') {
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else if (direction === 'right') {
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollMarket = (direction) => {
+  const getImageUrl = (media: any) => {
+    if (!media) return null;
+    if (media.url && media.url.startsWith('http')) return media.url;
+    return `http://127.0.0.1:8000/storage/${media.file_path?.replace("public/", "")}`;
+  };
+
+  const scrollMarket = (direction: 'left' | 'right') => {
     const container = marketScrollRef.current;
     if (!container) return;
-    
-    const scrollAmount = 300;
-    if (direction === 'left') {
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else if (direction === 'right') {
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const getCategoryColor = (categoryId) => {
-    const colors = [
-      '#667eea', '#f093fb', '#10b981', '#f59e0b', 
-      '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'
-    ];
-    return colors[categoryId % colors.length] || '#667eea';
+  const scrollNearby = (direction: 'left' | 'right') => {
+    const container = nearbyScrollRef.current;
+    if (!container) return;
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const getCategoryEmoji = (categoryName) => {
-    const emojiMap = {
-      'Jouets 🧸': '🧸',
-      'Vêtements 👕': '👕', 
-      'Livres 📚': '📚',
-      'Mobilier 🛏️': '🛏️',
-      'Bébé 🍼': '🍼',
-      'Jeux 🎮': '🎮',
-      'Chaussures 👟': '👟',
-      'Activités 🎨': '🎨'
-    };
-    return emojiMap[categoryName] || '📦';
+  const scrollFree = (direction: 'left' | 'right') => {
+    const container = freeScrollRef.current;
+    if (!container) return;
+    const scrollAmount = 400;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const getCardCountClass = (count) => {
-    if (count === 1) return 'single-card';
-    if (count >= 2 && count <= 4) return 'few-cards';
-    return 'many-cards';
+  const getCategoryColor = (categoryId: number) => {
+    const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', colors.error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
+    return catColors[categoryId % catColors.length] || colors.primary;
   };
 
-  // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState({ days: 3, hours: 0, minutes: 0, seconds: 0 });
+  const getCategoryIcon = (categoryName: string, size = 20) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('jouet') || name.includes('toy')) return <Gamepad size={size} />;
+    if (name.includes('vêtement') || name.includes('cloth')) return <TShirt size={size} />;
+    if (name.includes('livre') || name.includes('book')) return <Book size={size} />;
+    if (name.includes('mobilier') || name.includes('furniture')) return <Home2 size={size} />;
+    if (name.includes('bébé') || name.includes('baby')) return <UserRounded size={size} />;
+    if (name.includes('jeu') || name.includes('game')) return <Gamepad size={size} />;
+    if (name.includes('chaussure') || name.includes('shoe')) return <Walking size={size} />;
+    if (name.includes('activité') || name.includes('activit') || name.includes('art')) return <Palette size={size} />;
+    return <Box size={size} />;
+  };
 
-  // Countdown timer effect
+  // Countdown timer
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 3, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         const totalSeconds = prev.days * 86400 + prev.hours * 3600 + prev.minutes * 60 + prev.seconds - 1;
-        if (totalSeconds <= 0) {
-          clearInterval(timer);
-          return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-        }
+        if (totalSeconds <= 0) { clearInterval(timer); return { days: 0, hours: 0, minutes: 0, seconds: 0 }; }
         return {
           days: Math.floor(totalSeconds / 86400),
           hours: Math.floor((totalSeconds % 86400) / 3600),
@@ -145,16 +252,39 @@ function Home() {
         };
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  
+  const popularProducts = useMemo<Product[]>(() => 
+    homepageData?.popular_products || [], 
+    [homepageData?.popular_products]
+  );
+
+  const newArrivals = useMemo<Product[]>(() => 
+    homepageData?.new_arrivals || [], 
+    [homepageData?.new_arrivals]
+  );
+
+  const nearbyProducts = useMemo<Product[]>(() => 
+    homepageData?.nearby_products || [], 
+    [homepageData?.nearby_products]
+  );
+
+  const freeItems = useMemo<Product[]>(() => 
+    homepageData?.free_items || [], 
+    [homepageData?.free_items]
+  );
+
+  const productsByCategory = useMemo<Record<number, Product[]>>(() => {
+    return homepageData?.products_by_category || {};
+  }, [homepageData?.products_by_category]);
+
   if (loading) {
     return (
-      <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
-        <div className="loading-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: colors.textSecondary }}>
-          <div className="loading-spinner">Loading...</div>
+      <main className="home loading-state" style={{ backgroundColor: colors.bgPrimary }}>
+        <div className="loading-content">
+          <div className="pulse-logo">TT</div>
+          <p style={{ color: colors.textSecondary }}>Preparing treasures...</p>
         </div>
       </main>
     );
@@ -162,430 +292,440 @@ function Home() {
 
   if (error) {
     return (
-      <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
-        <div className="error-container" style={{ textAlign: 'center', padding: '100px', color: colors.danger }}>
-          <div className="error-message">{error}</div>
-          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: colors.primary, color: colors.bgSecondary, border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Try Again</button>
+      <main className="home error-state" style={{ backgroundColor: colors.bgPrimary }}>
+        <div className="error-box">
+          <h3>Oops!</h3>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} style={{ backgroundColor: colors.coral }}>Try Again</button>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="home" id="home" style={{ backgroundColor: colors.bgPrimary }}>
-      <section className="hero_v2" style={{ backgroundColor: colors.bgSecondary }}>
-        <div className="hero_copy">
-          <p className="eyebrow" style={{ color: colors.coral }}>PRE-LOVED KIDS CLOTHES</p>
-          <h1 style={{ color: colors.textPrimary }}>
-            Find Great Deals.
-            <br />
-            Help Local Families.
-          </h1>
-          <p className="tagline" style={{ color: colors.textSecondary }}>
-            Buy affordable kids clothes or donate to families in need.
-          </p>
-          <div className="hero_actions">
-            <Link to="/marketplace" className="hero_primary" style={{ backgroundColor: colors.coral, color: colors.bgSecondary }}>
-              Browse Items
-            </Link>
-            <Link to="/donate" className="hero_secondary" style={{ backgroundColor: colors.bgTertiary, color: colors.textPrimary }}>
-              Donate Now
-            </Link>
-          </div>
-        </div>
-        <div className="hero_visual">
-          <div className="floating-cards">
-            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>👕</div>
-            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>👟</div>
-            <div className="floating-card" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>🧸</div>
-          </div>
-          <div className="hero_image" style={{ backgroundColor: colors.bgTertiary }}>
-            <span>👨‍👩‍👧‍👦</span>
-          </div>
-          <div className="hero_stats" style={{ backgroundColor: colors.bgSecondary, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <div className="hero_stat">
-              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
-              <span style={{ color: colors.textSecondary }}>Items Available</span>
-            </div>
-            <div className="hero_stat">
-              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
-              <span style={{ color: colors.textSecondary }}>Active Users</span>
-            </div>
-            <div className="hero_stat">
-              <strong style={{ color: colors.textPrimary }}>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
-              <span style={{ color: colors.textSecondary }}>Donations</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
+    <main className="home redesign" style={{ 
+      backgroundColor: colors.bgPrimary,
+      '--primary': colors.primary,
+      '--coral': colors.coral,
+      '--bgSecondary': colors.bgSecondary,
+      '--bgTertiary': colors.bgTertiary,
+      '--textPrimary': colors.textPrimary,
+      '--textSecondary': colors.textSecondary,
+      '--border': colors.border,
+      '--shadow': colors.shadow || 'rgba(0,0,0,0.05)'
+    } as React.CSSProperties}>
       
-      <section className="season_banner" style={{ backgroundColor: colors.bgTertiary, borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
-        <span className="season_icon" aria-hidden="true" style={{ fontSize: '32px' }}>
-          ⭐
-        </span>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ color: colors.textPrimary, margin: 0 }}>Summer Clothing Drive - ends July 31</h3>
-          <p style={{ color: colors.textSecondary, margin: '5px 0' }}>Donate summer essentials for kids heading back to school.</p>
-          <div className="countdown-timer" style={{ fontWeight: '700', color: colors.coral }}>
-            {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
+      {/* Sticky Season Banner */}
+      <div className="sticky-season-wrap">
+        <div className="season-pill-banner" style={{ backgroundColor: colors.bgSecondary }}>
+          <span className="badge">Limited</span>
+          <p>Summer Drive: {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')} remaining</p>
+          <Link to="/donate" style={{ color: colors.coral }}>Join Now <ArrowRight size={14} /></Link>
+        </div>
+      </div>
+
+      {/* Hero Slider */}
+      <section className="hero-slider">
+        <div className="slides-container">
+          {homepageData?.hero_sliders?.map((slide, index) => (
+            <div 
+              key={slide.id} 
+              className={`slide ${index === activeSlide ? 'active' : ''}`}
+            >
+              <img src={getImageUrl(slide.thumbnail) || ''} alt={slide.headline} className="slide-image" />
+              <div className="slide-scrim"></div>
+              <div className="slide-content">
+                <h1 className="editorial-title">{slide.headline}</h1>
+                <p className="slide-subline">{slide.subline}</p>
+                <div className="slide-actions">
+                  {slide.cta1_text && <Link to={slide.cta1_link} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1_text}</Link>}
+                  {slide.cta2_text && <Link to={slide.cta2_link} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2_text}</Link>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="slider-nav">
+          <div className="slider-dots">
+            {homepageData?.hero_sliders?.map((_, i) => (
+              <button 
+                key={i} 
+                className={`dot ${i === activeSlide ? 'active' : ''}`} 
+                onClick={() => { setActiveSlide(i); setSlideProgress(0); }}
+                style={{ backgroundColor: i === activeSlide ? colors.coral : 'rgba(255,255,255,0.5)' }}
+              />
+            ))}
+          </div>
+          <div className="slider-progress-bg">
+            <div className="slider-progress-bar" style={{ width: `${slideProgress}%`, backgroundColor: colors.coral }}></div>
           </div>
         </div>
-        <Link to="/sign_up" style={{ padding: '10px 20px', backgroundColor: colors.coral, color: colors.bgSecondary, borderRadius: '8px', textDecoration: 'none', fontWeight: '700' }}>Donate now</Link>
       </section>
 
-      {homepageData?.featured_categories?.map((category) => (
-        <section key={category.id} className="category-section">
-          <div className="section-header">
-            <div className="category-title">
-              <span className="category-icon">{category.icon}</span>
-              <h3>{category.name}</h3>
+      {/* Stats Band */}
+      <div className="stats-band" style={{ backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}` }}>
+        <div className="stats-container">
+          <div className="stat-item">
+            <Box size={24} iconContext={{ color: colors.coral }} />
+            <div>
+              <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
+              <span>Items Listed</span>
             </div>
-            <Link to={`/category/${category.slug}`} className="see-all-link">
-              See all →
-            </Link>
           </div>
-          <div className="scroll-container">
-            <button 
-              className="scroll-btn left" 
-              onClick={() => scrollCategory(category.id, 'left')}
-              aria-label="Scroll left"
-            >
-              <ChevronLeft size={20} strokeWidth={2} />
-            </button>
-            <div className="category-scroll" ref={el => categoryRefs.current[category.id] = el}>
-              {(homepageData?.products_by_category?.[category.id]?.length >= 3 ? homepageData?.products_by_category?.[category.id] : homepageData?.products_by_category?.[category.id]?.slice(0, 3))?.map((item) => (
-                <div key={item.id} className="category-product-card">
-                  <div className="product-header">
-                    <div className="user-avatar">
-                      <img src={item.user?.avatar || 'https://picsum.photos/seed/user/30/30.jpg'} alt={item.user?.name} />
-                    </div>
-                    <div className="user-details">
-                      <span className="username">{item.user?.name || 'Unknown'}</span>
-                      <span className="time-posted">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently'}</span>
-                    </div>
-                  </div>
-                  <div className="product-image">
-                    {item.thumbnail?.url ? (
-                      <img src={item.thumbnail.url} alt={item.title} />
-                    ) : (
-                      <div>??</div>
-                    )}
-                  </div>
-                  <div className="product-details">
-                    <div className="location-line">
-                      <MapPin size={12} weight="BoldDuotone" />
-                      <span>{item.addresses?.[0]?.city || 'Unknown'}, {item.addresses?.[0]?.district || 'Unknown'}</span>
-                    </div>
-                    <h4 className="product-title">{item.title}</h4>
-                    <div className="tags-row">
-                      {item.condition && (
-                        <span className="tag">{item.condition}</span>
-                      )}
-                      {item.age_range && (
-                        <span className="tag">{item.age_range}</span>
-                      )}
-                    </div>
-                    <div className="price-section">
-                      {item.price ? (
-                        <span className="price-tag">£{item.price}</span>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Gift size={16} weight="BoldDuotone" />
-                          <span className="free-tag">FREE</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <div className="stat-item">
+            <UsersGroupRounded size={24} iconContext={{ color: colors.coral }} />
+            <div>
+              <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
+              <span>Active Parents</span>
             </div>
-            <button 
-              className="scroll-btn right" 
-              onClick={() => scrollCategory(category.id, 'right')}
-              aria-label="Scroll right"
-            >
-              <ChevronRight size={20} strokeWidth={2} />
-            </button>
           </div>
-        </section>
-      ))}
-
-      <section className="collections-section">
-        <div className="section-header">
-          <p className="eyebrow">FEATURED COLLECTIONS</p>
-          <h3>Browse by category</h3>
+          <div className="stat-item">
+            <Heart size={24} iconContext={{ color: colors.coral }} />
+            <div>
+              <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
+              <span>Donations</span>
+            </div>
+          </div>
         </div>
-        <div className="collections-grid">
-          {homepageData?.featured_categories?.slice(0, 8)?.map((category) => (
-            <Link key={category.id} to={`/category/${category.slug}`} className="collection-card">
-              <div className="collection-image" style={{ background: `linear-gradient(135deg, ${getCategoryColor(category.id)} 0%, ${getCategoryColor(category.id, 0.8)} 100%)` }}>
-                <span className="category-emoji">{getCategoryEmoji(category.name)}</span>
-              </div>
-              <div className="collection-content">
-                <h4>{category.name}</h4>
-                <p>Browse {category.name} items</p>
-                <div className="collection-meta">
-                  <span>{category.products_count || 0} items</span>
+      </div>
+
+      {/* Shop by Category Tabs */}
+      <section className="shop-by-tabs-section tt-container">
+        <div className="section-header-editorial">
+          <h2 className="editorial-title">Shop by Category</h2>
+          <p>Find exactly what they need, sorted by category.</p>
+        </div>
+
+        <div className="tabs-wrapper">
+          <div className="pill-tabs no-scrollbar">
+            {homepageData?.featured_categories?.map((cat) => (
+              <button 
+                key={cat.id}
+                className={`pill-tab ${activeCategoryTab === cat.id ? 'active' : ''}`}
+                onClick={() => setActiveCategoryTab(cat.id)}
+                style={{ '--active-color': colors.coral } as React.CSSProperties}
+              >
+                <span className="tab-emoji">{getCategoryIcon(cat.name)}</span>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tab-content-area">
+          {homepageData?.featured_categories?.map((cat) => (
+            <div 
+              key={cat.id} 
+              className={`tab-pane ${activeCategoryTab === cat.id ? 'active' : ''}`}
+            >
+              <div className="scroll-container no-scrollbar">
+                <button className="scroll-btn left" onClick={() => scrollCategory(cat.id, 'left')}><ChevronLeft size={20} /></button>
+                <div className="category-scroll-row" ref={el => categoryRefs.current[cat.id] = el}>
+                  {productsByCategory[cat.id]?.map((product) => (
+                    <div key={product.id} className="home-card-wrapper">
+                      <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                    </div>
+                  ))}
+                  <Link to={`/category/${cat.slug}`} className="view-more-card">
+                    <div className="view-more-inner">
+                      <div className="icon-circle"><ArrowRight /></div>
+                      <span>View all {cat.name}</span>
+                    </div>
+                  </Link>
                 </div>
+                <button className="scroll-btn right" onClick={() => scrollCategory(cat.id, 'right')}><ChevronRight size={20} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Collections Grid */}
+      <section className="collections-grid-section tt-container">
+        <div className="section-header-editorial">
+          <h2 className="editorial-title">Browse Collections</h2>
+          <p>Explore our curated selections for every stage.</p>
+        </div>
+        <div className="collections-grid-redesign">
+          {homepageData?.featured_categories?.slice(0, 8).map((cat) => (
+            <Link key={cat.id} to={`/category/${cat.slug}`} className="collection-tile">
+              <div className="tile-bg-wrap">
+                {cat.thumbnail?.url ? (
+                  <img src={cat.thumbnail.url} alt={cat.name} className="tile-image" />
+                ) : (
+                  <div className="tile-bg" style={{ background: `linear-gradient(135deg, ${getCategoryColor(cat.id)} 0%, ${getCategoryColor(cat.id)}cc 100%)` }}>
+                    <span className="tile-emoji">{getCategoryIcon(cat.name, 32)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="tile-info">
+                <h4>{cat.name}</h4>
+                <span>{cat.products_count || 0} treasures</span>
               </div>
             </Link>
           ))}
         </div>
-        {homepageData?.featured_categories?.length > 8 && (
-          <button className="show-more-btn" onClick={() => setShowMoreCategories(!showMoreCategories)}>
-            {showMoreCategories ? 'Show less' : 'Show more categories'}
-          </button>
-        )}
       </section>
 
-      <section className="trending-section">
-        <div className="section-header">
+      {/* Trending Now */}
+      <section className="trending-row-section tt-container">
+        <div className="section-header-editorial with-nav">
           <div>
-            <p className="eyebrow">TRENDING NOW</p>
-            <h3>Popular this week</h3>
+            <h2 className="editorial-title">Trending Now</h2>
+            <p>The most loved items in our community this week.</p>
           </div>
-          {homepageData?.popular_products?.length > 4 && (
-            <div className="scroll-controls">
-              <button 
-                className="scroll-btn left" 
-                onClick={() => scrollTrending('left')}
-                aria-label="Scroll left"
-              >
-                <ChevronLeft size={20} strokeWidth={2} />
-              </button>
-              <button 
-                className="scroll-btn right" 
-                onClick={() => scrollTrending('right')}
-                aria-label="Scroll right"
-              >
-                <ChevronRight size={20} strokeWidth={2} />
-              </button>
-            </div>
-          )}
+          <div className="row-nav">
+            <button onClick={() => scrollTrending('left')}><ChevronLeft /></button>
+            <button onClick={() => scrollTrending('right')}><ChevronRight /></button>
+          </div>
         </div>
-        <div className="scroll-container">
-          <div className={`trending-scroll ${getCardCountClass(homepageData?.popular_products?.length || 0)}`} ref={trendingScrollRef}>
-            {homepageData?.popular_products?.map((item) => (
-              <TrendingCard key={item.id} item={{
-                id: item.id,
-                title: item.title,
-                price: item.price,
-                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
-                is_boosted: item.is_boosted || false,
-                city: item.addresses?.[0]?.city || 'Unknown',
-                district: item.addresses?.[0]?.district || 'Unknown',
-                condition: item.condition || 'Good',
-                age_range: item.age_range || 'Unknown',
-                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
-                image: item.thumbnail?.url || '??',
-                tone: 'blue',
-                likes: item.favorites_count || 0,
-                seller: {
-                  name: item.user?.name || 'Unknown',
-                  avatar: '??'
-                }
-              }} />
+        <div className="scroll-container no-scrollbar">
+          <div className="trending-scroll-row" ref={trendingScrollRef}>
+            {popularProducts.map((product) => (
+              <div key={product.id} className="home-card-wrapper">
+                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="donation-causes-section">
-        <div className="section-header">
-          <p className="eyebrow">URGENT DONATION CAUSES</p>
-          <h3>Support families in need</h3>
-        </div>
-        <div className="scroll-container">
-          <button 
-            className="scroll-btn left" 
-            onClick={() => scrollDonationCauses('left')}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={20} strokeWidth={2} />
-          </button>
-          <div className="donation-causes-scroll" ref={donationCausesScrollRef}>
-            {(homepageData?.donation_causes?.length >= 3 ? homepageData?.donation_causes : homepageData?.donation_causes?.slice(0, 3))?.map((cause) => {
-              const daysAgo = Math.floor((Date.now() - new Date(cause.created_at)) / (1000 * 60 * 60 * 24));
-              const urgencyColor = daysAgo <= 1 ? 'green' : daysAgo <= 4 ? 'yellow' : 'red';
-              
-              return (
-                <div key={cause.id} className="donation-cause-card">
-                  <div className="cause-image">
-                    {cause.thumbnail?.url ? (
-                      <img src={cause.thumbnail.url} alt={cause.title} />
-                    ) : (
-                      <div>??</div>
-                    )}
-                  </div>
-                  <div className="cause-details">
-                    <h4>{cause.title}</h4>
-                    <div className="cause-location">
-                      <MapPin size={12} weight="BoldDuotone" />
-                      <span>{cause.addresses?.[0]?.city || 'Unknown'}, {cause.addresses?.[0]?.district || 'Unknown'}</span>
-                    </div>
-                    <div className="cause-time">
-                      Posted {new Date(cause.created_at).toLocaleDateString()}
-                      <span className={`urgency-indicator ${urgencyColor}`}></span>
-                    </div>
-                    <div className="cause-stats">
-                      <span>{cause.favorites_count || 0} interested</span>
-                      <span>{cause.views_count || 0} views</span>
-                    </div>
-                    <button className="support-btn">Support</button>
-                  </div>
+      {/* Dynamic Banners Section */}
+      {homepageData?.banners?.map((banner) => (
+        <section key={banner.id} className={`banner-section ${banner.type}-banner`} style={{ backgroundColor: colors.bgTertiary, padding: '60px 0' }}>
+          <div className="tt-container">
+            {banner.type === 'split' ? (
+              <div className="editorial-split">
+                <div className="split-image">
+                  {banner.thumbnail && <img src={getImageUrl(banner.thumbnail) || ''} alt={banner.title} />}
+                  {banner.badge_text && <div className="floating-badge" style={{ backgroundColor: colors.coral }}>{banner.badge_text}</div>}
                 </div>
-              );
-            })}
+                <div className="split-content">
+                  <h2 className="editorial-title">{banner.title}</h2>
+                  {banner.subtitle && <p className="banner-subtitle">{banner.subtitle}</p>}
+                  {banner.steps && (
+                    <div className="steps-list">
+                      {banner.steps.map((step, idx) => (
+                        <div key={idx} className="step-item">
+                          <span className="step-num">{step.num}</span>
+                          <div>
+                            <h4>{step.title}</h4>
+                            <p>{step.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {banner.cta_text && (
+                    <Link to={banner.cta_link || '#'} className="btn-text">
+                      {banner.cta_text} <ArrowRight size={16} />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="simple-banner-content" style={{ textAlign: 'center' }}>
+                <div className="simple-banner-inner" style={{ 
+                  backgroundImage: banner.thumbnail ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${getImageUrl(banner.thumbnail)})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  padding: '80px 40px',
+                  borderRadius: '24px',
+                  color: '#fff'
+                }}>
+                  {banner.badge_text && <span className="banner-badge" style={{ backgroundColor: colors.coral, padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px', display: 'inline-block' }}>{banner.badge_text}</span>}
+                  <h2 className="editorial-title" style={{ color: '#fff', marginBottom: '16px' }}>{banner.title}</h2>
+                  {banner.subtitle && <p style={{ fontSize: '18px', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>{banner.subtitle}</p>}
+                  {banner.cta_text && (
+                    <Link to={banner.cta_link || '#'} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff', padding: '12px 32px', borderRadius: '12px', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
+                      {banner.cta_text}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <button 
-            className="scroll-btn right" 
-            onClick={() => scrollDonationCauses('right')}
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={20} strokeWidth={2} />
-          </button>
-        </div>
-      </section>
+        </section>
+      ))}
 
-      <section className="tt-section dark_section">
-        <div className="tt-section-head market_head">
+      {/* New Arrivals */}
+      <section className="trending-row-section tt-container">
+        <div className="section-header-editorial with-nav">
           <div>
-            <p className="eyebrow">MARKETPLACE</p>
-            <h3>New arrivals</h3>
+            <h2 className="editorial-title">New Arrivals</h2>
+            <p>Fresh finds uploaded by parents just now.</p>
           </div>
-          <Link to="/add_announcement">See all</Link>
+          <div className="row-nav">
+            <button onClick={() => scrollMarket('left')}><ChevronLeft /></button>
+            <button onClick={() => scrollMarket('right')}><ChevronRight /></button>
+          </div>
         </div>
-        <div className="scroll-container">
-          <button 
-            className="scroll-btn left" 
-            onClick={() => scrollMarket('left')}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={20} strokeWidth={2} />
-          </button>
-          <div className="market_grid_v2" ref={marketScrollRef}>
-            {(homepageData?.new_arrivals?.length >= 3 ? homepageData?.new_arrivals : homepageData?.new_arrivals?.slice(0, 3))?.map((item) => (
-              <MarketplaceCard key={item.id} item={{
-                id: item.id,
-                title: item.title,
-                price: item.price,
-                timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recently',
-                is_boosted: item.is_boosted || false,
-                city: item.addresses?.[0]?.city || 'Unknown',
-                district: item.addresses?.[0]?.district || 'Unknown',
-                condition: item.condition || 'Good',
-                age_range: item.age_range || 'Unknown',
-                badge: item.views_count > 100 ? 'TRENDING' : 'NEW',
-                image: item.thumbnail?.url || '??',
-                tone: 'blue',
-                likes: item.favorites_count || 0,
-                seller: {
-                  name: item.user?.name || 'Unknown',
-                  avatar: '??'
-                }
-              }} />
+        <div className="scroll-container no-scrollbar">
+          <div className="trending-scroll-row" ref={marketScrollRef}>
+            {newArrivals.map((product) => (
+              <div key={product.id} className="home-card-wrapper">
+                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+              </div>
             ))}
           </div>
-          <button 
-            className="scroll-btn right" 
-            onClick={() => scrollMarket('right')}
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={20} strokeWidth={2} />
-          </button>
         </div>
       </section>
 
-      <section className="tt-how-it-works upgraded">
-        <h3>How TinyTrove Works</h3>
-        <div className="tt-how-grid">
-          <article>
-            <span>01</span>
-            <h4>Gather Gear</h4>
-            <p>Find gently used outfits and toys your kids have outgrown.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h4>Choose Your Path</h4>
-            <p>Sell them for cash or donate them instantly to a verified cause.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h4>Make an Impact</h4>
-            <p>Every item sold extends its life and supports children in need.</p>
-    </article>
-  </div>
-</section>
+      {/* Nearby Products */}
+      {nearbyProducts.length > 0 && (
+        <section className="trending-row-section tt-container">
+          <div className="section-header-editorial with-nav">
+            <div>
+              <h2 className="editorial-title">Nearby Treasures</h2>
+              <p>Find great deals from parents in your city.</p>
+            </div>
+            <div className="row-nav">
+              <button onClick={() => scrollNearby('left')}><ChevronLeft /></button>
+              <button onClick={() => scrollNearby('right')}><ChevronRight /></button>
+            </div>
+          </div>
+          <div className="scroll-container no-scrollbar">
+            <div className="trending-scroll-row" ref={nearbyScrollRef}>
+              {nearbyProducts.map((product) => (
+                <div key={product.id} className="home-card-wrapper">
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-<section className="tt-how-it-works upgraded">
-  <h3>How TinyTrove Works</h3>
-  <div className="tt-how-grid">
-    <article>
-      <span>01</span>
-      <h4>Gather Gear</h4>
-      <p>Find gently used outfits and toys your kids have outgrown.</p>
-    </article>
-    <article>
-      <span>02</span>
-      <h4>Choose Your Path</h4>
-      <p>Sell them for cash or donate them instantly to a verified cause.</p>
-    </article>
-    <article>
-      <span>03</span>
-      <h4>Make an Impact</h4>
-      <p>Every item sold extends its life and supports children in need.</p>
-    </article>
-  </div>
-</section>
+      {/* Free Items */}
+      {freeItems.length > 0 && (
+        <section className="trending-row-section tt-container">
+          <div className="section-header-editorial with-nav">
+            <div>
+              <h2 className="editorial-title">Free for All</h2>
+              <p>Generous donations looking for a new home.</p>
+            </div>
+            <div className="row-nav">
+              <button onClick={() => scrollFree('left')}><ChevronLeft /></button>
+              <button onClick={() => scrollFree('right')}><ChevronRight /></button>
+            </div>
+          </div>
+          <div className="scroll-container no-scrollbar">
+            <div className="trending-scroll-row" ref={freeScrollRef}>
+              {freeItems.map((product) => (
+                <div key={product.id} className="home-card-wrapper">
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-<section className="testimonials">
-  <h3>Trusted by local parents</h3>
-  <div className="testimonials-grid">
-    {homepageData?.recent_reviews?.map((review) => (
-      <article className="testimonial-card" key={review.id}>
-        <div className="testimonial-quote-icon">??</div>
-        <p>"{review.comment || 'Great product!'}</p>
-        <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
-        <div className="rating">{'?'.repeat(review.rating || 5)}</div>
-      </article>
-    ))}
-  </div>
-</section>
+      {/* Trust & Safety Band */}
+      <section className="trust-band" style={{ backgroundColor: colors.bgSecondary }}>
+        <div className="tt-container">
+          <div className="trust-grid">
+            <div className="trust-item">
+              <ShieldCheck size={32} color={colors.coral} />
+              <h4>Secure Payments</h4>
+              <p>Your transactions are protected with industry-leading encryption.</p>
+            </div>
+            <div className="trust-item">
+              <Star size={32} color={colors.coral} />
+              <h4>Quality Checked</h4>
+              <p>Verified sellers and community ratings ensure high quality.</p>
+            </div>
+            <div className="trust-item">
+              <Gift size={32} color={colors.coral} />
+              <h4>Giving Back</h4>
+              <p>Every donation directly supports local verified charities.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section className="tt-main-footer">
-  <div>
-    <h4>TinyTrove</h4>
-    <p>
-      Buy and donate pre-loved kids essentials while supporting verified local
-      causes.
-    </p>
-  </div>
-  <div>
-    <h5>Quick Links</h5>
-    <ul>
-      <li>
-        <Link to="/our_partners">About Us</Link>
-      </li>
-      <li>
-        <Link to="/faq">How to Donate</Link>
-      </li>
-      <li>
-        <Link to="/faq">Seller Fees</Link>
-      </li>
-      <li>
-        <Link to="/faq">Safety</Link>
-      </li>
-    </ul>
-  </div>
-  <div>
-    <h5>Trusted Badges</h5>
-    <p>?? Secure Payments</p>
-    <p>?? Nonprofit Verified</p>
-    <p>?? App Store / Google Play</p>
-    <input type="email" placeholder="Join our newsletter" aria-label="Newsletter email" />
-  </div>
-</section>
+      {/* Testimonials */}
+      <section className="testimonials-redesign tt-container">
+        <div className="section-header-editorial centered">
+          <h2 className="editorial-title">Trust Reviews</h2>
+          <p>Join thousands of families making a difference.</p>
+        </div>
+        <div className="testimonials-grid-redesign">
+          {homepageData?.recent_reviews?.slice(0, 3).map((review) => (
+            <div key={review.id} className="testimonial-editorial-card" style={{ backgroundColor: colors.bgSecondary }}>
+              <div className="rating-stars">
+                {[...Array(review.rating || 5)].map((_, i) => <Star key={i} size={14} fill={colors.coral} color={colors.coral} />)}
+              </div>
+              <p>"{review.comment || 'Great experience with this community. Found perfect outfits for my toddler!'}"</p>
+              <div className="reviewer">
+                <img src={review.reviewer?.avatar || `https://ui-avatars.com/api/?name=${review.reviewer?.name || 'U'}`} alt={review.reviewer?.name} />
+                <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Newsletter */}
+      <section className="newsletter-editorial">
+        <div className="tt-container">
+          <div className="newsletter-box" style={{ backgroundColor: colors.primary, color: colors.bgPrimary }}>
+            <div className="newsletter-content">
+              <h2 className="editorial-title" style={{ color: colors.bgPrimary }}>Join the TinyTrove Newsletter</h2>
+              <p>Get weekly curated treasures and impact reports delivered to your inbox.</p>
+              <form className="newsletter-form">
+                <div className="input-with-icon">
+                  <Mail size={18} />
+                  <input type="email" placeholder="Your email address" />
+                </div>
+                <button type="submit" style={{ backgroundColor: colors.coral, color: colors.bgPrimary }}>Subscribe</button>
+              </form>
+            </div>
+            <div className="newsletter-decor">
+              <ShoppingBag size={120} opacity={0.1} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Redesigned Footer */}
+      <footer className="footer-redesign" style={{ backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.border}` }}>
+        <div className="tt-container">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <h3 className="editorial-title">TinyTrove</h3>
+              <p>The marketplace for pre-loved kids' gear. Build a sustainable future for the next generation.</p>
+            </div>
+            <div className="footer-links">
+              <h4>Explore</h4>
+              <Link to="/marketplace">Marketplace</Link>
+              <Link to="/donate">Donations</Link>
+              <Link to="/categories">Categories</Link>
+            </div>
+            <div className="footer-links">
+              <h4>Support</h4>
+              <Link to="/faq">Help Center</Link>
+              <Link to="/how-it-works">How it Works</Link>
+              <Link to="/safety">Safety</Link>
+            </div>
+            <div className="footer-links">
+              <h4>Connect</h4>
+              <Link to="/about">About Us</Link>
+              <Link to="/partners">Charity Partners</Link>
+              <Link to="/contact">Contact</Link>
+            </div>
+          </div>
+          <div className="footer-bottom" style={{ borderTop: `1px solid ${colors.border}` }}>
+            <p>&copy; 2026 TinyTrove UK. All rights reserved.</p>
+            <div className="footer-legal">
+              <Link to="/terms">Terms</Link>
+              <Link to="/privacy">Privacy</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+
     </main>
   );
 }

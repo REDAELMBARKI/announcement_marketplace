@@ -20,7 +20,7 @@ class ProductFactory extends Factory
     {
         $listingModes = ['sell', 'donate'];
         $listingTypes = ['single', 'collection'];
-        $statuses = ['active', 'reserved', 'sold', 'donated'];
+        $statuses = ['sell', 'donate', 'reserved', 'sold', 'donated'];
         $conditions = ['new', 'like_new', 'good', 'fair'];
         $genders = ['boy', 'girl', 'unisex'];
         $ageRanges = ['0-3m', '3-6m', '6-12m', '1-2y', '2-3y', '3-5y', '5-7y', '7-10y', '10-12y'];
@@ -85,7 +85,7 @@ class ProductFactory extends Factory
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'active',
+            'status' => $attributes['listing_mode'] === 'donate' ? 'donate' : 'sell',
         ]);
     }
 

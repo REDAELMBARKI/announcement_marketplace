@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         // Run seeders in order
         $this->call([
             RoleSeeder::class,
+            HeroSliderSeeder::class,
+            BannerSeeder::class,
             FilterAttributeSeeder::class,
             AnnouncementSeeder::class,
         ]);

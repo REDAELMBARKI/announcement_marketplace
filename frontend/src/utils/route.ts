@@ -5,7 +5,7 @@ const Ziggy: any = {"url":"http://127.0.0.1:8000","port":null,"defaults":{},"rou
 /**
  * Ziggy route helper for React
  */
-const ziggyRoute = (name: string, params?: any, absolute?: boolean) => {
+const ziggyRoute = (name: string, params?: any, absolute: boolean = false) => {
     try {
         // @ts-ignore
         return route(name, params, absolute, Ziggy).toString();

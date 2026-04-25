@@ -2,20 +2,23 @@
 
 namespace App\DTOs\Home;
 
+use Illuminate\Support\Collection;
+
 readonly class HomepageDataDTO
 {
     public function __construct(
         public array $stats,
-        public array $featuredCategories,
-        public array $popularProducts,
-        public array $newArrivals,
+        public Collection|array $featuredCategories,
+        public Collection|array $popularProducts,
+        public Collection|array $newArrivals,
         public array $productsByCategory,
-        public array $donationCauses,
-        public array $trendingTags,
-        public array $topSellers,
-        public array $recentReviews,
-        public array $nearbyProducts,
-        public array $freeItems,
-        public array $boostedListings,
+        public Collection|array $trendingTags,
+        public Collection|array $topSellers,
+        public Collection|array $recentReviews,
+        public Collection|array $nearbyProducts,
+        public Collection|array $freeItems,
+        public Collection|array $boostedListings,
+        public Collection|array $heroSliders,
+        public Collection|array $banners,
     ) {}
 }
