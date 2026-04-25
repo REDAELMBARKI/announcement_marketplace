@@ -18,4 +18,6 @@ interface HomepageRepositoryInterface
     public function getNearbyProducts(string $city): Collection;
     public function getFreeItems(): Collection;
     public function getBoostedListings(): Collection;
+    public function getHeroSliders(): Collection;
+    public function getBanners(): Collection;
 }

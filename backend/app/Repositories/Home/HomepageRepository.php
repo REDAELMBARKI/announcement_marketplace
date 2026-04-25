@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
+use App\Models\HeroSlider;
+use App\Models\Banner;
 use App\Models\Review;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -189,6 +191,22 @@ class HomepageRepository implements HomepageRepositoryInterface
             ->whereIn('status', ['sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10)
+            ->get();
+    }
+
+    public function getHeroSliders(): Collection
+    {
+        return HeroSlider::where('is_active', true)
+            ->with(['thumbnail'])
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    public function getBanners(): Collection
+    {
+        return Banner::where('is_active', true)
+            ->with(['thumbnail'])
+            ->orderBy('sort_order')
             ->get();
     }
 }

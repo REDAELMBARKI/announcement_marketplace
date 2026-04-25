@@ -34,6 +34,8 @@ class HomepageService
                 : collect([]),
             freeItems: $this->repository->getFreeItems(),
             boostedListings: $this->repository->getBoostedListings(),
+            heroSliders: $this->repository->getHeroSliders(),
+            banners: $this->repository->getBanners(),
         );
     }
 }

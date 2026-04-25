@@ -18,5 +18,7 @@ readonly class HomepageDataDTO
         public Collection|array $nearbyProducts,
         public Collection|array $freeItems,
         public Collection|array $boostedListings,
+        public Collection|array $heroSliders,
+        public Collection|array $banners,
     ) {}
 }

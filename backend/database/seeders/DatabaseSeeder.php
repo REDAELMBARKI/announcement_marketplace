@@ -18,8 +18,11 @@ class DatabaseSeeder extends Seeder
     {
         // Run the announcement seeder first
         $this->call([
-                     FilterAttributeSeeder::class
-                    ,AnnouncementSeeder::class]);
+            FilterAttributeSeeder::class,
+            AnnouncementSeeder::class,
+            HeroSliderSeeder::class,
+            BannerSeeder::class,
+        ]);
         
         // Keep default user just in case
         User::factory()->create([

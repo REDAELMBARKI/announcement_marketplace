@@ -67,6 +67,35 @@ interface Stats {
   total_donations: number;
 }
 
+interface HeroSlide {
+  id: number;
+  thumbnail?: any;
+  headline: string;
+  subline: string;
+  cta1_text: string;
+  cta1_link: string;
+  cta2_text: string;
+  cta2_link: string;
+}
+
+interface BannerStep {
+  num: string;
+  title: string;
+  description: string;
+}
+
+interface Banner {
+  id: number;
+  type: 'split' | 'simple';
+  title: string;
+  subtitle?: string;
+  thumbnail?: any;
+  badge_text?: string;
+  cta_text?: string;
+  cta_link?: string;
+  steps?: BannerStep[];
+}
+
 interface HomepageData {
   stats: Stats;
   featured_categories: Category[];
@@ -76,51 +105,9 @@ interface HomepageData {
   recent_reviews: Review[];
   nearby_products: Product[];
   free_items: Product[];
+  hero_sliders: HeroSlide[];
+  banners: Banner[];
 }
-
-interface HeroSlide {
-  id: number;
-  image: string;
-  headline: string;
-  subline: string;
-  cta1: string;
-  link1: string;
-  cta2: string;
-  link2: string;
-}
-
-const HERO_SLIDES: HeroSlide[] = [
-  {
-    id: 1,
-    image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80&w=2000",
-    headline: "Pre-loved Treasures for Little Ones",
-    subline: "Quality kids' gear that grows with them. Buy, sell, or donate today.",
-    cta1: "Shop Marketplace",
-    link1: "/marketplace",
-    cta2: "Donate Gear",
-    link2: "/donate",
-  },
-  {
-    id: 2,
-    image: "https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=2000",
-    headline: "Join the Circular Kids Community",
-    subline: "Reduce waste and support local families by giving clothes a second life.",
-    cta1: "How it Works",
-    link1: "/how-it-works",
-    cta2: "Sign Up",
-    link2: "/sign_up",
-  },
-  {
-    id: 3,
-    image: "https://images.unsplash.com/photo-1522771935876-2497116a7a9e?auto=format&fit=crop&q=80&w=2000",
-    headline: "Summer Adventures Await",
-    subline: "Find everything they need for the perfect outdoor summer.",
-    cta1: "Summer Shop",
-    link1: "/category/summer",
-    cta2: "Browse All",
-    link2: "/marketplace",
-  }
-];
 
 function Home() {
   const { colors } = useTheme();
@@ -174,11 +161,14 @@ function Home() {
     const duration = 5000;
     const interval = 100;
     const step = (interval / duration) * 100;
+    const slidesCount = homepageData?.hero_sliders?.length || 0;
+
+    if (slidesCount === 0) return;
 
     const timer = setInterval(() => {
       setSlideProgress(prev => {
         if (prev >= 100) {
-          setActiveSlide(s => (s + 1) % HERO_SLIDES.length);
+          setActiveSlide(s => (s + 1) % slidesCount);
           return 0;
         }
         return prev + step;
@@ -186,7 +176,7 @@ function Home() {
     }, interval);
 
     return () => clearInterval(timer);
-  }, [activeSlide]);
+  }, [activeSlide, homepageData?.hero_sliders]);
 
   const scrollTrending = (direction: 'left' | 'right') => {
     const container = trendingScrollRef.current;
@@ -337,19 +327,19 @@ function Home() {
       {/* Hero Slider */}
       <section className="hero-slider">
         <div className="slides-container">
-          {HERO_SLIDES.map((slide, index) => (
+          {homepageData?.hero_sliders?.map((slide, index) => (
             <div 
               key={slide.id} 
               className={`slide ${index === activeSlide ? 'active' : ''}`}
             >
-              <img src={slide.image} alt={slide.headline} className="slide-image" />
+              <img src={getImageUrl(slide.thumbnail) || ''} alt={slide.headline} className="slide-image" />
               <div className="slide-scrim"></div>
               <div className="slide-content">
                 <h1 className="editorial-title">{slide.headline}</h1>
                 <p className="slide-subline">{slide.subline}</p>
                 <div className="slide-actions">
-                  <Link to={slide.link1} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1}</Link>
-                  <Link to={slide.link2} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2}</Link>
+                  {slide.cta1_text && <Link to={slide.cta1_link} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1_text}</Link>}
+                  {slide.cta2_text && <Link to={slide.cta2_link} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2_text}</Link>}
                 </div>
               </div>
             </div>
@@ -358,7 +348,7 @@ function Home() {
         
         <div className="slider-nav">
           <div className="slider-dots">
-            {HERO_SLIDES.map((_, i) => (
+            {homepageData?.hero_sliders?.map((_, i) => (
               <button 
                 key={i} 
                 className={`dot ${i === activeSlide ? 'active' : ''}`} 
@@ -501,44 +491,63 @@ function Home() {
         </div>
       </section>
 
-      {/* How it Works - Editorial */}
-      <section className="how-it-works-editorial" style={{ backgroundColor: colors.bgTertiary }}>
-        <div className="tt-container">
-          <div className="editorial-split">
-            <div className="split-image">
-              <img src="https://images.unsplash.com/photo-1513159419869-623ae1b1a620?auto=format&fit=crop&q=80&w=800" alt="Giving back" />
-              <div className="floating-badge" style={{ backgroundColor: colors.coral }}>Circular Kids</div>
-            </div>
-            <div className="split-content">
-              <h2 className="editorial-title">How TinyTrove Works</h2>
-              <div className="steps-list">
-                <div className="step-item">
-                  <span className="step-num">01</span>
-                  <div>
-                    <h4>Gather Gear</h4>
-                    <p>Find gently used outfits and toys your kids have outgrown.</p>
-                  </div>
+      {/* Dynamic Banners Section */}
+      {homepageData?.banners?.map((banner) => (
+        <section key={banner.id} className={`banner-section ${banner.type}-banner`} style={{ backgroundColor: colors.bgTertiary, padding: '60px 0' }}>
+          <div className="tt-container">
+            {banner.type === 'split' ? (
+              <div className="editorial-split">
+                <div className="split-image">
+                  {banner.thumbnail && <img src={getImageUrl(banner.thumbnail) || ''} alt={banner.title} />}
+                  {banner.badge_text && <div className="floating-badge" style={{ backgroundColor: colors.coral }}>{banner.badge_text}</div>}
                 </div>
-                <div className="step-item">
-                  <span className="step-num">02</span>
-                  <div>
-                    <h4>Choose Your Path</h4>
-                    <p>Sell them for cash or donate them instantly to a verified cause.</p>
-                  </div>
-                </div>
-                <div className="step-item">
-                  <span className="step-num">03</span>
-                  <div>
-                    <h4>Make an Impact</h4>
-                    <p>Every item sold extends its life and supports children in need.</p>
-                  </div>
+                <div className="split-content">
+                  <h2 className="editorial-title">{banner.title}</h2>
+                  {banner.subtitle && <p className="banner-subtitle">{banner.subtitle}</p>}
+                  {banner.steps && (
+                    <div className="steps-list">
+                      {banner.steps.map((step, idx) => (
+                        <div key={idx} className="step-item">
+                          <span className="step-num">{step.num}</span>
+                          <div>
+                            <h4>{step.title}</h4>
+                            <p>{step.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {banner.cta_text && (
+                    <Link to={banner.cta_link || '#'} className="btn-text">
+                      {banner.cta_text} <ArrowRight size={16} />
+                    </Link>
+                  )}
                 </div>
               </div>
-              <Link to="/how-it-works" className="btn-text">Learn more about our mission <ArrowRight size={16} /></Link>
-            </div>
+            ) : (
+              <div className="simple-banner-content" style={{ textAlign: 'center' }}>
+                <div className="simple-banner-inner" style={{ 
+                  backgroundImage: banner.thumbnail ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${getImageUrl(banner.thumbnail)})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  padding: '80px 40px',
+                  borderRadius: '24px',
+                  color: '#fff'
+                }}>
+                  {banner.badge_text && <span className="banner-badge" style={{ backgroundColor: colors.coral, padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px', display: 'inline-block' }}>{banner.badge_text}</span>}
+                  <h2 className="editorial-title" style={{ color: '#fff', marginBottom: '16px' }}>{banner.title}</h2>
+                  {banner.subtitle && <p style={{ fontSize: '18px', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>{banner.subtitle}</p>}
+                  {banner.cta_text && (
+                    <Link to={banner.cta_link || '#'} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff', padding: '12px 32px', borderRadius: '12px', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
+                      {banner.cta_text}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
       {/* New Arrivals */}
       <section className="trending-row-section tt-container">
@@ -639,7 +648,7 @@ function Home() {
       {/* Testimonials */}
       <section className="testimonials-redesign tt-container">
         <div className="section-header-editorial centered">
-          <h2 className="editorial-title">Trusted by Local Parents</h2>
+          <h2 className="editorial-title">Trust Reviews</h2>
           <p>Join thousands of families making a difference.</p>
         </div>
         <div className="testimonials-grid-redesign">
