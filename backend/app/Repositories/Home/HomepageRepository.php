@@ -30,6 +30,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         return Category::select(['id', 'name', 'slug', 'icon', 'sort_order'])
             ->whereNull('parent_id')
             ->where('is_active', true)
+            ->with(['thumbnail'])
             ->withCount(['superCategoryProducts as products_count' => function ($query) {
                 $query->whereIn('status', ['sell', 'donate']);
             }])

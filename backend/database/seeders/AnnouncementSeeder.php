@@ -80,7 +80,8 @@ class AnnouncementSeeder extends Seeder
         // Create 8 top-level super categories with their sub-categories
         $superCategories = [
             [
-                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'gamepad-2',
+                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'Gamepad',
+                'image' => 'https://images.unsplash.com/photo-1531346727404-cc74a445f02c?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Jouets éducatifs', 'slug' => 'jouets-educatifs'],
                     ['name' => 'Peluches', 'slug' => 'peluches'],
@@ -90,7 +91,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'shirt',
+                'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'TShirt',
+                'image' => 'https://images.unsplash.com/photo-1556905055-8f358a7a4bb4?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'T-shirts', 'slug' => 't-shirts'],
                     ['name' => 'Pantalons', 'slug' => 'pantalons'],
@@ -100,7 +102,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'book-open',
+                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'Book',
+                'image' => 'https://images.unsplash.com/photo-1491843351663-8511e81d312a?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Contes marocains', 'slug' => 'contes-marocains'],
                     ['name' => 'Livres éducatifs', 'slug' => 'livres-educatifs'],
@@ -109,7 +112,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'home',
+                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'Home2',
+                'image' => 'https://images.unsplash.com/photo-1533091902244-f9a912da2a5e?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Lits bébé', 'slug' => 'lits-bebe'],
                     ['name' => 'Chambres enfant', 'slug' => 'chambres-enfant'],
@@ -118,7 +122,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'baby',
+                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'UserRounded',
+                'image' => 'https://images.unsplash.com/photo-1522771935876-2497116a7a9e?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Poussettes', 'slug' => 'poussettes'],
                     ['name' => 'Porte-bébés', 'slug' => 'porte-bebes'],
@@ -127,7 +132,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'dice-5',
+                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'Gamepad',
+                'image' => 'https://images.unsplash.com/photo-1558023784-f8343393cb06?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Jeux de société', 'slug' => 'jeux-societe'],
                     ['name' => 'Jeux d\'extérieur', 'slug' => 'jeux-exterieur'],
@@ -136,7 +142,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'footprints',
+                'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'Walking',
+                'image' => 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Chaussures sport', 'slug' => 'chaussures-sport'],
                     ['name' => 'Chaussures cuir', 'slug' => 'chaussures-cuir'],
@@ -145,7 +152,8 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'palette',
+                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'Palette',
+                'image' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Peinture', 'slug' => 'peinture'],
                     ['name' => 'Musique', 'slug' => 'musique'],
@@ -163,6 +171,14 @@ class AnnouncementSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => $index + 1,
                 'parent_id' => null,
+            ]);
+
+            // Create category image
+            Media::factory()->create([
+                'mediable_id' => $parent->id,
+                'mediable_type' => Category::class,
+                'collection' => 'thumbnail',
+                'url' => $superCategory['image'],
             ]);
 
             // Create sub-categories for this super category

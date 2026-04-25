@@ -15,7 +15,29 @@ import {
   IconButton
 } from '@mui/material';
 
-const MarketplaceCard = memo(({ item }) => {
+interface MarketplaceItem {
+  id: number;
+  seller: {
+    name: string;
+    avatar: string;
+    avatarUrl?: string;
+  };
+  timePosted: string;
+  is_boosted: boolean;
+  image: string;
+  title: string;
+  city: string;
+  district: string;
+  condition: string;
+  age_range: string;
+  price: number;
+}
+
+interface MarketplaceCardProps {
+  item: MarketplaceItem;
+}
+
+const MarketplaceCard = memo(({ item }: MarketplaceCardProps) => {
   const { colors } = useTheme();
 
   return (

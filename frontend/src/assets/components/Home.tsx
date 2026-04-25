@@ -6,13 +6,11 @@ import {
   ChevronRight, 
   ArrowRight,
   TrendingUp,
-  Package,
   Zap,
   Star,
-  Users,
-  Heart as HeartIcon,
   ShieldCheck,
   Mail,
+  Palette,
 } from "lucide-react";
 import {
   Shop as Store,
@@ -20,13 +18,93 @@ import {
   Heart,
   Bag as ShoppingBag,
   MapPoint as MapPin,
+  Gamepad,
+  TShirt,
+  Book,
+  Home2,
+  UserRounded,
+  Walking,
+  Box,
+  UsersGroupRounded,
 } from "@solar-icons/react";
 import MarketplaceCard from "./MarketplaceCard";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
 
-const HERO_SLIDES = [
+interface User {
+  id: number;
+  name: string;
+  avatar?: string;
+}
+
+interface Address {
+  city: string;
+  district?: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon?: string | null;
+  thumbnail?: { url: string };
+  products_count?: number;
+}
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  listing_mode: 'sell' | 'donate';
+  age_range: string;
+  condition: string;
+  views_count: number;
+  favorites_count: number;
+  created_at: string;
+  user?: User;
+  categories?: Category[];
+  addresses?: Address[];
+  thumbnail?: { url: string };
+  image?: string;
+}
+
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  reviewer?: User;
+}
+
+interface Stats {
+  total_products: number;
+  total_users: number;
+  total_donations: number;
+}
+
+interface HomepageData {
+  stats: Stats;
+  featured_categories: Category[];
+  popular_products: Product[];
+  new_arrivals: Product[];
+  products_by_category: Record<number, Product[]>;
+  recent_reviews: Review[];
+  nearby_products: Product[];
+  free_items: Product[];
+}
+
+interface HeroSlide {
+  id: number;
+  image: string;
+  headline: string;
+  subline: string;
+  cta1: string;
+  link1: string;
+  cta2: string;
+  link2: string;
+}
+
+const HERO_SLIDES: HeroSlide[] = [
   {
     id: 1,
     image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80&w=2000",
@@ -59,26 +137,44 @@ const HERO_SLIDES = [
   }
 ];
 
+interface MarketplaceItem {
+  id: number;
+  seller: {
+    name: string;
+    avatar: string;
+    avatarUrl?: string;
+  };
+  timePosted: string;
+  is_boosted: boolean;
+  image: string;
+  title: string;
+  city: string;
+  district: string;
+  condition: string;
+  age_range: string;
+  price: number;
+}
+
 function Home() {
   const { colors } = useTheme();
-  const [homepageData, setHomepageData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Refs
-  const trendingScrollRef = useRef(null);
-  const marketScrollRef = useRef(null);
-  const collectionsScrollRef = useRef(null);
-  const nearbyScrollRef = useRef(null);
-  const freeScrollRef = useRef(null);
-  const categoryRefs = useRef({});
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
+  const marketScrollRef = useRef<HTMLDivElement>(null);
+  const collectionsScrollRef = useRef<HTMLDivElement>(null);
+  const nearbyScrollRef = useRef<HTMLDivElement>(null);
+  const freeScrollRef = useRef<HTMLDivElement>(null);
+  const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Hero Slider State
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [slideProgress, setSlideProgress] = useState(0);
+  const [activeSlide, setActiveSlide] = useState<number>(0);
+  const [slideProgress, setSlideProgress] = useState<number>(0);
 
   // Tabs State
-  const [activeCategoryTab, setActiveCategoryTab] = useState(null);
+  const [activeCategoryTab, setActiveCategoryTab] = useState<number | null>(null);
 
   // Fetch homepage data from API
   useEffect(() => {
@@ -86,12 +182,12 @@ function Home() {
       try {
         setLoading(true);
         const data = await homeApi.getHomepageData({});
-        setHomepageData(data);
+        setHomepageData(data as HomepageData);
         if (data?.featured_categories?.length > 0) {
           setActiveCategoryTab(data.featured_categories[0].id);
         }
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Detailed fetch error:', err);
         if (err.response) {
           console.error('Response data:', err.response.data);
@@ -125,61 +221,61 @@ function Home() {
     return () => clearInterval(timer);
   }, [activeSlide]);
 
-  const scrollTrending = (direction) => {
+  const scrollTrending = (direction: 'left' | 'right') => {
     const container = trendingScrollRef.current;
     if (!container) return;
     const scrollAmount = 400;
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollCategory = (categoryId, direction) => {
+  const scrollCategory = (categoryId: number, direction: 'left' | 'right') => {
     const container = categoryRefs.current[categoryId];
     if (!container) return;
     const scrollAmount = 400;
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollMarket = (direction) => {
+  const scrollMarket = (direction: 'left' | 'right') => {
     const container = marketScrollRef.current;
     if (!container) return;
     const scrollAmount = 400;
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollNearby = (direction) => {
+  const scrollNearby = (direction: 'left' | 'right') => {
     const container = nearbyScrollRef.current;
     if (!container) return;
     const scrollAmount = 400;
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const scrollFree = (direction) => {
+  const scrollFree = (direction: 'left' | 'right') => {
     const container = freeScrollRef.current;
     if (!container) return;
     const scrollAmount = 400;
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
-  const getCategoryColor = (categoryId) => {
+  const getCategoryColor = (categoryId: number) => {
     const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', colors.error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
     return catColors[categoryId % catColors.length] || colors.primary;
   };
 
-  const getCategoryEmoji = (categoryName) => {
+  const getCategoryIcon = (categoryName: string, size = 20) => {
     const name = categoryName.toLowerCase();
-    if (name.includes('jouet') || name.includes('toy')) return '🧸';
-    if (name.includes('vêtement') || name.includes('cloth')) return '👕';
-    if (name.includes('livre') || name.includes('book')) return '📚';
-    if (name.includes('mobilier') || name.includes('furniture')) return '🛏️';
-    if (name.includes('bébé') || name.includes('baby')) return '🍼';
-    if (name.includes('jeu') || name.includes('game')) return '🎮';
-    if (name.includes('chaussure') || name.includes('shoe')) return '👟';
-    if (name.includes('activité') || name.includes('activit') || name.includes('art')) return '🎨';
-    return '📦';
+    if (name.includes('jouet') || name.includes('toy')) return <Gamepad size={size} />;
+    if (name.includes('vêtement') || name.includes('cloth')) return <TShirt size={size} />;
+    if (name.includes('livre') || name.includes('book')) return <Book size={size} />;
+    if (name.includes('mobilier') || name.includes('furniture')) return <Home2 size={size} />;
+    if (name.includes('bébé') || name.includes('baby')) return <UserRounded size={size} />;
+    if (name.includes('jeu') || name.includes('game')) return <Gamepad size={size} />;
+    if (name.includes('chaussure') || name.includes('shoe')) return <Walking size={size} />;
+    if (name.includes('activité') || name.includes('activit') || name.includes('art')) return <Palette size={size} />;
+    return <Box size={size} />;
   };
 
   // Countdown timer
-  const [timeLeft, setTimeLeft] = useState({ days: 3, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 3, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -197,7 +293,7 @@ function Home() {
   }, []);
 
   // Helper to map API product to MarketplaceCard props
-  const mapToMarketplace = (item) => ({
+  const mapToMarketplace = (item: Product): MarketplaceItem => ({
     id: item.id,
     seller: {
       name: item.user?.name || 'Parent',
@@ -215,30 +311,31 @@ function Home() {
     price: item.price
   });
 
-  const popularProducts = useMemo(() => 
+  const popularProducts = useMemo<MarketplaceItem[]>(() => 
     homepageData?.popular_products?.map(mapToMarketplace) || [], 
     [homepageData?.popular_products]
   );
 
-  const newArrivals = useMemo(() => 
+  const newArrivals = useMemo<MarketplaceItem[]>(() => 
     homepageData?.new_arrivals?.map(mapToMarketplace) || [], 
     [homepageData?.new_arrivals]
   );
 
-  const nearbyProducts = useMemo(() => 
+  const nearbyProducts = useMemo<MarketplaceItem[]>(() => 
     homepageData?.nearby_products?.map(mapToMarketplace) || [], 
     [homepageData?.nearby_products]
   );
 
-  const freeItems = useMemo(() => 
+  const freeItems = useMemo<MarketplaceItem[]>(() => 
     homepageData?.free_items?.map(mapToMarketplace) || [], 
     [homepageData?.free_items]
   );
 
   const productsByCategory = useMemo(() => {
-    const result = {};
+    const result: Record<number, MarketplaceItem[]> = {};
     if (homepageData?.products_by_category) {
-      Object.keys(homepageData.products_by_category).forEach(catId => {
+      Object.keys(homepageData.products_by_category).forEach(catIdStr => {
+        const catId = parseInt(catIdStr);
         result[catId] = homepageData.products_by_category[catId].map(mapToMarketplace);
       });
     }
@@ -333,21 +430,21 @@ function Home() {
       <div className="stats-band" style={{ backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}` }}>
         <div className="stats-container">
           <div className="stat-item">
-            <Package size={20} color={colors.coral} />
+            <Box size={24} iconContext={{ color: colors.coral }} />
             <div>
               <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
               <span>Items Listed</span>
             </div>
           </div>
           <div className="stat-item">
-            <Users size={20} color={colors.coral} />
+            <UsersGroupRounded size={24} iconContext={{ color: colors.coral }} />
             <div>
               <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
               <span>Active Parents</span>
             </div>
           </div>
           <div className="stat-item">
-            <HeartIcon size={20} color={colors.coral} />
+            <Heart size={24} iconContext={{ color: colors.coral }} />
             <div>
               <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
               <span>Donations</span>
@@ -372,7 +469,7 @@ function Home() {
                 onClick={() => setActiveCategoryTab(cat.id)}
                 style={{ '--active-color': colors.coral } as React.CSSProperties}
               >
-                <span className="tab-emoji">{getCategoryEmoji(cat.name)}</span>
+                <span className="tab-emoji">{getCategoryIcon(cat.name)}</span>
                 {cat.name}
               </button>
             ))}
@@ -416,8 +513,14 @@ function Home() {
         <div className="collections-grid-redesign">
           {homepageData?.featured_categories?.slice(0, 8).map((cat) => (
             <Link key={cat.id} to={`/category/${cat.slug}`} className="collection-tile">
-              <div className="tile-bg" style={{ background: `linear-gradient(135deg, ${getCategoryColor(cat.id)} 0%, ${getCategoryColor(cat.id)}cc 100%)` }}>
-                <span className="tile-emoji">{getCategoryEmoji(cat.name)}</span>
+              <div className="tile-bg-wrap">
+                {cat.thumbnail?.url ? (
+                  <img src={cat.thumbnail.url} alt={cat.name} className="tile-image" />
+                ) : (
+                  <div className="tile-bg" style={{ background: `linear-gradient(135deg, ${getCategoryColor(cat.id)} 0%, ${getCategoryColor(cat.id)}cc 100%)` }}>
+                    <span className="tile-emoji">{getCategoryIcon(cat.name, 32)}</span>
+                  </div>
+                )}
               </div>
               <div className="tile-info">
                 <h4>{cat.name}</h4>

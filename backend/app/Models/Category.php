@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Category extends Model
 {
@@ -59,5 +61,17 @@ class Category extends Model
     public function superCategoryProducts(): HasMany
     {
         return $this->hasMany(Product::class, 'super_category_id');
+    }
+
+    public function media(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'mediable');
+    }
+
+    public function thumbnail(): MorphOne
+    {
+        return $this->morphOne(Media::class, 'mediable')
+            ->where('collection', 'category')
+            ->orderBy('sort_order');
     }
 }
