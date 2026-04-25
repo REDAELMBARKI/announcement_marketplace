@@ -1,17 +1,19 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Home\HomepageController;
+use App\Http\Controllers\MediaController;
+use App\Http\Controllers\OpenAIController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\FoundationController;
+use App\Http\Controllers\ViewUserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ViewUserController;
-use App\Http\Controllers\OpenAIController;
-use App\Http\Controllers\Home\HomepageController;
-use App\Http\Controllers\AnnouncementController;
-use App\Http\Controllers\MediaController;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,7 +30,7 @@ Route::get('/status', function () {
 });
 Route::get('/test-db', function () {
     return response()->json([
-        'tables' => DB::select("SELECT name FROM sqlite_master WHERE type='table'")
+        'tables' => DB::select("SELECT name FROM sqlite_master WHERE type='table'"),
     ]);
 });
 Route::get('/users', function () {
@@ -37,47 +39,46 @@ Route::get('/users', function () {
 
         return response()->json([
             'status' => 'success',
-            'users' => $users
+            'users' => $users,
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage()
+            'message' => $e->getMessage(),
         ], 500);
     }
 });
 
-
-Route::get('/api/test-users', function() {
+Route::get('/api/test-users', function () {
     try {
         $users = DB::table('users')->get();
+
         return response()->json(['status' => 'success', 'users' => $users]);
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage()
+            'message' => $e->getMessage(),
         ], 500);
     }
 });
 
-//end of testing routes
-
+// end of testing routes
 
 // Authenrtication routes
 
 use App\Http\Controllers\UserProfileController;
 
-Route::get('/user/{id}', [UserProfileController::class, 'show'])->name('user.show');
-Route::put('/user/{id}', [UserProfileController::class, 'update'])->name('user.update');
+Route::middleware('auth:api')->group(function () {
+    Route::get('/user/{id}', [UserProfileController::class, 'show'])->name('user.show');
+    Route::put('/user/{id}', [UserProfileController::class, 'update'])->name('user.update');
+    Route::post('/user/avatar', [UserProfileController::class, 'uploadAvatar'])->name('user.avatar');
+});
 
- 
-
-
+Route::get('/foundations', [FoundationController::class, 'index'])->name('foundations.index');
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api');
-
 
 // Media upload routes
 Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
@@ -93,30 +94,28 @@ Route::get('/categories', function () {
         ->where('is_active', true)
         ->orderBy('sort_order')
         ->get();
-    
+
     return response()->json([
         'status' => 'success',
         'categories' => $superCategories,
     ]);
 })->name('categories.index');
 
-
-
 // Admin routes (JWT protected)
 Route::prefix('admin')->middleware('auth:api')->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin']);
-    Route::get('/charities',    [AdminController::class, 'getAllCharities']);
-    Route::get('/users',        [AdminController::class, 'getAllUsers']);
-    Route::get('/stats',        [AdminController::class, 'getDashboardStats']);
+    Route::get('/charities', [AdminController::class, 'getAllCharities']);
+    Route::get('/users', [AdminController::class, 'getAllUsers']);
+    Route::get('/stats', [AdminController::class, 'getDashboardStats']);
     Route::get('/stats/type-split', [AdminController::class, 'getAnnouncementTypeSplit']);
     Route::get('/stats/funnel', [AdminController::class, 'getAnnouncementFunnel']);
     Route::get('/stats/categories', [AdminController::class, 'getTopCategories']);
     Route::get('/stats/user-retention', [AdminController::class, 'getUserRetention']);
     Route::get('/stats/hourly-activity', [AdminController::class, 'getHourlyActivity']);
     Route::get('/moderation/pending', [AdminController::class, 'getPendingModeration']);
-    Route::get('/donations',    [AdminController::class, 'getAllDonations']);
-    Route::get('/inventory',    [AdminController::class, 'getAllInventory']);
-    Route::post('/charities',   [AdminController::class, 'addCharity']);
+    Route::get('/donations', [AdminController::class, 'getAllDonations']);
+    Route::get('/inventory', [AdminController::class, 'getAllInventory']);
+    Route::post('/charities', [AdminController::class, 'addCharity']);
     Route::put('/charities/{id}', [AdminController::class, 'updateCharity']);
     Route::delete('/charities/{id}', [AdminController::class, 'deleteCharity']);
 });
@@ -130,10 +129,18 @@ Route::prefix('user-management')->middleware('auth:api')->group(function () {
     Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser']);
 });
 
+Route::prefix('dashboard')->middleware('auth:api')->group(function () {
+    Route::get('/stats', [DashboardController::class, 'stats']);
+    Route::get('/activity', [DashboardController::class, 'activity']);
+    Route::get('/top-announcements', [DashboardController::class, 'topAnnouncements']);
+    Route::get('/categories', [DashboardController::class, 'categories']);
+    Route::get('/status', [DashboardController::class, 'status']);
+});
+
 Route::post('/remote-sessions', function (Request $request) {
     return response()->json([
         'status' => 'success',
-        'session_id' => (string) Str::uuid(), 
+        'session_id' => (string) Str::uuid(),
     ]);
 })->name('remote-sessions');
 
@@ -142,8 +149,6 @@ Route::post('/ask-faq', [OpenAIController::class, 'ask'])->name('ask-faq');
 
 // Homepage route
 Route::get('/homepage', HomepageController::class)->name('homepage');
-
-
 
 // Announcements routes (handles both donations and sales)
 Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketplaceInitData'])->name('marketplace.init-data');
@@ -167,10 +172,8 @@ Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncement
 // Charity announcements routes
 Route::get('/charities/{charityId}/announcements', [AnnouncementController::class, 'getCharityAnnouncements'])->name('charity.announcements');
 
-
 // Admin announcements routes
 Route::get('/admin/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('admin.announcements.all');
-
 
 // Reports routes
 Route::prefix('reports')->name('reports.')->group(function () {

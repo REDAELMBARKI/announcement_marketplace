@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Run the announcement seeder first
 
         $this->call(AnnouncementSeeder::class);
+        $this->call(FoundationSeeder::class);
 
         // Seed one admin and one donor in unified users table.
         User::updateOrCreate(
@@ -36,6 +37,15 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['email' => 'soufiane@gmail.com'],
+            [
+                'name' => 'soufiane chabib',
+                'password' => Hash::make('Soufiane123@'),
+                'role_id' => 10,
+            ]
+        );
+
+        $this->call(UserImpactDemoSeeder::class);
     }
 }
-

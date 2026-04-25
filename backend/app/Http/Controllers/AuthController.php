@@ -23,11 +23,17 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
+            $avatarUrl = null;
+            if (! empty($user->avatar_path)) {
+                $avatarUrl = asset('storage/'.ltrim($user->avatar_path, '/'));
+            }
+
             $userData = [
                 'id' => $user->id,
                 'user_name' => $user->name,
                 'user_email' => $user->email,
                 'role_id' => $user->role_id,
+                'avatar_url' => $avatarUrl,
             ];
 
             $token = JWTAuth::fromUser($user);

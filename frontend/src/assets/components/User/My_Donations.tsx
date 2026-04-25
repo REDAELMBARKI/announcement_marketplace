@@ -1,41 +1,87 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../../utils/route";
 import "../../../css/records.css";
 
-// This allows users to view and filter their donation history
+type Thumbnail = {
+  url?: string | null;
+  file_path?: string | null;
+  path?: string | null;
+};
+
+type DonationProduct = {
+  id: number;
+  title: string;
+  description?: string | null;
+  condition?: string | null;
+  status?: string | null;
+  created_at?: string;
+  pickup_address?: string | null;
+  super_category?: { name?: string } | null;
+  thumbnail?: Thumbnail | null;
+};
+
+function getImageUrl(media: Thumbnail | null | undefined): string | null {
+  if (!media) return null;
+  if (media.url && media.url.startsWith("http")) return media.url;
+  const path = media.file_path || media.path;
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const clean = path.replace(/^public\//, "").replace(/^\/+/, "");
+  const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://127.0.0.1:8000";
+  return `${base}/storage/${clean}`;
+}
+
 export default function My_Donations() {
-  const [donations, setDonations] = useState([]);
+  const [donations, setDonations] = useState<DonationProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const loadDonations = useCallback(() => {
+    const raw = localStorage.getItem("user");
+    if (!raw) {
+      setLoading(false);
+      return;
+    }
+    const user = JSON.parse(raw) as { id?: number };
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => {
-    if (!user?.donor?.donor_ID) return;
-
-    fetch(`http://localhost:8000/api/donations/user/${user.donor.donor_ID}`) // fetch donations for this donor
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setDonations(data.donations);
-        setLoading(false);
+    setLoading(true);
+    axios
+      .get<{ status: string; products: DonationProduct[] }>(
+        route("user.donations", { userId: user.id }).toString(),
+      )
+      .then((res) => {
+        if (res.data.status === "success" && Array.isArray(res.data.products)) {
+          setDonations(res.data.products);
+        } else {
+          setDonations([]);
+        }
       })
       .catch((err) => {
         console.error("Donation fetch error:", err);
-        setLoading(false);
-      });
-  }, [user]);
+        setDonations([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  //filtering donations
+  useEffect(() => {
+    loadDonations();
+  }, [loadDonations]);
+
   const filtered = donations.filter((d) => {
-    const item = d.items?.[0];
-
+    const cat = d.super_category?.name ?? "";
     const matchesSearch =
-      item?.item_name?.toLowerCase().includes(search.toLowerCase()) ||
-      item?.item_category?.toLowerCase().includes(search.toLowerCase());
+      (d.title?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
+      cat.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = statusFilter
-      ? d.donation_status?.toLowerCase() === statusFilter.toLowerCase()
+      ? (d.status ?? "").toLowerCase() === statusFilter.toLowerCase()
       : true;
 
     return matchesSearch && matchesStatus;
@@ -51,7 +97,7 @@ export default function My_Donations() {
         <div className="return-right">
           <ul>
             <li>
-              <Link to="/User_Dashboard" className="return-link">
+              <Link to="/user_dashboard" className="return-link">
                 Return
               </Link>
             </li>
@@ -62,7 +108,7 @@ export default function My_Donations() {
       <div className="filter-bar">
         <input
           type="text"
-          placeholder="Search by item or category..."
+          placeholder="Search by title or category..."
           className="search-input"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -73,10 +119,12 @@ export default function My_Donations() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="">All Statuses</option>
-          <option value="approved">Approved</option>
-          <option value="pending">Pending</option>
-          <option value="rejected">Rejected</option>
+          <option value="">All statuses</option>
+          <option value="donate">Donate (live)</option>
+          <option value="reserved">Reserved</option>
+          <option value="donated">Donated</option>
+          <option value="closed">Closed</option>
+          <option value="draft">Draft</option>
         </select>
       </div>
 
@@ -85,11 +133,12 @@ export default function My_Donations() {
           <thead>
             <tr>
               <th>Category</th>
-              <th>Item Name</th>
+              <th>Item</th>
               <th>Description</th>
               <th>Condition</th>
               <th>Image</th>
-              <th>Date Donated</th>
+              <th>Date</th>
+              <th>Pickup</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -97,60 +146,39 @@ export default function My_Donations() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7">Loading donations...</td>
+                <td colSpan={8}>Loading donations...</td>
               </tr>
             ) : filtered.length > 0 ? (
               filtered.map((d) => {
-                const item = d.items?.[0];
+                const img = getImageUrl(d.thumbnail ?? null);
                 return (
-                  <tr key={d.donation_ID}>
-                    <td>{item?.item_category ?? "N/A"}</td>
-                    <td>{item?.item_name ?? "N/A"}</td>
-                    <td>{item?.item_description ?? "N/A"}</td>
-                    <td>{item?.item_condition ?? "N/A"}</td>
-
+                  <tr key={d.id}>
+                    <td>{d.super_category?.name ?? "—"}</td>
+                    <td>{d.title}</td>
+                    <td>{d.description ? String(d.description).slice(0, 80) : "—"}</td>
+                    <td>{d.condition ?? "—"}</td>
                     <td>
-                      {item?.item_image
-                        ? (() => {
-                            let path = item.item_image;
-
-                            path = path.replace(/^public\//, "");
-
-                            path = path.replace(/^\/+/, "");
-
-                            const imageUrl = path.startsWith("http")
-                              ? path
-                              : `http://localhost:8000/storage/${path}`;
-
-                            return (
-                              <a
-                                href={imageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={imageUrl}
-                                  alt={item.item_name}
-                                  style={{
-                                    width: "50px",
-                                    height: "auto",
-                                    borderRadius: "4px",
-                                  }}
-                                />
-                              </a>
-                            );
-                          })()
-                        : "N/A"}
+                      {img ? (
+                        <a href={img} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={img}
+                            alt={d.title}
+                            style={{ width: "50px", height: "auto", borderRadius: "4px" }}
+                          />
+                        </a>
+                      ) : (
+                        "—"
+                      )}
                     </td>
-
-                    <td>{new Date(d.donation_date).toLocaleDateString()}</td>
-                    <td>{d.donation_status}</td>
+                    <td>{d.created_at ? new Date(d.created_at).toLocaleDateString() : "—"}</td>
+                    <td>{d.pickup_address ?? "—"}</td>
+                    <td>{d.status ?? "—"}</td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="7">No donations found.</td>
+                <td colSpan={8}>No donation listings found.</td>
               </tr>
             )}
           </tbody>

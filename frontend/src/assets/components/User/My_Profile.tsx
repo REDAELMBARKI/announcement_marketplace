@@ -1,112 +1,162 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../../services/api";
+import route from "../../../utils/route";
 import "../../../css/records.css";
 
 export default function My_Profile() {
-  const [user, setUser] = useState(null);
-  const [status, setStatus] = useState(null);
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
-  // Load user
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) return;
+    const raw = localStorage.getItem("user");
+    if (!raw) {
+      navigate("/login");
+      return;
+    }
+    const parsed = JSON.parse(raw) as {
+      id?: number;
+      user_name?: string;
+      user_email?: string;
+      name?: string;
+      email?: string;
+      avatar_url?: string | null;
+    };
+    const id = parsed.id;
+    if (!id) {
+      navigate("/login");
+      return;
+    }
+    setUserId(id);
+    setName(parsed.user_name ?? parsed.name ?? "");
+    setEmail(parsed.user_email ?? parsed.email ?? "");
+    setAvatarUrl(parsed.avatar_url ?? null);
 
-    const parsed = JSON.parse(stored);
-    setUser(parsed);
-
-    fetch(`http://localhost:8000/api/user/${parsed.user_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setFormData({
-            name: data.user.name,
-            email: data.user.email,
-            password: "",
-          });
+    api
+      .get<{ status: string; user: { name: string; email: string; avatar_url?: string | null } }>(
+        route("user.show", { id }).toString(),
+      )
+      .then((res) => {
+        if (res.data.status === "success" && res.data.user) {
+          setName(res.data.user.name);
+          setEmail(res.data.user.email);
+          if (res.data.user.avatar_url) {
+            setAvatarUrl(res.data.user.avatar_url);
+          }
         }
       })
-      .catch((err) => console.error("Profile fetch error:", err));
-  }, []);
+      .catch(() => {
+        /* keep localStorage fallbacks */
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const persistUserAvatar = (url: string | null) => {
+    const raw = localStorage.getItem("user");
+    if (!raw) return;
+    const prev = JSON.parse(raw) as Record<string, unknown>;
+    const next = { ...prev, avatar_url: url };
+    localStorage.setItem("user", JSON.stringify(next));
   };
 
-  // Submit update
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user) return;
-
-    const bodyData = {
-      name: formData.name,
-      email: formData.email,
-    };
-
-    if (formData.password.trim()) {
-      bodyData.password = formData.password;
-    }
-
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setStatus(null);
+    const form = new FormData();
+    form.append("avatar", file);
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/user/${user.user_ID}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(bodyData),
-        },
-      );
-
-      const data = await res.json();
-
-      if (data.status === "success") {
-        const updatedUser = {
-          ...user,
-          user_name: formData.name,
-          user_email: formData.email,
-        };
-
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-
-        setStatus({
-          type: "success",
-          message: "Profile updated successfully!",
-        });
-
-        setFormData((prev) => ({ ...prev, password: "" }));
-      } else {
-        setStatus({ type: "error", message: data.message });
+      const res = await api.post<{ status: string; avatar_url?: string }>("/user/avatar", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.status === "success" && res.data.avatar_url) {
+        setAvatarUrl(res.data.avatar_url);
+        persistUserAvatar(res.data.avatar_url);
+        setStatus({ type: "success", message: "Profile photo updated." });
       }
     } catch {
-      setStatus({ type: "error", message: "Network error." });
+      setStatus({ type: "error", message: "Could not upload photo. Try a smaller JPG or PNG." });
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
     setTimeout(() => setStatus(null), 4000);
   };
 
-  if (!user) return <p>Loading profile...</p>;
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userId == null) return;
+
+    if (!password || password.length < 6) {
+      setStatus({ type: "error", message: "Password must be at least 6 characters." });
+      return;
+    }
+    if (password !== passwordConfirmation) {
+      setStatus({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+
+    try {
+      const res = await api.put(route("user.update", { id: userId }).toString(), {
+        name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+
+      if (res.data.status === "success") {
+        const raw = localStorage.getItem("user");
+        const prev = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...prev,
+            user_name: name,
+            user_email: email,
+            name,
+            email,
+          }),
+        );
+        setPassword("");
+        setPasswordConfirmation("");
+        setStatus({ type: "success", message: "Password updated successfully." });
+      } else {
+        setStatus({ type: "error", message: "Could not update password." });
+      }
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? "")
+          : "";
+      setStatus({ type: "error", message: msg || "Request failed." });
+    }
+
+    setTimeout(() => setStatus(null), 5000);
+  };
+
+  if (loading) return <p>Loading profile...</p>;
 
   return (
     <main className="dashboard-main">
       <div className="records-container">
         <div className="header-left">
-          <h2>My Profile</h2>
+          <h2>Profile settings</h2>
         </div>
 
         <div className="return-right">
           <ul>
             <li>
-              <Link to="/User_Dashboard" className="return-link">
+              <Link to="/user_dashboard" className="return-link">
                 Return
               </Link>
             </li>
@@ -114,48 +164,75 @@ export default function My_Profile() {
         </div>
       </div>
 
-      {status && (
-        <div className={`form-message ${status.type}`}>{status.message}</div>
-      )}
+      {status && <div className={`form-message ${status.type}`}>{status.message}</div>}
 
       <div className="table-container profile-form-container">
-        <form onSubmit={handleSubmit} className="profile-form">
-          <label>
-            Name:
+        <div className="profile-form" style={{ maxWidth: "480px" }}>
+          <div className="profile-avatar-wrap">
+            <button
+              type="button"
+              className="profile-avatar-button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              aria-label="Upload profile photo"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="profile-avatar-img" />
+              ) : (
+                <span className="profile-avatar-placeholder">
+                  {uploadingAvatar ? "…" : (name || "?").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </button>
             <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={handleChange}
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleAvatarChange}
             />
-          </label>
+            <p className="profile-avatar-hint">{uploadingAvatar ? "Uploading…" : "Tap the circle to upload a photo"}</p>
+          </div>
 
-          <label>
-            Email:
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-          </label>
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.35rem" }}>Full name</label>
+            <input type="text" value={name} readOnly disabled className="profile-readonly" />
+          </div>
 
-          <label>
-            Password:
-            <input
-              type="password"
-              name="password"
-              placeholder="Leave blank to keep current password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-          </label>
+          <div style={{ marginBottom: "1.75rem" }}>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.35rem" }}>Email</label>
+            <input type="email" value={email} readOnly disabled className="profile-readonly" />
+          </div>
 
-          <button type="submit" className="donation-button">
-            Save Changes
-          </button>
-        </form>
+          <h3 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Change password</h3>
+          <form onSubmit={handleChangePassword}>
+            <label style={{ display: "block", marginBottom: "0.75rem" }}>
+              <span style={{ fontWeight: 600, display: "block", marginBottom: "0.35rem" }}>New password</span>
+              <input
+                type="password"
+                name="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ width: "100%", padding: "0.65rem" }}
+              />
+            </label>
+            <label style={{ display: "block", marginBottom: "1rem" }}>
+              <span style={{ fontWeight: 600, display: "block", marginBottom: "0.35rem" }}>Confirm new password</span>
+              <input
+                type="password"
+                name="password_confirmation"
+                autoComplete="new-password"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                style={{ width: "100%", padding: "0.65rem" }}
+              />
+            </label>
+            <button type="submit" className="donation-button">
+              Change password
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );

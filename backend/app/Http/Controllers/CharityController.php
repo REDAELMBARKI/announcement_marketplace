@@ -19,9 +19,7 @@ class CharityController extends Controller
     // get single charity with staff, donations, and inventory
     public function show($id)
     {
-        return response()->json(
-            Charity::with(['staff', 'donations', 'inventory'])->findOrFail($id)
-        );
+        return response()->json(Charity::findOrFail($id));
     }
 
     // create a new charity and its staff
@@ -136,37 +134,25 @@ class CharityController extends Controller
     }
 
     // deletes a charity and its staff links
-public function destroy($id)
-{
-    try {
-        $charity = Charity::with('donations')->findOrFail($id);
+    public function destroy($id)
+    {
+        try {
+            $charity = Charity::findOrFail($id);
 
-        // stop deletion if donations exist
-        if ($charity->donations()->count() > 0) {
+            DB::table('Charity_Staff')->where('charity_ID', $id)->delete();
+            $charity->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Charity account deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'You cannot delete this charity because it has donations attached to it.'
-            ], 409);
+                'message' => 'Failed to delete charity: '.$e->getMessage(),
+            ], 500);
         }
-
-        // remove any staff that are linked
-        DB::table('Charity_Staff')->where('charity_ID', $id)->delete();
-
-        // delete the charity
-        $charity->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Charity account deleted successfully.'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to delete charity: ' . $e->getMessage()
-        ], 500);
     }
-}
-
 
     // get simplified list of charities for dropdowns
     public function getCharitiesList()
@@ -181,7 +167,7 @@ public function destroy($id)
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to fetch charities: ' . $e->getMessage()
+                'message' => 'Failed to fetch charities: '.$e->getMessage(),
             ], 500);
         }
     }
