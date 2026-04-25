@@ -22,18 +22,18 @@ class HomepageService
 
         return new HomepageDataDTO(
             stats: $this->repository->getStats(),
-            featuredCategories: $this->repository->getFeaturedCategories()->toArray(),
-            popularProducts: $this->repository->getPopularProducts($filters)->toArray(),
-            newArrivals: $this->repository->getNewArrivals()->toArray(),
+            featuredCategories: $this->repository->getFeaturedCategories(),
+            popularProducts: $this->repository->getPopularProducts($filters),
+            newArrivals: $this->repository->getNewArrivals(),
             productsByCategory: $this->repository->getAllProductsByCategory(),
-            trendingTags: $this->repository->getTrendingTags()->toArray(),
-            topSellers: $this->repository->getTopSellers()->toArray(),
-            recentReviews: $this->repository->getRecentReviews()->toArray(),
+            trendingTags: $this->repository->getTrendingTags(),
+            topSellers: $this->repository->getTopSellers(),
+            recentReviews: $this->repository->getRecentReviews(),
             nearbyProducts: $request->getCity()
-                ? $this->repository->getNearbyProducts($request->getCity())->toArray()
-                : [],
-            freeItems: $this->repository->getFreeItems()->toArray(),
-            boostedListings: $this->repository->getBoostedListings()->toArray(),
+                ? $this->repository->getNearbyProducts($request->getCity())
+                : collect([]),
+            freeItems: $this->repository->getFreeItems(),
+            boostedListings: $this->repository->getBoostedListings(),
         );
     }
 }

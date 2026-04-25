@@ -44,7 +44,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
             ->whereIn('status', ['sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10);
@@ -66,7 +66,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
             ->whereIn('status', ['sell', 'donate'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -79,7 +79,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
             ->whereIn('status', ['sell', 'donate'])
             ->where('super_category_id', $categoryId)
             ->orderBy('views_count', 'desc')
@@ -97,7 +97,7 @@ class HomepageRepository implements HomepageRepositoryInterface
                 'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
                 'views_count', 'favorites_count', 'created_at', 'user_id'
             ])
-                ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail'])
+                ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
                 ->whereIn('status', ['sell', 'donate'])
                 ->where('super_category_id', $category->id)
                 ->orderBy('views_count', 'desc')

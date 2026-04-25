@@ -28,6 +28,7 @@ import {
   UsersGroupRounded,
 } from "@solar-icons/react";
 import MarketplaceCard from "./MarketplaceCard";
+import { Product } from "./User/announcement/types";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
@@ -52,22 +53,6 @@ interface Category {
   products_count?: number;
 }
 
-interface Product {
-  id: number;
-  title: string;
-  price: number;
-  listing_mode: 'sell' | 'donate';
-  age_range: string;
-  condition: string;
-  views_count: number;
-  favorites_count: number;
-  created_at: string;
-  user?: User;
-  categories?: Category[];
-  addresses?: Address[];
-  thumbnail?: { url: string };
-  image?: string;
-}
 
 interface Review {
   id: number;
@@ -136,24 +121,6 @@ const HERO_SLIDES: HeroSlide[] = [
     link2: "/marketplace",
   }
 ];
-
-interface MarketplaceItem {
-  id: number;
-  seller: {
-    name: string;
-    avatar: string;
-    avatarUrl?: string;
-  };
-  timePosted: string;
-  is_boosted: boolean;
-  image: string;
-  title: string;
-  city: string;
-  district: string;
-  condition: string;
-  age_range: string;
-  price: number;
-}
 
 function Home() {
   const { colors } = useTheme();
@@ -235,6 +202,12 @@ function Home() {
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
+  const getImageUrl = (media: any) => {
+    if (!media) return null;
+    if (media.url && media.url.startsWith('http')) return media.url;
+    return `http://127.0.0.1:8000/storage/${media.file_path?.replace("public/", "")}`;
+  };
+
   const scrollMarket = (direction: 'left' | 'right') => {
     const container = marketScrollRef.current;
     if (!container) return;
@@ -292,54 +265,28 @@ function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // Helper to map API product to MarketplaceCard props
-  const mapToMarketplace = (item: Product): MarketplaceItem => ({
-    id: item.id,
-    seller: {
-      name: item.user?.name || 'Parent',
-      avatar: item.user?.name?.charAt(0) || 'U',
-      avatarUrl: item.user?.avatar
-    },
-    timePosted: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
-    is_boosted: item.views_count > 500, // example logic
-    image: item.thumbnail?.url || item.image || '??',
-    title: item.title,
-    city: item.addresses?.[0]?.city || 'Maroc',
-    district: item.addresses?.[0]?.district || '',
-    condition: item.condition,
-    age_range: item.age_range,
-    price: item.price
-  });
-
-  const popularProducts = useMemo<MarketplaceItem[]>(() => 
-    homepageData?.popular_products?.map(mapToMarketplace) || [], 
+  const popularProducts = useMemo<Product[]>(() => 
+    homepageData?.popular_products || [], 
     [homepageData?.popular_products]
   );
 
-  const newArrivals = useMemo<MarketplaceItem[]>(() => 
-    homepageData?.new_arrivals?.map(mapToMarketplace) || [], 
+  const newArrivals = useMemo<Product[]>(() => 
+    homepageData?.new_arrivals || [], 
     [homepageData?.new_arrivals]
   );
 
-  const nearbyProducts = useMemo<MarketplaceItem[]>(() => 
-    homepageData?.nearby_products?.map(mapToMarketplace) || [], 
+  const nearbyProducts = useMemo<Product[]>(() => 
+    homepageData?.nearby_products || [], 
     [homepageData?.nearby_products]
   );
 
-  const freeItems = useMemo<MarketplaceItem[]>(() => 
-    homepageData?.free_items?.map(mapToMarketplace) || [], 
+  const freeItems = useMemo<Product[]>(() => 
+    homepageData?.free_items || [], 
     [homepageData?.free_items]
   );
 
-  const productsByCategory = useMemo(() => {
-    const result: Record<number, MarketplaceItem[]> = {};
-    if (homepageData?.products_by_category) {
-      Object.keys(homepageData.products_by_category).forEach(catIdStr => {
-        const catId = parseInt(catIdStr);
-        result[catId] = homepageData.products_by_category[catId].map(mapToMarketplace);
-      });
-    }
-    return result;
+  const productsByCategory = useMemo<Record<number, Product[]>>(() => {
+    return homepageData?.products_by_category || {};
   }, [homepageData?.products_by_category]);
 
   if (loading) {
@@ -485,9 +432,9 @@ function Home() {
               <div className="scroll-container no-scrollbar">
                 <button className="scroll-btn left" onClick={() => scrollCategory(cat.id, 'left')}><ChevronLeft size={20} /></button>
                 <div className="category-scroll-row" ref={el => categoryRefs.current[cat.id] = el}>
-                  {productsByCategory[cat.id]?.map((itemProps) => (
-                    <div key={itemProps.id} className="home-card-wrapper">
-                      <MarketplaceCard item={itemProps} />
+                  {productsByCategory[cat.id]?.map((product) => (
+                    <div key={product.id} className="home-card-wrapper">
+                      <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                     </div>
                   ))}
                   <Link to={`/category/${cat.slug}`} className="view-more-card">
@@ -545,9 +492,9 @@ function Home() {
         </div>
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={trendingScrollRef}>
-            {popularProducts.map((itemProps) => (
-              <div key={itemProps.id} className="home-card-wrapper">
-                <MarketplaceCard item={itemProps} />
+            {popularProducts.map((product) => (
+              <div key={product.id} className="home-card-wrapper">
+                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
               </div>
             ))}
           </div>
@@ -607,9 +554,9 @@ function Home() {
         </div>
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={marketScrollRef}>
-            {newArrivals.map((itemProps) => (
-              <div key={itemProps.id} className="home-card-wrapper">
-                <MarketplaceCard item={itemProps} />
+            {newArrivals.map((product) => (
+              <div key={product.id} className="home-card-wrapper">
+                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
               </div>
             ))}
           </div>
@@ -631,9 +578,9 @@ function Home() {
           </div>
           <div className="scroll-container no-scrollbar">
             <div className="trending-scroll-row" ref={nearbyScrollRef}>
-              {nearbyProducts.map((itemProps) => (
-                <div key={itemProps.id} className="home-card-wrapper">
-                  <MarketplaceCard item={itemProps} />
+              {nearbyProducts.map((product) => (
+                <div key={product.id} className="home-card-wrapper">
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
             </div>
@@ -656,9 +603,9 @@ function Home() {
           </div>
           <div className="scroll-container no-scrollbar">
             <div className="trending-scroll-row" ref={freeScrollRef}>
-              {freeItems.map((itemProps) => (
-                <div key={itemProps.id} className="home-card-wrapper">
-                  <MarketplaceCard item={itemProps} />
+              {freeItems.map((product) => (
+                <div key={product.id} className="home-card-wrapper">
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
             </div>
