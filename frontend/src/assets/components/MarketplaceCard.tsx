@@ -51,13 +51,13 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
     setIsFavorited(newStatus);
     
     // Proactively implement the API call (even if endpoint is pending)
-    axios.post(route('announcements.favorite', { productId: product.id }).toString(), { favorite: newStatus })
+    axios.post(route('announcements.favorite', { announcement: product.slug }).toString(), { favorite: newStatus })
       .catch(err => console.error("Favorite toggle error:", err));
   };
 
   if (view === 'list') {
     return (
-      <Link to={`/product/${product.id}`} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s' }}>
+      <Link to={`/products/${product.slug}`} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s' }}>
         <div style={{ width: '280px', height: '210px', position: 'relative', flexShrink: 0 }}>
           <img src={allImages[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', top: '15px', left: '15px', padding: '5px 12px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success, color: colors.bgSecondary, fontSize: '11px', fontWeight: '900' }}>
@@ -124,7 +124,7 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
 
   return (
     <Link 
-      to={`/product/${product.id}`} 
+      to={`/products/${product.slug}`} 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ 

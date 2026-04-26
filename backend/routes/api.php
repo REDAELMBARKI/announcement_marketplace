@@ -67,8 +67,8 @@ Route::get('/api/test-users', function() {
 
 use App\Http\Controllers\UserProfileController;
 
-Route::get('/user/{id}', [UserProfileController::class, 'show'])->name('user.show');
-Route::put('/user/{id}', [UserProfileController::class, 'update'])->name('user.update');
+Route::get('/users/{user:slug}', [UserProfileController::class, 'show'])->name('user.show');
+Route::put('/users/{user:slug}', [UserProfileController::class, 'update'])->name('user.update');
 
  
 
@@ -133,21 +133,18 @@ Route::get('/homepage', HomepageController::class)->name('homepage');
 Route::get('/marketplace/init-data', [AnnouncementController::class, 'getMarketplaceInitData'])->name('marketplace.init-data');
 Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketplaceListings'])->name('marketplace.listings');
 Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
-Route::get('/announcements/{id}', [AnnouncementController::class, 'show'])->name('announcements.show');
-Route::post('/announcements/{productId}/favorite', [AnnouncementController::class, 'toggleFavorite'])->name('announcements.favorite');
-Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
-Route::put('/announcements/{announcementId}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
+Route::post('/announcements/{announcement:slug}/favorite', [AnnouncementController::class, 'toggleFavorite'])->name('announcements.favorite');
 
 // User announcements routes
-Route::prefix('user')->name('user.')->group(function () {
-    Route::get('/announcements/{userId}', [AnnouncementController::class, 'getUserAnnouncements'])->name('announcements');
-    Route::get('/donations/{userId}', [AnnouncementController::class, 'getUserDonations'])->name('donations');
-    Route::get('/sales/{userId}', [AnnouncementController::class, 'getUserSales'])->name('sales');
+Route::prefix('users/{user:slug}')->name('users.')->group(function () {
+    Route::get('announcements', [AnnouncementController::class, 'getUserAnnouncementsBySlug'])->name('user.announcements');
+    Route::get('donations', [AnnouncementController::class, 'getUserDonations'])->name('donations');
+    Route::get('sales', [AnnouncementController::class, 'getUserSales'])->name('sales');
+    Route::get('announcements/{announcement:slug}', [AnnouncementController::class, 'showBySlug'])->name('announcements.show');
+    Route::put('announcements/{announcement:slug}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('announcements/{announcement:slug}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    Route::put('announcements/{announcement:slug}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
 });
-
-// New routes for user announcements by slug
-Route::get('users/{user:slug}/announcements', [AnnouncementController::class, 'getUserAnnouncementsBySlug'])->name('users.announcements');
-Route::put('users/{user:slug}/announcements/{announcement:slug}', [AnnouncementController::class, 'updateUserAnnouncementBySlug'])->name('users.announcements.update');
 
 
 // Public announcements routes

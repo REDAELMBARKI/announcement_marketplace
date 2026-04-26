@@ -20,54 +20,72 @@ class AnnouncementService
     public function createAnnouncement(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            $product = $this->announcementRepository->create([
-                'user_id'           => $data['user_id'],
-                'super_category_id' => $data['super_category_id'],
-                'listing_mode'      => $data['listing_mode'],
-                'listing_type'      => $data['listing_type'],
-                'title'             => $data['title'],
-                'description'       => $data['description'] ?? null,
-                'price'             => $data['price'] ?? 0,
-                'currency'          => $data['currency'] ?? 'MAD',
-                'price_negotiable'  => $data['price_negotiable'] ?? false,
-                'status'            => 'sell', // Default status
-                'condition'         => $data['condition'] ?? null,
-                'gender'            => $data['gender'] ?? null,
-                'age_range'         => $data['age_range'] ?? null,
-                'brand'             => $data['brand'] ?? null,
-                'season'            => $data['season'] ?? null,
-                'sizes'             => $this->parseListField($data['sizes'] ?? null),
-                'colors'            => $this->parseListField($data['colors'] ?? null),
-                'pickup_address'    => $data['pickup_address'] ?? null,
-                'handover_method'   => $data['handover_method'] ?? 'pickup',
-            ]);
+            $data['status'] = 'active'; // Default status for new announcements
+            $data['sizes'] = $this->parseListField($data['sizes'] ?? null);
+            $data['colors'] = $this->parseListField($data['colors'] ?? null);
 
-            // Sync sub-categories if provided
-            if (!empty($data['sub_category_ids'])) {
-                $product->subCategories()->sync($data['sub_category_ids']);
-            }
+            $product = $this->announcementRepository->create($data);
 
-            // Link media
-            if (!empty($data['media_ids'])) {
-                $this->announcementRepository->linkMediaToProduct($data['media_ids'], $product);
-            }
-
-            // Create basic product item
-            $this->announcementRepository->createProductItem([
-                'product_id'      => $product->id,
-                'item_name'       => $product->title,
-                'item_condition'  => $product->condition,
-                'item_gender'     => $product->gender,
-                'recommended_age' => $product->age_range,
-                'item_brand'      => $product->brand,
-                'item_season'     => $product->season,
-                'item_quantity'   => 1,
-                'item_sizes'      => $product->sizes,
-                'item_colors'     => $product->colors,
-            ]);
+            $this->syncRelations($product, $data);
+            $this->upsertProductItem($product, $data);
 
             return $product;
         });
+    }
+
+    public function updateAnnouncement(int $id, array $data): Product
+    {
+        return DB::transaction(function () use ($id, $data) {
+            if (isset($data['sizes'])) {
+                $data['sizes'] = $this->parseListField($data['sizes']);
+            }
+            if (isset($data['colors'])) {
+                $data['colors'] = $this->parseListField($data['colors']);
+            }
+
+            $product = $this->announcementRepository->update($id, $data);
+
+            $this->syncRelations($product, $data);
+            $this->upsertProductItem($product, $data);
+
+            return $product;
+        });
+    }
+
+    protected function syncRelations(Product $product, array $data): void
+    {
+        // Sync sub-categories if provided
+        if (isset($data['sub_category_ids'])) {
+            $product->subCategories()->sync($data['sub_category_ids']);
+        }
+
+        // Link media if provided
+        if (!empty($data['media_ids'])) {
+            $this->announcementRepository->linkMediaToProduct($data['media_ids'], $product);
+        }
+    }
+
+    protected function upsertProductItem(Product $product, array $data): void
+    {
+        $itemData = [
+            'product_id'      => $product->id,
+            'item_name'       => $product->title,
+            'item_condition'  => $product->condition,
+            'item_gender'     => $product->gender,
+            'recommended_age' => $product->age_range,
+            'item_brand'      => $product->brand,
+            'item_season'     => $product->season,
+            'item_quantity'   => 1,
+            'item_sizes'      => $product->sizes,
+            'item_colors'     => $product->colors,
+        ];
+
+        $this->announcementRepository->updateProductItem($product->id, $itemData);
+
+        // If no item exists, create one (fallback for legacy data)
+        if (!$product->items()->exists()) {
+            $this->announcementRepository->createProductItem($itemData);
+        }
     }
 
     protected function parseListField($value): array
@@ -88,7 +106,7 @@ class AnnouncementService
         $categories = Category::whereNull('parent_id')
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get(['id', 'name as label', 'icon', 'slug']);
+            ->get(['id', 'name', 'icon', 'slug']);
 
         $attributes = $this->filterAttributeRepository->getAllGrouped();
 

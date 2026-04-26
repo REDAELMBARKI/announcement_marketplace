@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../../utils/route";
 import "../../../css/records.css";
 
 // This allows users to view and filter their donation history
@@ -12,19 +14,20 @@ export default function My_Donations() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
-    if (!user?.donor?.donor_ID) return;
+    if (!user?.slug) return;
 
-    fetch(`http://localhost:8000/api/donations/user/${user.donor.donor_ID}`) // fetch donations for this donor
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setDonations(data.donations);
+    axios.get(route('users.donations', { user: user.slug }).toString())
+      .then((res) => {
+        if (res.data.status === "success") {
+          setDonations(res.data.products);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Donation fetch error:", err);
         setLoading(false);
       });
-  }, [user]);
+  }, [user.slug]);
 
   //filtering donations
   const filtered = donations.filter((d) => {

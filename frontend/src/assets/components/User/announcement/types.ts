@@ -44,11 +44,14 @@ export interface Product {
   listing_mode: 'sell' | 'donate';
   listing_type: 'single' | 'collection';
   title: string;
+  slug : string ;
+  is_featured: boolean;
   description?: string;
   price?: string | number;
   currency: string;
   price_negotiable: boolean;
   pickup_address?: string;
+  phone_contact?: string;
   handover_method: 'pickup' | 'delivery' | 'both';
   status: 'draft' | 'active' | 'reserved' | 'sold' | 'donated' | 'closed';
   condition: string;

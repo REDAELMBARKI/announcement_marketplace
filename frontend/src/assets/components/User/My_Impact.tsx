@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import route from "../../../utils/route";
 import "../../../css/my_impact.css";
 
 // This allows users to view and track their donation impact
@@ -10,22 +12,23 @@ export default function My_Impact() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
-    if (!user?.donor?.donor_ID) {
+    if (!user?.slug) {
       setLoading(false);
       return;
     }
     // fetch donations for this donor
-    fetch(`http://localhost:8000/api/donations/user/${user.donor.donor_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setDonations(data.donations);
+    axios.get(route('users.donations', { user: user.slug }).toString())
+      .then((res) => {
+        if (res.data.status === "success") {
+          setDonations(res.data.products);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Impact fetch error:", err);
         setLoading(false);
       });
-  }, [user]);
+  }, [user.slug]);
   // calculate impact metrics
   const totalItems = donations.length;
   const totalCO2 = (totalItems * 1.5).toFixed(1);

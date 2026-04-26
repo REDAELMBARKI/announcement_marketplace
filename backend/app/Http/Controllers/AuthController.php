@@ -28,6 +28,7 @@ class AuthController extends Controller
             $user->load('role');
             
             $userData = $user->toArray();
+            $userData['role'] = $user->role ? $user->role->name : null;
 
             return response()->json([
                 'status' => 'success',
@@ -72,9 +73,12 @@ class AuthController extends Controller
         // Load role relationship
         $user->load('role');
 
+        $userData = $user->toArray();
+        $userData['role'] = $user->role ? $user->role->name : null;
+
         return response()->json([
             'status' => 'success',
-            'user'   => $user,
+            'user'   => $userData,
         ]);
     }
 

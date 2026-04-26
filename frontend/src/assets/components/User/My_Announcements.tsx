@@ -38,7 +38,7 @@ const My_Announcements: React.FC = () => {
       return;
     }
 
-    axios.get(route('user.announcements', { userId: user.id }).toString())
+    axios.get(route('user.announcements', { user: user.slug }).toString())
       .then((res) => {
         if (res.data.status === "success") {
           const productsArray = res.data.products?.data || res.data.products;
@@ -54,8 +54,11 @@ const My_Announcements: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
       try {
-        const res = await axios.delete(route('announcements.destroy', { id }).toString());
+        const res = await axios.delete(route('announcements.destroy', { user: user.slug, announcement: product.slug }).toString());
         if (res.data.status === "success") {
           setProducts(products.filter((p) => p.id !== id));
         }
@@ -202,7 +205,7 @@ const My_Announcements: React.FC = () => {
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
-                        onClick={() => navigate(`/product/${p.id}`)}
+                        onClick={() => navigate(`/products/${p.slug}`)}
                         className="action-btn"
                         title="View details"
                         style={{ padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '6px', backgroundColor: colors.bgSecondary, cursor: 'pointer' }}
@@ -210,6 +213,15 @@ const My_Announcements: React.FC = () => {
                         <Eye size={16} color={colors.textSecondary} strokeWidth={2} />
                       </button>
                       <button 
+                        onClick={() => {
+                          const userSlug = p.user?.slug || user.slug;
+                          const announcementSlug = p.slug;
+                          if (userSlug && announcementSlug) {
+                            navigate(`/users/${userSlug}/announcements/${announcementSlug}`);
+                          } else {
+                            navigate(`/add_announcement`, { state: { product: p } });
+                          }
+                        }}
                         className="action-btn"
                         title="Edit listing"
                         style={{ padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '6px', backgroundColor: colors.bgSecondary, cursor: 'pointer' }}

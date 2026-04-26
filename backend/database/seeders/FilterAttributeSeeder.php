@@ -14,7 +14,7 @@ class FilterAttributeSeeder extends Seeder
     {
         $attributes = [
             'ageRanges' => [
-                ['id' => 1, 'label' => '0-1 ansTest', 'value' => '0-1 ans'],
+                ['id' => 1, 'label' => '0-1 ans', 'value' => '0-1 ans'],
                 ['id' => 2, 'label' => '1-3 ans', 'value' => '1-3 ans'],
                 ['id' => 3, 'label' => '3-6 ans', 'value' => '3-6 ans'],
                 ['id' => 4, 'label' => '6-10 ans', 'value' => '6-10 ans'],
@@ -34,7 +34,7 @@ class FilterAttributeSeeder extends Seeder
                 ['id' => 4, 'label' => '32 EU', 'value' => '32'],
             ],
             'conditions' => [
-                ['id' => 1, 'label' => 'Neufx', 'value' => 'Neuf', 'color' => '#00b894'],
+                ['id' => 1, 'label' => 'Neuf', 'value' => 'Neuf', 'color' => '#00b894'],
                 ['id' => 2, 'label' => 'Très bon état', 'value' => 'Très bon état', 'color' => '#0984e3'],
                 ['id' => 3, 'label' => 'Bon état', 'value' => 'Bon état', 'color' => '#fdcb6e'],
                 ['id' => 4, 'label' => 'État correct', 'value' => 'État correct', 'color' => '#e17055'],
@@ -50,6 +50,25 @@ class FilterAttributeSeeder extends Seeder
                 ['id' => 3, 'label' => 'Marrakech', 'districts' => [['id' => 301, 'label' => 'Gueliz'], ['id' => 302, 'label' => 'Hivernage']]],
                 ['id' => 4, 'label' => 'Agadir', 'districts' => [['id' => 401, 'label' => 'Cité Dakhla'], ['id' => 402, 'label' => 'Bensergao']]],
                 ['id' => 5, 'label' => 'Tanger', 'districts' => [['id' => 501, 'label' => 'Malabata'], ['id' => 502, 'label' => 'Marshane']]],
+            ],
+            'materials' => [
+                ['id' => 1, 'label' => 'Coton', 'value' => 'coton'],
+                ['id' => 2, 'label' => 'Laine', 'value' => 'laine'],
+                ['id' => 3, 'label' => 'Polyester', 'value' => 'polyester'],
+                ['id' => 4, 'label' => 'Soie', 'value' => 'soie'],
+                ['id' => 5, 'label' => 'Lin', 'value' => 'lin'],
+            ],
+            'colors' => [
+                ['id' => 1, 'label' => 'Noir', 'value' => 'Noir', 'hex' => '#000000'],
+                ['id' => 2, 'label' => 'Blanc', 'value' => 'Blanc', 'hex' => '#FFFFFF'],
+                ['id' => 3, 'label' => 'Gris', 'value' => 'Gris', 'hex' => '#808080'],
+                ['id' => 4, 'label' => 'Rouge', 'value' => 'Rouge', 'hex' => '#FF0000'],
+                ['id' => 5, 'label' => 'Bleu', 'value' => 'Bleu', 'hex' => '#0000FF'],
+                ['id' => 6, 'label' => 'Vert', 'value' => 'Vert', 'hex' => '#008000'],
+                ['id' => 7, 'label' => 'Jaune', 'value' => 'Jaune', 'hex' => '#FFFF00'],
+                ['id' => 8, 'label' => 'Rose', 'value' => 'Rose', 'hex' => '#FFC0CB'],
+                ['id' => 9, 'label' => 'Violet', 'value' => 'Violet', 'hex' => '#800080'],
+                ['id' => 10, 'label' => 'Orange', 'value' => 'Orange', 'hex' => '#FFA500'],
             ],
         ];
 

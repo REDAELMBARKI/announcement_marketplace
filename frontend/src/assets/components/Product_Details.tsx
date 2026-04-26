@@ -20,7 +20,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 const Product_Details: React.FC = () => {
   const { colors } = useTheme();
-  const { id } = useParams<{ id: string }>();
+  const { announcementSlug } = useParams<{ announcementSlug: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -28,10 +28,10 @@ const Product_Details: React.FC = () => {
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
 
   const toggleFavorite = () => {
+    if (!product) return;
     const newStatus = !isFavorited;
     setIsFavorited(newStatus);
-    
-    axios.post(route('announcements.favorite', { productId: id }).toString(), { favorite: newStatus })
+    axios.post(route('announcements.favorite', { announcement: product.slug }).toString(), { favorite: newStatus })
       .catch(err => console.error("Favorite toggle error:", err));
   };
 
@@ -42,9 +42,9 @@ const Product_Details: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!id) return;
+    if (!announcementSlug) return;
     
-    axios.get(route('announcements.show', { id }).toString())
+    axios.get(route('announcements.show', { announcement: announcementSlug }).toString())
       .then((res: any) => {
         if (res.data.status === "success" && (res.data.product?.data || res.data.product)) {
           const productData = res.data.product?.data || res.data.product;

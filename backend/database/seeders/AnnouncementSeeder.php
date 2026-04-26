@@ -59,16 +59,17 @@ class AnnouncementSeeder extends Seeder
     {
         // Create 5 specific Moroccan users
         $users = [
-            ['name' => 'Fatima Alami', 'email' => 'fatima@example.com', 'rating' => 4.8, 'role_id' => 2],
-            ['name' => 'Youssef Benkiran', 'email' => 'youssef@example.com', 'rating' => 4.5, 'role_id' => 2],
-            ['name' => 'Amina Rachidi', 'email' => 'amina@example.com', 'rating' => 4.9, 'role_id' => 2],
-            ['name' => 'Karim El Mardi', 'email' => 'karim@example.com', 'rating' => 4.7, 'role_id' => 2],
-            ['name' => 'Sofia Mansouri', 'email' => 'sofia@example.com', 'rating' => 4.6, 'role_id' => 2],
+            ['name' => 'Fatima Alami', 'slug' => 'fatima-alami' ,  'email' => 'fatima@example.com', 'rating' => 4.8, 'role_id' => 2],
+            ['name' => 'Youssef Benkiran' , 'slug' => 'youssef-benkiran' , 'email' => 'youssef@example.com', 'rating' => 4.5, 'role_id' => 2],
+            ['name' => 'Amina Rachidi', 'slug' => 'amina-rachidi' ,  'email' => 'amina@example.com', 'rating' => 4.9, 'role_id' => 2],
+            ['name' => 'Karim El Mardi', 'slug' => 'karim-el-mardi' ,  'email' => 'karim@example.com', 'rating' => 4.7, 'role_id' => 2],
+            ['name' => 'Sofia Mansouri', 'slug' => 'sofia-mansouri' ,  'email' => 'sofia@example.com', 'rating' => 4.6, 'role_id' => 2],
         ];
 
         foreach ($users as $userData) {
             User::factory()->create([
                 'name' => $userData['name'],
+                'slug' => $userData['slug'],
                 'email' => $userData['email'],
                 'rating' => $userData['rating'],
                 'role_id' => $userData['role_id'],
@@ -81,7 +82,7 @@ class AnnouncementSeeder extends Seeder
         // Create 8 top-level super categories with their sub-categories
         $superCategories = [
             [
-                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'Gamepad',
+                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'gamepad-2',
                 'image' => 'https://images.unsplash.com/photo-1531346727404-cc74a445f02c?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Jouets éducatifs', 'slug' => 'jouets-educatifs'],
@@ -92,7 +93,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'TShirt',
+                'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'shirt',
                 'image' => 'https://images.unsplash.com/photo-1556905055-8f358a7a4bb4?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'T-shirts', 'slug' => 't-shirts'],
@@ -103,7 +104,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'Book',
+                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'book-open',
                 'image' => 'https://images.unsplash.com/photo-1491843351663-8511e81d312a?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Contes marocains', 'slug' => 'contes-marocains'],
@@ -113,7 +114,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'Home2',
+                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'package',
                 'image' => 'https://images.unsplash.com/photo-1533091902244-f9a912da2a5e?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Lits bébé', 'slug' => 'lits-bebe'],
@@ -123,7 +124,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'UserRounded',
+                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'baby',
                 'image' => 'https://images.unsplash.com/photo-1522771935876-2497116a7a9e?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Poussettes', 'slug' => 'poussettes'],
@@ -133,7 +134,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'Gamepad',
+                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'dice-5',
                 'image' => 'https://images.unsplash.com/photo-1558023784-f8343393cb06?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Jeux de société', 'slug' => 'jeux-societe'],
@@ -143,7 +144,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'Walking',
+                'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'footprints',
                 'image' => 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Chaussures sport', 'slug' => 'chaussures-sport'],
@@ -153,7 +154,7 @@ class AnnouncementSeeder extends Seeder
                 ]
             ],
             [
-                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'Palette',
+                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'palette',
                 'image' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
                     ['name' => 'Peinture', 'slug' => 'peinture'],
@@ -199,7 +200,7 @@ class AnnouncementSeeder extends Seeder
     private function createProducts(): void
     {
         $categories = Category::whereNotNull('parent_id')->get();
-        $users = User::all();
+        $users = User::whereIn("id" , [1,6])->get();
 
         // Realistic Moroccan kids product names
         $productNames = [
@@ -232,6 +233,8 @@ class AnnouncementSeeder extends Seeder
                 'favorites_count' => fake()->numberBetween(0, 50),
                 'condition' => fake()->randomElement(['Neuf', 'Très bon état', 'Bon état']),
                 'age_range' => fake()->randomElement(['0-2 ans', '2-5 ans', '5-8 ans', '8-12 ans']),
+                'contact_phone' => '06' . fake()->numerify('########'),
+                'phone_contact' => '+2126' . fake()->numerify('########'),
             ]);
 
             // Link to category (sub-category)

@@ -19,7 +19,7 @@ interface CustomSelectProps {
   placeholder?: string;
   icon?: React.ReactNode;
   searchable?: boolean;
-  renderType?: 'dropdown' | 'pills' | 'checkbox' | 'radio';
+  renderType?: 'dropdown' | 'pills' | 'checkbox' | 'radio' | 'colors';
   error?: boolean;
   helperText?: string;
 }
@@ -76,6 +76,49 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     }
     return value === optValue;
   };
+
+  if (renderType === 'colors') {
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+        {options.map(opt => {
+          const active = isSelected(opt.value || opt.id);
+          const colorHex = (opt as any).hex || opt.value || opt.label;
+          
+          return (
+            <div 
+              key={opt.id}
+              onClick={() => handleToggle(opt.value || opt.id)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: colorHex,
+                  border: active ? `3px solid ${colors.coral}` : `1px solid ${colors.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: active ? '0 0 10px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                {active && <Check size={18} color={colorHex.toLowerCase() === '#ffffff' || colorHex.toLowerCase() === 'white' ? 'black' : 'white'} strokeWidth={3} />}
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: active ? '700' : '500', color: colors.textSecondary }}>{opt.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   if (renderType === 'pills') {
     return (

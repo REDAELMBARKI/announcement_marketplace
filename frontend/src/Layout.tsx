@@ -144,7 +144,7 @@ export default function Layout() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/faq_chatbot" element={<FAQChatBot />} />
           <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/product/:id" element={<Product_Details />} />
+          <Route path="/products/:announcementSlug" element={<Product_Details />} />
           <Route path="/our_partners" element={<Our_Partners />} />
 
           {/* Admin */}
@@ -173,6 +173,7 @@ export default function Layout() {
           <Route path="/my_profile" element={<My_Profile />} />
           <Route path="/my_announcements" element={<My_Announcements />} />
           <Route path="/add_announcement" element={<Add_Announcement />} />
+          <Route path="/users/:userSlug/announcements/:announcementSlug" element={<Add_Announcement />} />
 
           {/* Footer items */}
           <Route path="/terms_conditions" element={<Terms_Conditions />} />

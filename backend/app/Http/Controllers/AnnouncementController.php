@@ -3,16 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductItem;
-use App\Models\Media;
-use App\Models\Category;
-use App\Models\Favorite;
+use App\Models\User;
 use App\Http\Resources\ProductResource;
 use App\Services\AnnouncementService;
 use App\Services\ProductService;
+use App\Http\Requests\ProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 // Unified controller for managing both donations and sales announcements
 class AnnouncementController extends Controller
@@ -22,19 +19,23 @@ class AnnouncementController extends Controller
         protected ProductService $productService
     ) {}
 
-     function toggleFavorite(Request $request, $productId)
+    /**
+     * Toggle favorite status for an announcement.
+     */
+     function toggleFavorite(Request $request, Product $announcement)
     {
-        // For now, we'll use a hardcoded user_id or get it from auth if implemented
-        $userId = $request->input('user_id') ?? 1;
-        
-        $result = $this->productService->toggleFavorite($userId, $productId);
+        try {
+            // Assume authenticated user for now, or use a dummy ID for guest
+            $userId = auth()->id() ?? 1;
+            $res = $this->productService->toggleFavorite($userId, $announcement->id);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => $result['message'],
-            'is_favorited' => $result['is_favorited'],
-            'favorites_count' => $result['favorites_count']
-        ]);
+            return response()->json($res);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -83,26 +84,10 @@ class AnnouncementController extends Controller
     /**
      * Store a new announcement.
      */
-     function store(Request $request)
+     function store(ProductRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'super_category_id' => 'required|exists:categories,id',
-            'listing_mode'      => 'required|in:sell,donate',
-            'title'             => 'required|string|max:255',
-            'condition'         => 'required|string',
-            'age_range'         => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            $data = $request->all();
-            $data['user_id'] = $request->input('user_id') ?? 1;
+            $data = $request->validated();
 
             $product = $this->announcementService->createAnnouncement($data);
 
@@ -122,14 +107,14 @@ class AnnouncementController extends Controller
     /**
      * Display the specified announcement.
      */
-     function show($id)
+     function show(Product $announcement)
     {
         try {
-            $product = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'addresses'])->findOrFail($id);
+            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'addresses']);
             
             return response()->json([
                 'status'  => 'success',
-                'product' => new ProductResource($product),
+                'product' => new ProductResource($announcement),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -140,12 +125,75 @@ class AnnouncementController extends Controller
     }
 
     /**
-     * Remove the specified announcement.
+     * Display the specified announcement by slug.
      */
-     function destroy($id)
+    public function showBySlug(User $user, Product $announcement)
     {
         try {
-            $this->productService->deleteAnnouncement($id);
+            // Verify that the announcement belongs to the user
+            if ($announcement->user_id !== $user->id) {
+                throw new \Exception('Announcement does not belong to this user');
+            }
+
+            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'addresses']);
+
+            return response()->json([
+                'status'  => 'success',
+                'product' => new ProductResource($announcement),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Announcement not found',
+            ], 404);
+        }
+    }
+
+    /**
+     * Update the specified announcement.
+     */
+    function update(ProductRequest $request, User $user, Product $announcement)
+    {
+        try {
+            // Verify that the announcement belongs to the user
+            if ($announcement->user_id !== $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Announcement does not belong to this user',
+                ], 403);
+            }
+
+            $data = $request->validated();
+            $product = $this->announcementService->updateAnnouncement($announcement->id, $data);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Announcement updated successfully',
+                'product' => new ProductResource($product),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to update announcement: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified announcement.
+     */
+     function destroy(User $user, Product $announcement)
+    {
+        try {
+            // Verify that the announcement belongs to the user
+            if ($announcement->user_id !== $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Announcement does not belong to this user',
+                ], 403);
+            }
+
+            $this->productService->deleteAnnouncement($announcement->id);
 
             return response()->json([
                 'status'  => 'success',
@@ -162,17 +210,24 @@ class AnnouncementController extends Controller
     /**
      * Update the status of an announcement.
      */
-     function updateStatus(Request $request, $announcementId)
+     function updateStatus(Request $request, User $user, Product $announcement)
     {
         try {
+            // Verify that the announcement belongs to the user
+            if ($announcement->user_id !== $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Announcement does not belong to this user',
+                ], 403);
+            }
+
             $status = $request->input('status');
-            $product = Product::findOrFail($announcementId);
-            $product->update(['status' => $status]);
+            $announcement->update(['status' => $status]);
 
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Status updated successfully',
-                'product' => new ProductResource($product),
+                'product' => new ProductResource($announcement),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -183,28 +238,12 @@ class AnnouncementController extends Controller
     }
 
     /**
-     * Fetch announcements for a specific user.
-     */
-     function getUserAnnouncements($userId)
-    {
-        $products = Product::with(['superCategory', 'thumbnail', 'user'])
-            ->where('user_id', $userId)
-            ->orderByDesc('created_at')
-            ->get();
-
-        return response()->json([
-            'status'   => 'success',
-            'products' => ProductResource::collection($products),
-        ]);
-    }
-
-    /**
      * Fetch donations for a specific user.
      */
-     function getUserDonations($userId)
+     function getUserDonations(User $user)
     {
         $products = Product::with(['superCategory', 'thumbnail', 'user'])
-            ->where('user_id', $userId)
+            ->where('user_id', $user->id)
             ->where('listing_mode', 'donate')
             ->orderByDesc('created_at')
             ->get();
@@ -218,10 +257,10 @@ class AnnouncementController extends Controller
     /**
      * Fetch sales for a specific user.
      */
-     function getUserSales($userId)
+     function getUserSales(User $user)
     {
         $products = Product::with(['superCategory', 'thumbnail', 'user'])
-            ->where('user_id', $userId)
+            ->where('user_id', $user->id)
             ->where('listing_mode', 'sell')
             ->orderByDesc('created_at')
             ->get();
@@ -235,7 +274,7 @@ class AnnouncementController extends Controller
     /**
      * Fetch announcements for a specific user by slug.
      */
-    public function getUserAnnouncementsBySlug(Request $request, \App\Models\User $user)
+    public function getUserAnnouncementsBySlug(Request $request, User $user)
     {
         // Use Gate to ensure only the owner can see their own announcements
         // This requires the user to be authenticated.
@@ -250,46 +289,6 @@ class AnnouncementController extends Controller
             'status'   => 'success',
             'products' => ProductResource::collection($products),
         ]);
-    }
-
-    /**
-     * Update an announcement for a specific user by slug.
-     */
-    public function updateUserAnnouncementBySlug(Request $request, \App\Models\User $user, Product $announcement)
-    {
-        // Ensure the announcement belongs to the user
-        if ($announcement->user_id !== $user->id) {
-            return response()->json(['status' => 'error', 'message' => 'Announcement does not belong to this user'], 404);
-        }
-
-        // Use policy for authorization
-        // Gate::authorize('update', $announcement);
-
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'price' => 'sometimes|required|numeric',
-            'condition' => 'sometimes|required|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
-        }
-
-        try {
-            $announcement->update($request->all());
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Announcement updated successfully',
-                'product' => new ProductResource($announcement),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Failed to update announcement: ' . $e->getMessage(),
-            ], 500);
-        }
     }
 
     /**

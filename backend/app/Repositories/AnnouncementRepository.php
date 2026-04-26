@@ -10,9 +10,31 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class AnnouncementRepository
 {
+    /**
+     * Common method to prepare product data.
+     */
+    protected function prepareProductData(array $data): array
+    {
+        $fields = [
+            'user_id', 'super_category_id', 'listing_mode', 'listing_type',
+            'title', 'description', 'price', 'currency', 'price_negotiable',
+            'status', 'condition', 'gender', 'age_range', 'brand', 'season',
+            'sizes', 'colors', 'pickup_address', 'handover_method', 'phone_contact'
+        ];
+
+        return array_intersect_key($data, array_flip($fields));
+    }
+
     public function create(array $data): Product
     {
-        return Product::create($data);
+        return Product::create($this->prepareProductData($data));
+    }
+
+    public function update(int $id, array $data): Product
+    {
+        $product = Product::findOrFail($id);
+        $product->update($this->prepareProductData($data));
+        return $product;
     }
 
     public function linkMediaToProduct(array $mediaIds, Product $product): void
@@ -31,10 +53,15 @@ class AnnouncementRepository
         return ProductItem::create($data);
     }
 
+    public function updateProductItem(int $productId, array $data): void
+    {
+        ProductItem::where('product_id', $productId)->first()?->update($data);
+    }
+
     public function getMarketplaceListings(array $filters, int $perPage = 12): LengthAwarePaginator
     {
         $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories'])
-            ->whereIn('status', ['sell', 'donate']);
+            ->whereIn('status', ['sell', 'donate', 'active']); // Added active status
 
         // Search filter
         if (!empty($filters['search'])) {

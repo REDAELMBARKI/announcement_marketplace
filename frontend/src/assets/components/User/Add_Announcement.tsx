@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import ziggyRoute from "../../../utils/route";
 import {
@@ -37,6 +37,10 @@ import {
   Chip,
   Divider,
   Alert,
+  FormControl,
+  OutlinedInput,
+  FormHelperText,
+  InputLabel,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
@@ -56,6 +60,27 @@ const SUB_CATEGORIES_MAP: Record<string, string[]> = {
   "Puériculture": ["Sommeil", "Repas", "Bain & Soins", "Sécurité", "Poussettes & Sièges auto", "Portage"],
   "Livres & Éveil": ["Albums illustrés", "Contes & Histoires", "Livres sonores", "Livres à toucher", "Activités & Coloriages"],
   "Autre": ["Mobilier", "Décoration", "Matériel de sport", "Divers"]
+};
+
+// Color mapping for French names to Hex
+const COLOR_MAP: Record<string, string> = {
+  "Noir": "#000000",
+  "Blanc": "#FFFFFF",
+  "Gris": "#808080",
+  "Rouge": "#FF0000",
+  "Bleu": "#0000FF",
+  "Vert": "#008000",
+  "Jaune": "#FFFF00",
+  "Rose": "#FFC0CB",
+  "Violet": "#800080",
+  "Orange": "#FFA500",
+  "Marron": "#A52A2A",
+  "Beige": "#F5F5DC",
+  "Marine": "#000080",
+  "Ciel": "#87CEEB",
+  "Doré": "#FFD700",
+  "Argenté": "#C0C0C0",
+  "Multicolore": "linear-gradient(45deg, red, blue, green, yellow)"
 };
 
 // Types
@@ -90,12 +115,15 @@ interface FormState {
   city: string;
   handover_method: string;
   pickup_address: string;
+  phone_contact: string;
+  custom_colors: { name: string; hex: string }[];
 }
 
 interface User {
   id?: number;
+  slug?: string;
   name?: string;
-  email?: string;
+  role?: string;
 }
 
 // Helper to get icon by category name
@@ -158,10 +186,72 @@ interface FilterAttributes {
   colors: string[];
 }
 
-export default function Add_Announcement() {
+interface Product {
+  id: number;
+  slug: string;
+  user?: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  super_category_id: number;
+  super_category_name?: string;
+  sub_category_names?: string[];
+  title: string;
+  description: string;
+  listing_type: "single" | "collection";
+  listing_mode: "sell" | "donate";
+  price: string | number;
+  currency: string;
+  price_negotiable: boolean;
+  condition: string;
+  gender: string;
+  age_range: string;
+  brand?: string;
+  season?: string;
+  sizes?: string[];
+  colors?: string[];
+  city: string;
+  pickup_address: string;
+  phone_contact: string;
+  handover_method: string;
+  thumbnail?: { url: string; id: number };
+  gallery?: { url: string; id: number }[];
+}
+
+interface AddAnnouncementProps {
+  product?: Product;
+}
+
+export default function Add_Announcement({ product: propProduct }: AddAnnouncementProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { userSlug, announcementSlug } = useParams();
+  const [product, setProduct] = useState<Product | undefined>(propProduct || location.state?.product);
+  const isEditMode = !!product || (!!userSlug && !!announcementSlug);
   const user: User = JSON.parse(localStorage.getItem("user") || "{}");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch product if slugs are present and no product in state
+  useEffect(() => {
+    if (userSlug && announcementSlug && !product) {
+      const fetchProduct = async () => {
+        try {
+        const response = await axios.get(ziggyRoute('announcements.show', { 
+          user: userSlug, 
+          announcement: announcementSlug 
+        }));
+        if (response.data.status === "success") {
+            setProduct(response.data.product);
+          }
+        } catch (error) {
+          console.error("Failed to fetch product by slug:", error);
+          setStatus({ type: 'error', message: "Impossible de charger l'annonce." });
+        }
+      };
+      fetchProduct();
+    }
+  }, [userSlug, announcementSlug, product]);
 
   const [stepKey, setStepKey] = useState<string>("category");
   const [status, setStatus] = useState<StatusMessage | null>(null);
@@ -206,15 +296,19 @@ export default function Add_Announcement() {
     price_negotiable: false,
     city: "",
     pickup_address: "",
+    phone_contact: "+212",
     handover_method: "both",
+    custom_colors: [],
   });
 
-  // Fetch initial data from API
+  const [tempColorName, setTempColorName] = useState("");
+  const [tempColorHex, setTempColorHex] = useState("#3b82f6");
+
+  // Fetch initial data and pre-fill if in edit mode
   useEffect(() => {
     const fetchInitData = async () => {
       try {
-        const response = await axios.get(ziggyRoute('marketplace.init'));
-        console.log(response)
+        const response = await axios.get(ziggyRoute('marketplace.init-data'));
         if (response.data.status === "success") {
           setCategories(response.data.categories || []);
           setAttributes({
@@ -227,6 +321,50 @@ export default function Add_Announcement() {
             materials: response.data.materials || [],
             colors: response.data.colors || []
           });
+
+          // Pre-fill form if in edit mode
+          if (isEditMode && product) {
+            setForm({
+              super_category_id: product.super_category_id,
+              super_category_name: product.super_category_name || null,
+              sub_category_names: product.sub_category_names || [],
+              sub_category_ids: [], // Backend might need this but we use names for now
+              title: product.title,
+              description: product.description,
+              listing_type: product.listing_type,
+              gender: product.gender,
+              age_range: product.age_range,
+              brand: product.brand || "",
+              condition: product.condition,
+              sizes: product.sizes || [],
+              colors: product.colors || [],
+              season: product.season || "",
+              material: "", // Missing in product?
+              listing_mode: product.listing_mode,
+              price: String(product.price),
+              currency: product.currency,
+              price_negotiable: product.price_negotiable,
+              city: product.city,
+              pickup_address: product.pickup_address,
+              phone_contact: product.phone_contact,
+              handover_method: product.handover_method,
+              custom_colors: [], // Assuming custom colors aren't separate in backend yet
+            });
+
+            // Set upload slots
+            const slots: UploadSlot[] = Array(8).fill(null).map(() => ({ status: 'idle', url: null, id: null }));
+            if (product.thumbnail) {
+              slots[0] = { status: 'done', url: product.thumbnail.url, id: product.thumbnail.id };
+            }
+            if (product.gallery) {
+              product.gallery.forEach((media, idx) => {
+                if (idx + 1 < slots.length) {
+                  slots[idx + 1] = { status: 'done', url: media.url, id: media.id };
+                }
+              });
+            }
+            setUploadSlots(slots);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
@@ -235,13 +373,18 @@ export default function Add_Announcement() {
       }
     };
     fetchInitData();
-  }, []);
+  }, [isEditMode, product]);
 
   const visibleSteps = useMemo(() => BASE_STEPS, []);
 
   const stepIndex = visibleSteps.findIndex((step) => step.key === stepKey);
   const currentStepNumber = stepIndex + 1;
   const isLastStep = currentStepNumber === visibleSteps.length;
+
+  const selectedCategory = useMemo(() => 
+    categories.find(c => c.id === form.super_category_id), 
+    [categories, form.super_category_id]
+  );
 
   const updateField = (key: keyof FormState, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
   
@@ -296,6 +439,11 @@ export default function Add_Announcement() {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
       if (!form.city) errors.city = "Choisissez une ville.";
       if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
+      if (!form.phone_contact.trim() || form.phone_contact === "+212") {
+        errors.phone_contact = "Le numéro de téléphone est obligatoire.";
+      } else if (!/^\+212[5-7]\d{8}$/.test(form.phone_contact)) {
+        errors.phone_contact = "Format: 9 chiffres après +212, commençant par 5, 6 ou 7.";
+      }
     }
     return errors;
   };
@@ -439,9 +587,18 @@ export default function Add_Announcement() {
     };
 
     try {
-      const response = await axios.post(ziggyRoute('announcements.store'), payload);
+      let response;
+      if (isEditMode && product) {
+        response = await axios.put(ziggyRoute('users.announcements.update', { 
+          user: product.user?.slug || user.slug, 
+          announcement: product.slug 
+        }), payload);
+      } else {
+        response = await axios.post(ziggyRoute('announcements.store'), payload);
+      }
+
       if (response.data.status === "success") {
-        setStatus({ type: "success", message: "Annonce publiée avec succès." });
+        setStatus({ type: "success", message: isEditMode ? "Annonce mise à jour avec succès." : "Annonce publiée avec succès." });
         setTimeout(() => navigate("/my_announcements"), 1200);
         return;
       }
@@ -567,14 +724,17 @@ export default function Add_Announcement() {
 
             {/* Row 3: État du produit - Full-width dropdown alone on its own row */}
             <Box sx={{ mb: 4, width: '100%' }}>
-              <CustomSelect
-                label="État du produit"
-                options={attributes.conditions}
-                value={form.condition}
-                onChange={(val) => updateField("condition", val)}
-                error={!!fieldErrors.condition}
-                helperText={fieldErrors.condition}
-              />
+                <CustomSelect
+                  label="État du produit"
+                  options={attributes.conditions}
+                  value={form.condition}
+                  onChange={(val) => {
+                    const selected = attributes.conditions.find(o => (o.value || o.id) === val);
+                    updateField("condition", selected?.value || val);
+                  }}
+                  error={!!fieldErrors.condition}
+                  helperText={fieldErrors.condition}
+                />
             </Box>
 
             {/* Row 4: Photos - Single large dashed-border upload box full width. One empty slot at a time. */}
@@ -695,9 +855,154 @@ export default function Add_Announcement() {
               Variantes & Caractéristiques
             </Typography>
 
+            {/* Collection Checkbox */}
+            <Box sx={{ width: '100%', p: 2.5, borderRadius: 3, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <input 
+                  type="checkbox" 
+                  id="is_collection"
+                  checked={form.listing_type === "collection"}
+                  onChange={(e) => updateField("listing_type", e.target.checked ? "collection" : "single")}
+                  style={{ width: 24, height: 24, cursor: 'pointer' }}
+                />
+                <Box>
+                  <label htmlFor="is_collection" style={{ cursor: 'pointer', fontWeight: 700, color: '#1e293b', fontSize: '1rem' }}>
+                    Vendez-vous une collection ou un article individuel ?
+                  </label>
+                  <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+                    Cochez cette case si vous vendez un lot d'articles (les options de taille et couleur deviendront facultatives).
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Tailles */}
+            <Box sx={{ width: '100%' }}>
+              <CustomSelect
+                label={`Tailles ${form.listing_type === 'collection' ? '(Optionnel)' : ''}`}
+                multiple={true}
+                placeholder="Choisir les tailles..."
+                options={sizesOptions.map(o => (typeof o === 'string' ? { id: o, label: o, value: o } : o))}
+                value={form.sizes}
+                onChange={(val) => updateField("sizes", val)}
+                error={!!fieldErrors.sizes}
+                helperText={fieldErrors.sizes}
+                renderType="pills"
+              />
+            </Box>
+
+            {/* Couleurs */}
+            <Box sx={{ width: '100%' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#1e293b' }}>
+                Couleurs {form.listing_type === 'collection' ? '(Optionnel)' : ''}
+              </Typography>
+              
+              <CustomSelect
+                multiple={true}
+                options={attributes.colors.map(o => {
+                  const label = typeof o === 'string' ? o : (o as any).label;
+                  const value = typeof o === 'string' ? o : (o as any).value || (o as any).id;
+                  return {
+                    id: value,
+                    label: label,
+                    value: value,
+                    hex: COLOR_MAP[label] || value
+                  };
+                })}
+                value={form.colors}
+                onChange={(val) => updateField("colors", val)}
+                error={!!fieldErrors.colors}
+                helperText={fieldErrors.colors}
+                renderType="colors"
+              />
+
+              {/* Custom Color Picker */}
+              <Box sx={{ mt: 3, p: 2, borderRadius: 2, border: '1px dashed #cbd5e1', bgcolor: '#f8fafc' }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Palette size={18} /> Ajouter une couleur personnalisée
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* List of custom colors being added */}
+                  {form.custom_colors.map((cc, idx) => (
+                    <Box key={idx} sx={{ display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#fff', p: 1, borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                      <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: cc.hex, border: '1px solid #e2e8f0' }} />
+                      <Typography variant="body2" sx={{ flexGrow: 1, fontWeight: 500 }}>{cc.name}</Typography>
+                      <IconButton size="small" onClick={() => {
+                        const nameToRemove = form.custom_colors[idx].name;
+                        const newCustomColors = form.custom_colors.filter((_, i) => i !== idx);
+                        updateField("custom_colors", newCustomColors);
+                        if (nameToRemove) {
+                          updateField("colors", form.colors.filter(c => c !== nameToRemove));
+                        }
+                      }}>
+                        <X size={18} />
+                      </IconButton>
+                    </Box>
+                  ))}
+
+                  {/* Add new custom color input */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ position: 'relative', width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', border: '2px solid #3b82f6', flexShrink: 0 }}>
+                      <input 
+                        type="color" 
+                        value={tempColorHex || "#3b82f6"}
+                        onChange={(e) => setTempColorHex(e.target.value)}
+                        style={{ 
+                          position: 'absolute',
+                          top: '-50%',
+                          left: '-50%',
+                          width: '200%',
+                          height: '200%',
+                          cursor: 'pointer',
+                          border: 'none',
+                          padding: 0
+                        }}
+                      />
+                      <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                        <Plus size={20} color="#3b82f6" />
+                      </Box>
+                    </Box>
+                    <TextField
+                      size="small"
+                      placeholder="Nom de la couleur (min 3 car.)"
+                      value={tempColorName}
+                      onChange={(e) => setTempColorName(e.target.value)}
+                      sx={{ bgcolor: 'white' }}
+                    />
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      disabled={tempColorName.trim().length < 3}
+                      onClick={() => {
+                        const newName = tempColorName.trim();
+                        if (newName.length >= 3) {
+                          const newCustomColor = { name: newName, hex: tempColorHex || "#3b82f6" };
+                          updateField("custom_colors", [...form.custom_colors, newCustomColor]);
+                          
+                          // Add to main colors list
+                          if (!form.colors.includes(newName)) {
+                            updateField("colors", [...form.colors, newName]);
+                          }
+                          
+                          // Update dynamic map
+                          COLOR_MAP[newName] = newCustomColor.hex;
+                          
+                          // Reset temp
+                          setTempColorName("");
+                        }
+                      }}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      Ajouter
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Other fields */}
             {[
-              { label: "Tailles", field: "sizes", options: sizesOptions },
-              { label: "Couleurs", field: "colors", options: attributes.colors },
               { label: "Saison", field: "season", options: ["Toutes saisons", "Printemps / Été", "Automne / Hiver"], multiple: false },
               { label: "Matière", field: "material", options: attributes.materials },
               { label: "Âge recommandé", field: "age_range", options: attributes.ageRanges, multiple: false },
@@ -760,8 +1065,10 @@ export default function Add_Announcement() {
                     onChange={(e) => updateField("price", e.target.value)}
                     error={!!fieldErrors.price}
                     helperText={fieldErrors.price}
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">MAD</InputAdornment>,
+                    slotProps={{
+                      input: {
+                        endAdornment: <InputAdornment position="end">MAD</InputAdornment>,
+                      }
                     }}
                   />
                 </Box>
@@ -864,10 +1171,44 @@ export default function Add_Announcement() {
                 onChange={(e) => updateField("pickup_address", e.target.value)}
                 error={!!fieldErrors.pickup_address}
                 helperText={fieldErrors.pickup_address}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
+                  }
                 }}
               />
+            </Box>
+
+            {/* Contact Téléphonique - Single row alone */}
+            <Box sx={{ width: '100%' }}>
+              <FormControl fullWidth variant="outlined" error={!!fieldErrors.phone_contact}>
+                <InputLabel htmlFor="phone-contact">Numéro de téléphone</InputLabel>
+                <OutlinedInput
+                  id="phone-contact"
+                  label="Numéro de téléphone"
+                  placeholder="6XXXXXXXX"
+                  value={(form.phone_contact || "").replace('+212', '')}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.startsWith('0')) val = val.substring(1);
+                    if (val.length > 9) val = val.substring(0, 9);
+                    updateField("phone_contact", `+212${val}`);
+                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1, borderRight: '1px solid #cbd5e1', mr: 1.5 }}>
+                        <span style={{ fontSize: '20px' }}>🇲🇦</span>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>+212</Typography>
+                      </Box>
+                    </InputAdornment>
+                  }
+                />
+                {fieldErrors.phone_contact && (
+                  <FormHelperText id="phone-contact-error-text">
+                    {fieldErrors.phone_contact}
+                  </FormHelperText>
+                )}
+              </FormControl>
             </Box>
           </Box>
         );
@@ -945,7 +1286,13 @@ export default function Add_Announcement() {
                   disabled={isUploading}
                   sx={{ borderRadius: 2, px: 4, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
                 >
-                  {isUploading ? <CircularProgress size={24} color="inherit" /> : "Publier l'annonce"}
+                  {isUploading ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : isEditMode ? (
+                    "Mettre à jour"
+                  ) : (
+                    "Publier l'annonce"
+                  )}
                 </Button>
               )}
             </Box>

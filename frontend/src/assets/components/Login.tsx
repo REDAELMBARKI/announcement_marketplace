@@ -28,9 +28,9 @@ export default function Login() {
         console.log("Logged in user object:", user);
 
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("role", user.role?.name || "user");
+        localStorage.setItem("role", user.role || "user");
 
-        const roleName = user.role?.name || "user";
+        const roleName = user.role || "user";
 
         if (roleName === "Admin") {
           navigate("/admin_dashboard");

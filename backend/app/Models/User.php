@@ -13,6 +13,18 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (!$user->slug) {
+                $user->slug = \Illuminate\Support\Str::slug($user->name) . '-' . \Illuminate\Support\Str::random(5);
+            }
+        });
+    }
+
+    /**
      * Get the products for the user.
      */
     public function products(): HasMany
@@ -74,7 +86,9 @@ class User extends Authenticatable
         'remember_token',
         'email_verified_at',
         'total_reviews',
-       
+        'created_at',
+        'updated_at',
+        'email',
     ];
 
     /**

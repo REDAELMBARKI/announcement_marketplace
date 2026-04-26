@@ -8,15 +8,13 @@ export const getProducts = async (): Promise<Product[]> => {
   return res.data;
 };
 
-export const getProduct = async (id: number): Promise<Product> => {
-  const res = await axios.get(route('announcements.show', { id }).toString());
+export const getProduct = async (slug: string): Promise<Product> => {
+  const res = await axios.get(route('announcements.show', { announcement: slug }).toString());
   return res.data;
 };
 
-export const getMyProducts = async (token: string): Promise<Product[]> => {
-  // We need user ID for this route, or we can use a generic my-products route if it exists
-  // For now using user.announcements as an example
-  const res = await axios.get(route('user.announcements', { userId: 'me' }).toString(), {
+export const getMyProducts = async (userSlug: string, token: string): Promise<Product[]> => {
+  const res = await axios.get(route('users.announcements', { user: userSlug }).toString(), {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -26,11 +24,12 @@ export const getMyProducts = async (token: string): Promise<Product[]> => {
 };
 
 export const updateProduct = async (
-  id: number,
+  userSlug: string,
+  announcementSlug: string,
   data: Partial<Product>,
   token: string
 ) => {
-  return axios.put(route('announcements.update-status', { announcementId: id }).toString(), data, {
+  return axios.put(route('users.announcements.update-status', { user: userSlug, announcement: announcementSlug }).toString(), data, {
     headers: {
       Authorization: `Bearer ${token}`
     }

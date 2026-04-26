@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 const TrendingCard = ({ item }) => {
   const { colors } = useTheme();
   return (
-    <Link to={`/product/${item.id}`} className="product-card-link" style={{ textDecoration: 'none' }}>
+    <Link to={`/products/${item.slug}`} className="product-card-link" style={{ textDecoration: 'none' }}>
       <article className="trending-card" style={{ backgroundColor: colors.bgSecondary, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         {/* User info row */}
         <div className="card-header" style={{ padding: '10px 15px', borderBottom: `1px solid ${colors.border}` }}>

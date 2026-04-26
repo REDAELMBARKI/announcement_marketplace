@@ -15,6 +15,18 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Product $product) {
+            if (!$product->slug) {
+                $product->slug = \Illuminate\Support\Str::slug($product->title) . '-' . \Illuminate\Support\Str::random(5);
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'super_category_id',
@@ -27,6 +39,7 @@ class Product extends Model
         'currency',
         'price_negotiable',
         'pickup_address',
+        'phone_contact',
         'handover_method',
         'status',
         'condition',

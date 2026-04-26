@@ -42,8 +42,9 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->nullable();
             $table->string('currency', 10)->default('MAD');
             $table->boolean('price_negotiable')->default(false);
-
+            
             $table->string('pickup_address')->nullable();
+            $table->string('contact_phone', 32);
             $table->enum('handover_method', ['pickup', 'delivery', 'both'])->nullable();
 
             // Status lifecycle

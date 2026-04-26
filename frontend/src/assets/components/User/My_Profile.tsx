@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import route from "../../../utils/route";
+import axios from "axios";
 import "../../../css/records.css";
 
 export default function My_Profile() {
@@ -20,13 +22,12 @@ export default function My_Profile() {
     const parsed = JSON.parse(stored);
     setUser(parsed);
 
-    fetch(`http://localhost:8000/api/user/${parsed.user_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
+    axios.get(route('user.show', { user: parsed.slug }).toString())
+      .then((res) => {
+        if (res.data.status === "success") {
           setFormData({
-            name: data.user.name,
-            email: data.user.email,
+            name: res.data.user.name,
+            email: res.data.user.email,
             password: "",
           });
         }
@@ -54,19 +55,12 @@ export default function My_Profile() {
     }
 
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/user/${user.user_ID}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(bodyData),
-        },
+      const res = await axios.put(
+        route('user.update', { user: user.slug }).toString(),
+        bodyData
       );
 
-      const data = await res.json();
+      const data = res.data;
 
       if (data.status === "success") {
         const updatedUser = {
