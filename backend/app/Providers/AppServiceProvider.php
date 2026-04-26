@@ -7,6 +7,8 @@ use App\Models\Favorite;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
+use App\Policies\AnnouncementPolicy;
+use Illuminate\Support\Facades\Gate;
 use App\Observers\CategoryObserver;
 use App\Observers\FavoriteObserver;
 use App\Observers\ProductObserver;
@@ -34,6 +36,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Product::class, AnnouncementPolicy::class);
+
+        Gate::define('view-my-announcements', function (User $user, User $targetUser) {
+            return $user->id === $targetUser->id;
+        });
+
         Product::observe(ProductObserver::class);
         Review::observe(ReviewObserver::class);
         Category::observe(CategoryObserver::class);

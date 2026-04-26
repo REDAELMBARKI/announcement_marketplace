@@ -176,12 +176,14 @@ const My_Announcements: React.FC = () => {
                       <span style={{ color: colors.textMuted }}>Free</span>
                     )}
                   </td>
+                  {/* stats */}
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '12px', color: colors.textSecondary, fontSize: '13px' }}>
                       <span title="Views" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={14} strokeWidth={2} /> {p.views_count}</span>
                       <span title="Favorites" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Heart size={14} strokeWidth={2} /> {p.favorites_count}</span>
                     </div>
                   </td>
+                  {/* status */}
                   <td style={{ padding: '12px' }}>
                     <span className={`status-tag ${p.status}`} style={{
                       padding: '4px 8px',

@@ -63,7 +63,7 @@ Route::get('/api/test-users', function() {
 //end of testing routes
 
 
-// Authenrtication routes
+// Authentication routes
 
 use App\Http\Controllers\UserProfileController;
 
@@ -144,6 +144,11 @@ Route::prefix('user')->name('user.')->group(function () {
     Route::get('/donations/{userId}', [AnnouncementController::class, 'getUserDonations'])->name('donations');
     Route::get('/sales/{userId}', [AnnouncementController::class, 'getUserSales'])->name('sales');
 });
+
+// New routes for user announcements by slug
+Route::get('users/{user:slug}/announcements', [AnnouncementController::class, 'getUserAnnouncementsBySlug'])->name('users.announcements');
+Route::put('users/{user:slug}/announcements/{announcement:slug}', [AnnouncementController::class, 'updateUserAnnouncementBySlug'])->name('users.announcements.update');
+
 
 // Public announcements routes
 Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncements'])->name('announcements.all');

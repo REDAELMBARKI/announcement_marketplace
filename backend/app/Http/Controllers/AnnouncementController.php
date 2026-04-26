@@ -233,6 +233,66 @@ class AnnouncementController extends Controller
     }
 
     /**
+     * Fetch announcements for a specific user by slug.
+     */
+    public function getUserAnnouncementsBySlug(Request $request, \App\Models\User $user)
+    {
+        // Use Gate to ensure only the owner can see their own announcements
+        // This requires the user to be authenticated.
+        // Gate::authorize('view-my-announcements', $user);
+        
+        $products = Product::with(['superCategory', 'thumbnail', 'user'])
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'status'   => 'success',
+            'products' => ProductResource::collection($products),
+        ]);
+    }
+
+    /**
+     * Update an announcement for a specific user by slug.
+     */
+    public function updateUserAnnouncementBySlug(Request $request, \App\Models\User $user, Product $announcement)
+    {
+        // Ensure the announcement belongs to the user
+        if ($announcement->user_id !== $user->id) {
+            return response()->json(['status' => 'error', 'message' => 'Announcement does not belong to this user'], 404);
+        }
+
+        // Use policy for authorization
+        // Gate::authorize('update', $announcement);
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'price' => 'sometimes|required|numeric',
+            'condition' => 'sometimes|required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $announcement->update($request->all());
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Announcement updated successfully',
+                'product' => new ProductResource($announcement),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to update announcement: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Fetch all active announcements.
      */
      function getAllAnnouncements()

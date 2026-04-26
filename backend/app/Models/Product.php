@@ -21,6 +21,7 @@ class Product extends Model
         'listing_mode',
         'listing_type',
         'title',
+        'slug',
         'description',
         'price',
         'currency',
