@@ -223,6 +223,7 @@ class AnnouncementSeeder extends Seeder
             $mode = fake()->randomElement(['sell', 'donate']);
             $product = Product::factory()->create([
                 'title' => $productName,
+                'slug' => Str::slug($productName),
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
                 'price' => fake()->randomFloat(2, 50, 500),
                 'listing_mode' => $mode,

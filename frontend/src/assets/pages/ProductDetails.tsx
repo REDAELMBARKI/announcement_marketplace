@@ -4,12 +4,12 @@ import { Product } from "../../types/Product";
 import { getProduct } from "../services/api";
 
 function ProductDetails() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [product, setProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    if (id) getProduct(Number(id)).then(setProduct);
-  }, [id]);
+    if (slug) getProduct(slug).then(setProduct);
+  }, [slug]);
 
   if (!product) return <p>Loading...</p>;
 

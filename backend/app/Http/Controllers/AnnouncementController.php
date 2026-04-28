@@ -136,7 +136,7 @@ class AnnouncementController extends Controller
             }
 
             $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'addresses']);
-
+            
             return response()->json([
                 'status'  => 'success',
                 'product' => new ProductResource($announcement),
@@ -284,7 +284,6 @@ class AnnouncementController extends Controller
             ->where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->get();
-
         return response()->json([
             'status'   => 'success',
             'products' => ProductResource::collection($products),

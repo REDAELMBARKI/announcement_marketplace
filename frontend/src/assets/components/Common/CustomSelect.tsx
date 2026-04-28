@@ -67,7 +67,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   };
 
   const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+    opt.label?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const isSelected = (optValue: any) => {

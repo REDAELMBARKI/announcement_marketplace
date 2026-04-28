@@ -9,7 +9,7 @@ function Header() {
       <div className="top_navbar">
         <div className="brand">
           <Link to="/" className="brand_logo">
-            LetUsDonate.uk <Leaf size={24} weight="BoldDuotone" style={{ marginLeft: '8px' }} />
+            Donate&Sell<Leaf size={24} weight="BoldDuotone" style={{ marginLeft: '8px' }} />
           </Link>
         </div>
 

@@ -1,16 +1,25 @@
 import "../../css/faq.css";
-import React, { useState, Suspense } from "react";
+import React, { Suspense } from "react";
 function FAQ() {
   const FAQChatBot = React.lazy(() => import("./FAQChatBot"));
 
   return (
     <div>
       <div className="faq">
-        <h3>Popular asked question </h3>
+        <h3>Frequently Asked Questions</h3>
 
-        <Suspense fallback={<div>Loading Chati...</div>}>
+        <Suspense fallback={<div>Loading Chat...</div>}>
           <FAQChatBot />
         </Suspense>
+
+        <div className="cont">
+          <h4>What is Announcement Marketplace?</h4>
+          <p>
+            Announcement Marketplace is a platform where users can buy, sell, or donate items. 
+            Whether you're looking to find great deals, sell unwanted items, or give away things 
+            to those in need, our marketplace connects you with local buyers and sellers.
+          </p>
+        </div>
 
         <div className="cont">
           <h4>What makes LetusDonate Different? </h4>
@@ -45,35 +54,54 @@ function FAQ() {
         </div>
 
         <div className="cont">
-          <h4>How do I book a collection </h4>
-
-          <h5> All it takes is 3 easy steps:</h5>
-
+          <h4>How do I create an announcement?</h4>
+          <h5>Follow these simple steps:</h5>
           <ul>
-            <li> 1: Login or create an account </li>
-            <li>
-              {" "}
-              2: Go to the donations page on the website and fill out the
-              donation form.{" "}
-            </li>
-            <li> 3: Then select a date, time and location.</li>
-            <li> </li>
+            <li>1: Login or create a free account</li>
+            <li>2: Click "Create Announcement" and fill in your item details</li>
+            <li>3: Add photos and set your price or mark as donation</li>
+            <li>4: Choose pickup location and contact preferences</li>
+            <li>5: Publish your announcement</li>
           </ul>
+        </div>
 
-          <br></br>
-          <br></br>
+        <div className="cont">
+          <h4>What can I sell or donate?</h4>
+          <ul>
+            <li>•Clothing and accessories for all ages</li>
+            <li>•Electronics and gadgets</li>
+            <li>•Home furniture and decor</li>
+            <li>•Books and educational materials</li>
+            <li>•Sports equipment</li>
+            <li>•And much more!</li>
+          </ul>
+        </div>
 
+        <div className="cont">
+          <h4>How do transactions work?</h4>
           <p>
-            {" "}
-            Then you are all sorted, and a Volunteer or partner courier will
-            collect you donation.
+            Buyers and sellers can arrange pickup or delivery directly through the platform. 
+            You can choose to meet in person, arrange delivery, or use our secure messaging 
+            system to coordinate the exchange. For donations, simply coordinate pickup with 
+            the recipient.
           </p>
         </div>
 
         <div className="cont">
-          <h4>How much money goes to my chosen charity? </h4>
+          <h4>Is Announcement Marketplace safe to use?</h4>
+          <p>
+            Yes! We prioritize user safety with features like user ratings, secure messaging, 
+            and verification options. Always meet in safe public locations and inspect items 
+            before completing transactions.
+          </p>
+        </div>
 
-          <p> 100% of all profits go to the chosen charity. </p>
+        <div className="cont">
+          <h4>Are there any fees for using the platform?</h4>
+          <p>
+            Creating announcements and browsing is free. We charge a small commission only on 
+            successful sales. Donations are always free to post and receive.
+          </p>
         </div>
       </div>
     </div>

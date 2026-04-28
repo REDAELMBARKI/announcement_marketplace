@@ -21,7 +21,7 @@ class MediaResource extends JsonResource
         return [
             'id' => $this->id,
             'path' => $this->path,
-            'file_path' => $this->path, // backward compatibility for my frontend code
+            'file_path' => $this->path,
             'url' => $this->url,
             'collection' => $this->collection,
             'file_name' => $this->file_name,

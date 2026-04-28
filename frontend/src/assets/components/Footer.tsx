@@ -12,7 +12,7 @@ export function Footer() {
           <Link to="/privacy_policy"> Privacy Policy </Link>/
           <Link to="accessibility"> Accessibility </Link>/
           <Link to="/cookie_policy"> Cookie Policy </Link>/ &copy;{" "}
-          {new Date().getFullYear()}LetUsDonateUK <br></br>All rights reserved.
+          {new Date().getFullYear()}Donate&Sell <br></br>All rights reserved.
         </p>
         <div className="footer-logo">
           <Leaf size={24} weight="BoldDuotone" />

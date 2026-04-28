@@ -112,6 +112,7 @@ const Marketplace: React.FC = () => {
       .then(res => {
         if (res.data.status === "success") {
           const productsArray = res.data.data.data || res.data.data;
+          console.log(productsArray)
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);

@@ -128,7 +128,7 @@ const lightTheme: Theme = {
     accentGreen: "#2e7d32",
     accentMint: "#34b879",
     accentLightGreen: "#5ddca0",
-    coral: "#ff6b35",
+    coral: "#35ddff",
     coralHover: "#e85d25",
     coralLight: "#fff3ee",
     darkNavy: "#1a1a2e",

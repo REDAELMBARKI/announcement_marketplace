@@ -136,6 +136,7 @@ function Home() {
       try {
         setLoading(true);
         const data = await homeApi.getHomepageData({});
+        console.log(data);
         setHomepageData(data as HomepageData);
         if (data?.featured_categories?.length > 0) {
           setActiveCategoryTab(data.featured_categories[0].id);

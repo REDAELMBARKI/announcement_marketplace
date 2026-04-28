@@ -38,7 +38,7 @@ class MediaFactory extends Factory
             'https://picsum.photos/seed/books2/400/300.jpg',
             'https://picsum.photos/seed/books3/400/300.jpg',
             'https://picsum.photos/seed/games1/400/300.jpg',
-            'https://picsum.photos/seed/games2/400/300.jpg',
+            'https://picsum.photos/seed/games2/400/300.jpg', 
         ];
 
         $collections = ['thumbnail', 'gallery'];

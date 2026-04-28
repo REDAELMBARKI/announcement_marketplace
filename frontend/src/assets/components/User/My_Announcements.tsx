@@ -38,10 +38,12 @@ const My_Announcements: React.FC = () => {
       return;
     }
 
-    axios.get(route('user.announcements', { user: user.slug }).toString())
+    axios.get(`/api/users/${user.slug}/announcements`)
       .then((res) => {
         if (res.data.status === "success") {
           const productsArray = res.data.products?.data || res.data.products;
+          console.log(productsArray);
+    
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }
         setLoading(false);
