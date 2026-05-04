@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatar?: string;
   role?: string;
+  slug?: string;
 }
 
 export interface Media {
@@ -72,7 +73,7 @@ export interface Product {
   items?: ProductItem[];
 }
 
-export interface ApiResponse<T> {
+export interface ApiResponse {
   status: 'success' | 'error';
   message?: string;
   [key: string]: any;

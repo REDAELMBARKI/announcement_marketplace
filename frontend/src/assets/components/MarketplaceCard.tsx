@@ -124,7 +124,7 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
 
   return (
     <Link 
-      to={`/products/${product.slug}`} 
+      to={`/announcements/${product.slug}`} 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ 

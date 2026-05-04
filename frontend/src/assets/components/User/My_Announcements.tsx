@@ -207,7 +207,12 @@ const My_Announcements: React.FC = () => {
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
-                        onClick={() => navigate(`/products/${p.slug}`)}
+                        onClick={() => {
+                          const announcementSlug = p.slug;
+                          if (announcementSlug) {
+                            navigate(`/announcements/${announcementSlug}`);
+                          }
+                        }}
                         className="action-btn"
                         title="View details"
                         style={{ padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '6px', backgroundColor: colors.bgSecondary, cursor: 'pointer' }}
