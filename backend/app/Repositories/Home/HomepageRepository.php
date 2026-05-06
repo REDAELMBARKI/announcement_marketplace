@@ -43,7 +43,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getPopularProducts(array $filters): Collection
     {
         $query = Product::select([
-            'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+            'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
@@ -65,7 +65,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getNewArrivals(): Collection
     {
         return Product::select([
-            'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+            'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
@@ -78,7 +78,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getProductsByCategory(int $categoryId, int $limit = 10): Collection
     {
         return Product::select([
-            'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+            'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
@@ -96,7 +96,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         
         foreach ($categories as $category) {
             $products = Product::select([
-                'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+                'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
                 'views_count', 'favorites_count', 'created_at', 'user_id'
             ])
                 ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
@@ -150,7 +150,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getNearbyProducts(string $city): Collection
     {
         return Product::select([
-            'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+            'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'addresses' => function ($query) use ($city) {
@@ -170,7 +170,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getFreeItems(): Collection
     {
         return Product::select([
-            'id', 'title', 'age_range', 'condition', 'views_count',
+            'id', 'title', 'slug', 'age_range', 'condition', 'views_count',
             'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug'])
@@ -184,7 +184,7 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getBoostedListings(): Collection
     {
         return Product::select([
-            'id', 'title', 'price', 'listing_mode', 'age_range', 'condition',
+            'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'thumbnail'])

@@ -1,9 +1,11 @@
 import axios from 'axios';
-import route from '../utils/route';
+
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 class HomeApi {
   constructor() {
     this.api = axios.create({
+      baseURL: API_BASE_URL,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -11,22 +13,21 @@ class HomeApi {
     });
   }
 
-  async request(routeName, params = {}, options = {}) {
+  async request(url, options = {}) {
     try {
-      const url = route(routeName, params).toString();
       const response = await this.api({
         url,
         ...options,
       });
       return response.data;
     } catch (error) {
-      console.error(`API request failed for ${routeName}:`, error);
+      console.error(`API request failed for ${url}:`, error);
       throw error;
     }
   }
 
-  async get(routeName, params = {}, options = {}) {
-    return this.request(routeName, params, {
+  async get(url, options = {}) {
+    return this.request(url, {
       method: 'GET',
       ...options,
     });
@@ -34,7 +35,7 @@ class HomeApi {
 
   // Homepage specific methods
   async getHomepageData(params = {}) {
-    return this.get('homepage', params);
+    return this.get('/api/homepage', params);
   }
 }
 

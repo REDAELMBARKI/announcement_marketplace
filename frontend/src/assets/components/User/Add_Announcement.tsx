@@ -238,7 +238,6 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       const fetchProduct = async () => {
         try {
         const response = await axios.get(ziggyRoute('announcements.show', { 
-          user: userSlug, 
           announcement: announcementSlug 
         }));
         if (response.data.status === "success") {
@@ -589,8 +588,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     try {
       let response;
       if (isEditMode && product) {
-        response = await axios.put(ziggyRoute('users.announcements.update', { 
-          user: product.user?.slug || user.slug, 
+        response = await axios.put(ziggyRoute('announcements.update', { 
           announcement: product.slug 
         }), payload);
       } else {

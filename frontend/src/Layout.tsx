@@ -143,8 +143,8 @@ export default function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/faq_chatbot" element={<FAQChatBot />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/products/:announcementSlug" element={<Product_Details />} />
+          <Route path="/announcements" element={<Marketplace />} />
+          <Route path="/announcements/:announcementSlug" element={<Product_Details />} />
           <Route path="/our_partners" element={<Our_Partners />} />
 
           {/* Admin */}

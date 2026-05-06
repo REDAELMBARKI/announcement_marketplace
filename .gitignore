@@ -12,7 +12,7 @@ coverage/
 .turbo/
 *.tsbuildinfo
 .pnpm-store/
-
+*docker*
 # --------------------------
 # Laravel / PHP (monorepo: app is under backend/)
 # --------------------------

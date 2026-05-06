@@ -24,12 +24,11 @@ export const getMyProducts = async (userSlug: string, token: string): Promise<Pr
 };
 
 export const updateProduct = async (
-  userSlug: string,
   announcementSlug: string,
   data: Partial<Product>,
   token: string
 ) => {
-  return axios.put(route('users.announcements.update-status', { user: userSlug, announcement: announcementSlug }).toString(), data, {
+  return axios.put(route('announcements.update-status', { announcement: announcementSlug }).toString(), data, {
     headers: {
       Authorization: `Bearer ${token}`
     }

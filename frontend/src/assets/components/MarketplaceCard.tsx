@@ -1,7 +1,5 @@
 import React, { memo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
-import route from '../../utils/route';
 import { 
   ChevronLeft,
   ChevronRight,
@@ -27,6 +25,10 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorited, setIsFavorited] = useState(product.is_favorited || false);
   
+  const handleCardClick = () => {
+    window.location.href = `/announcements/${product.slug}`;
+  };
+  
   const gallery = product.gallery || [];
   const allImages = [
     ...(product.thumbnail ? [getImageUrl(product.thumbnail)] : []),
@@ -50,14 +52,14 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
     const newStatus = !isFavorited;
     setIsFavorited(newStatus);
     
-    // Proactively implement the API call (even if endpoint is pending)
-    axios.post(route('announcements.favorite', { announcement: product.slug }).toString(), { favorite: newStatus })
+    // Proactively implement the API call
+    axios.post(`/api/announcements/${product.slug}/favorite`, { favorite: newStatus })
       .catch(err => console.error("Favorite toggle error:", err));
   };
 
   if (view === 'list') {
     return (
-      <Link to={`/announcements/${product.slug}`} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s' }}>
+      <div onClick={handleCardClick} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s', cursor: 'pointer' }}>
         <div style={{ width: '280px', height: '210px', position: 'relative', flexShrink: 0 }}>
           <img src={allImages[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', top: '15px', left: '15px', padding: '5px 12px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success, color: colors.bgSecondary, fontSize: '11px', fontWeight: '900' }}>
@@ -118,13 +120,13 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     );
   }
 
   return (
-    <Link 
-      to={`/announcements/${product.slug}`} 
+    <div 
+      onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ 
@@ -137,7 +139,8 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
         transition: 'all 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
-        position: 'relative'
+        position: 'relative',
+        cursor: 'pointer'
       }}
     >
       {/* Seller Row */}
@@ -229,7 +232,7 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 });
 export default MarketplaceCard;

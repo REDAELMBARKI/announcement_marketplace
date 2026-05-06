@@ -60,7 +60,7 @@ const My_Announcements: React.FC = () => {
       if (!product) return;
 
       try {
-        const res = await axios.delete(route('announcements.destroy', { user: user.slug, announcement: product.slug }).toString());
+        const res = await axios.delete(route('announcements.destroy', { announcement: product.slug }).toString());
         if (res.data.status === "success") {
           setProducts(products.filter((p) => p.id !== id));
         }

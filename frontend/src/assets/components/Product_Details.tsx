@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import route from "../../utils/route";
 import { 
   MessageCircle, 
   Share2, 
@@ -18,6 +17,9 @@ import {
 import { Product, ApiResponse } from "./User/announcement/types";
 import { useTheme } from "../../context/ThemeContext";
 
+// Configure axios baseURL for backend API
+axios.defaults.baseURL = 'http://127.0.0.1:8000';
+
 const Product_Details: React.FC = () => {
   const { colors } = useTheme();
   const { announcementSlug } = useParams<{ announcementSlug: string }>();
@@ -27,12 +29,17 @@ const Product_Details: React.FC = () => {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
 
-  const toggleFavorite = () => {
+  console.log("Product_Details mounted, announcementSlug:", announcementSlug);
+
+  const toggleFavorite = async () => {
     if (!product) return;
     const newStatus = !isFavorited;
     setIsFavorited(newStatus);
-    axios.post(route('announcements.favorite', { announcement: product.slug }).toString(), { favorite: newStatus })
-      .catch(err => console.error("Favorite toggle error:", err));
+    try {
+      await axios.post(`/api/announcements/${product.slug}/favorite`, { favorite: newStatus });
+    } catch (err) {
+      console.error("Favorite toggle error:", err);
+    }
   };
 
   const getImageUrl = (media: any) => {
@@ -42,25 +49,35 @@ const Product_Details: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!announcementSlug) return;
-    
-    axios.get(route('announcements.show', { announcement: announcementSlug }).toString())
-      .then((res: any) => {
+    const fetchProduct = async () => {
+      console.log("fetchProduct called, announcementSlug:", announcementSlug);
+      if (!announcementSlug) {
+        console.log("No announcementSlug, returning");
+        return;
+      }
+      
+      try {
+        console.log("Making API call to:", `/api/announcements/${announcementSlug}`);
+        const res = await axios.get(`/api/announcements/${announcementSlug}`, { timeout: 10000 });
+        console.log("API response received:", res.data);
         if (res.data.status === "success" && (res.data.product?.data || res.data.product)) {
           const productData = res.data.product?.data || res.data.product;
+          console.log("Setting product data:", productData);
           setProduct(productData);
-          // Set initial active image
           if (productData.thumbnail) {
             setActiveImage(getImageUrl(productData.thumbnail));
           }
         }
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Fetch product error:", err);
+      } finally {
+        console.log("Setting loading to false");
         setLoading(false);
-      });
-  }, [id]);
+      }
+    };
+    
+    fetchProduct();
+  }, [announcementSlug]);
 
   if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}>Loading product details...</div>;
   if (!product) return <div style={{ textAlign: 'center', padding: '100px' }}>Product not found.</div>;

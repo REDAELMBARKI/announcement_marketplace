@@ -127,14 +127,9 @@ class AnnouncementController extends Controller
     /**
      * Display the specified announcement by slug.
      */
-    public function showBySlug(User $user, Product $announcement)
+    public function showBySlug(Product $announcement)
     {
         try {
-            // Verify that the announcement belongs to the user
-            if ($announcement->user_id !== $user->id) {
-                throw new \Exception('Announcement does not belong to this user');
-            }
-
             $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'addresses']);
             
             return response()->json([

@@ -140,11 +140,13 @@ Route::prefix('users/{user:slug}')->name('users.')->group(function () {
     Route::get('announcements', [AnnouncementController::class, 'getUserAnnouncementsBySlug'])->name('user.announcements');
     Route::get('donations', [AnnouncementController::class, 'getUserDonations'])->name('donations');
     Route::get('sales', [AnnouncementController::class, 'getUserSales'])->name('sales');
-    Route::get('announcements/{announcement:slug}', [AnnouncementController::class, 'showBySlug'])->name('announcements.show');
-    Route::put('announcements/{announcement:slug}', [AnnouncementController::class, 'update'])->name('announcements.update');
-    Route::delete('announcements/{announcement:slug}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
-    Route::put('announcements/{announcement:slug}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
 });
+
+// Announcement management routes (show, update, delete, status)
+Route::get('/announcements/{announcement:slug}', [AnnouncementController::class, 'showBySlug'])->name('announcements.show');
+Route::put('/announcements/{announcement:slug}', [AnnouncementController::class, 'update'])->name('announcements.update');
+Route::delete('/announcements/{announcement:slug}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+Route::put('/announcements/{announcement:slug}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
 
 
 // Public announcements routes
