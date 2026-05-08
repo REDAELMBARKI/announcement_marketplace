@@ -7,16 +7,19 @@ use App\Models\User;
 use App\Http\Resources\ProductResource;
 use App\Services\AnnouncementService;
 use App\Services\ProductService;
+use App\Services\ReviewService
 use App\Http\Requests\ProductRequest;
+use App\Http\Requests\ReviewRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 // Unified controller for managing both donations and sales announcements
 class AnnouncementController extends Controller
 {
      function __construct(
         protected AnnouncementService $announcementService,
-        protected ProductService $productService
+        protected ProductService $productService,
+        protected ReviewService $reviewService
     ) {}
 
     /**
@@ -26,7 +29,7 @@ class AnnouncementController extends Controller
     {
         try {
             // Assume authenticated user for now, or use a dummy ID for guest
-            $userId = auth()->id() ?? 1;
+            $userId = Auth::id() ?? 1;
             $res = $this->productService->toggleFavorite($userId, $announcement->id);
 
             return response()->json($res);
@@ -333,5 +336,60 @@ class AnnouncementController extends Controller
             'status'     => 'success',
             'products'   => ProductResource::collection($products),
         ]);
+    }
+
+    /**
+     * Get reviews for a specific announcement by slug.
+     * Delegates to ReviewService.
+     */
+    public function getReviews(Product $announcement)
+    {
+        try {
+            $reviews = $this->reviewService->getReviewsForProduct($announcement);
+
+            return response()->json([
+                'status' => 'success',
+                'reviews' => $reviews,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch reviews',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store a new review for a specific announcement.
+     * Uses ReviewRequest for validation, delegates to ReviewService.
+     */
+    public function storeReview(ReviewRequest $request, Product $announcement)
+    {
+        try {
+            $result = $this->reviewService->storeReview(
+                $announcement,
+                Auth::id(),
+                $request->validated('rating'),
+                $request->validated('comment')
+            );
+
+            if (!$result['success']) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $result['message'],
+                ], 422);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'review' => $result['review'],
+                'message' => $result['message'],
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to submit review',
+            ], 500);
+        }
     }
 }

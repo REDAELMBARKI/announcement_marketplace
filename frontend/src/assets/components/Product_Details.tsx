@@ -20,6 +20,19 @@ import { useTheme } from "../../context/ThemeContext";
 // Configure axios baseURL for backend API
 axios.defaults.baseURL = 'http://127.0.0.1:8000';
 
+// Review interface
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  reviewer: {
+    id: number;
+    name: string;
+    avatar?: string;
+  };
+  created_at: string;
+}
+
 const Product_Details: React.FC = () => {
   const { colors } = useTheme();
   const { announcementSlug } = useParams<{ announcementSlug: string }>();
@@ -28,6 +41,12 @@ const Product_Details: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
+  
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newRating, setNewRating] = useState<number>(5);
+  const [newComment, setNewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
 
   console.log("Product_Details mounted, announcementSlug:", announcementSlug);
 
@@ -39,6 +58,29 @@ const Product_Details: React.FC = () => {
       await axios.post(`/api/announcements/${product.slug}/favorite`, { favorite: newStatus });
     } catch (err) {
       console.error("Favorite toggle error:", err);
+    }
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!product || !newComment.trim()) return;
+    
+    setSubmittingReview(true);
+    try {
+      const res = await axios.post(`/api/announcements/${product.slug}/reviews`, {
+        rating: newRating,
+        comment: newComment
+      });
+      
+      if (res.data.status === 'success') {
+        setReviews([res.data.review, ...reviews]);
+        setNewComment('');
+        setNewRating(5);
+      }
+    } catch (err) {
+      console.error('Submit review error:', err);
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -66,6 +108,16 @@ const Product_Details: React.FC = () => {
           setProduct(productData);
           if (productData.thumbnail) {
             setActiveImage(getImageUrl(productData.thumbnail));
+          }
+          
+          // Fetch reviews for this product
+          try {
+            const reviewsRes = await axios.get(`/api/announcements/${announcementSlug}/reviews`);
+            if (reviewsRes.data.status === 'success') {
+              setReviews(reviewsRes.data.reviews || []);
+            }
+          } catch (reviewsErr) {
+            console.error('Fetch reviews error:', reviewsErr);
           }
         }
       } catch (err) {
@@ -283,6 +335,116 @@ const Product_Details: React.FC = () => {
         }}>
           View Profile
         </Link>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="reviews-section" style={{ marginTop: '50px', padding: '30px', borderTop: `1px solid ${colors.border}` }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '25px', color: colors.textPrimary }}>
+          Reviews & Comments ({reviews.length})
+        </h2>
+
+        {/* Add Review Form */}
+        <div style={{ backgroundColor: colors.bgTertiary, padding: '25px', borderRadius: '12px', marginBottom: '30px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px', color: colors.textPrimary }}>Write a Review</h3>
+          <form onSubmit={submitReview}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: colors.textSecondary, fontSize: '14px' }}>Rating</label>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setNewRating(star)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}
+                  >
+                    <Star 
+                      size={24} 
+                      fill={star <= newRating ? colors.warning : 'none'} 
+                      color={star <= newRating ? colors.warning : colors.textMuted}
+                      strokeWidth={2}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: colors.textSecondary, fontSize: '14px' }}>Your Comment</label>
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Share your experience with this product..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: `1px solid ${colors.border}`,
+                  backgroundColor: colors.bgSecondary,
+                  color: colors.textPrimary,
+                  fontSize: '14px',
+                  minHeight: '100px',
+                  resize: 'vertical'
+                }}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submittingReview || !newComment.trim()}
+              style={{
+                padding: '12px 25px',
+                backgroundColor: colors.primary,
+                color: colors.bgSecondary,
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                opacity: submittingReview || !newComment.trim() ? 0.6 : 1
+              }}
+            >
+              {submittingReview ? 'Submitting...' : 'Post Review'}
+            </button>
+          </form>
+        </div>
+
+        {/* Reviews List */}
+        <div className="reviews-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {reviews.length === 0 ? (
+            <p style={{ color: colors.textSecondary, fontStyle: 'italic' }}>No reviews yet. Be the first to review!</p>
+          ) : (
+            reviews.map((review) => (
+              <div key={review.id} style={{ backgroundColor: colors.bgSecondary, padding: '20px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: colors.bgTertiary, overflow: 'hidden' }}>
+                      {review.reviewer?.avatar ? (
+                        <img src={review.reviewer.avatar} alt="" style={{ width: '100%', height: '100%' }} />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: colors.textMuted }}>
+                          <User size={20} />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '600', color: colors.textPrimary }}>{review.reviewer?.name || 'Anonymous'}</div>
+                      <div style={{ fontSize: '12px', color: colors.textMuted }}>{new Date(review.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '2px' }}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        size={14} 
+                        fill={i < review.rating ? colors.warning : 'none'} 
+                        color={i < review.rating ? colors.warning : colors.textMuted}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p style={{ color: colors.textSecondary, lineHeight: '1.6', margin: 0 }}>{review.comment}</p>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

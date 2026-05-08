@@ -135,6 +135,10 @@ Route::get('/marketplace/listings', [AnnouncementController::class, 'getMarketpl
 Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
 Route::post('/announcements/{announcement:slug}/favorite', [AnnouncementController::class, 'toggleFavorite'])->name('announcements.favorite');
 
+// Reviews routes
+Route::get('/announcements/{announcement:slug}/reviews', [AnnouncementController::class, 'getReviews'])->name('announcements.reviews');
+Route::post('/announcements/{announcement:slug}/reviews', [AnnouncementController::class, 'storeReview'])->middleware('auth:sanctum')->name('announcements.reviews.store');
+
 // User announcements routes
 Route::prefix('users/{user:slug}')->name('users.')->group(function () {
     Route::get('announcements', [AnnouncementController::class, 'getUserAnnouncementsBySlug'])->name('user.announcements');
