@@ -138,6 +138,16 @@ Route::post('/announcements/{announcement:slug}/favorite', [AnnouncementControll
 // Reviews routes
 Route::get('/announcements/{announcement:slug}/reviews', [AnnouncementController::class, 'getReviews'])->name('announcements.reviews');
 Route::post('/announcements/{announcement:slug}/reviews', [AnnouncementController::class, 'storeReview'])->middleware('auth:sanctum')->name('announcements.reviews.store');
+Route::put('/reviews/{review}', [AnnouncementController::class, 'updateReview'])->middleware('auth:sanctum')->name('reviews.update');
+Route::delete('/reviews/{review}', [AnnouncementController::class, 'destroyReview'])->middleware('auth:sanctum')->name('reviews.destroy');
+
+// Offers routes
+Route::get('/announcements/{announcement:slug}/offers', [AnnouncementController::class, 'getOffers'])->name('announcements.offers');
+Route::post('/announcements/{announcement:slug}/offers', [AnnouncementController::class, 'makeOffer'])->middleware('auth:sanctum')->name('announcements.offers.store');
+Route::put('/offers/{offer}/accept', [AnnouncementController::class, 'acceptOffer'])->middleware('auth:sanctum')->name('offers.accept');
+Route::put('/offers/{offer}/reject', [AnnouncementController::class, 'rejectOffer'])->middleware('auth:sanctum')->name('offers.reject');
+Route::put('/offers/{offer}/counter', [AnnouncementController::class, 'counterOffer'])->middleware('auth:sanctum')->name('offers.counter');
+Route::put('/offers/{offer}/accept-counter', [AnnouncementController::class, 'acceptCounterOffer'])->middleware('auth:sanctum')->name('offers.accept-counter');
 
 // User announcements routes
 Route::prefix('users/{user:slug}')->name('users.')->group(function () {

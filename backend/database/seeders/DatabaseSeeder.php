@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             BannerSeeder::class,
             FilterAttributeSeeder::class,
             AnnouncementSeeder::class,
+            ReviewSeeder::class,
+            OfferSeeder::class,
         ]);
         
         // Create admin user

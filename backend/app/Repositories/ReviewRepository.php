@@ -66,4 +66,33 @@ class ReviewRepository
         return Review::with('reviewer:id,name,avatar')
             ->find($reviewId);
     }
+
+    /**
+     * Update an existing review.
+     *
+     * @param Review $review
+     * @param int $rating
+     * @param string $comment
+     * @return Review
+     */
+    public function update(Review $review, int $rating, string $comment): Review
+    {
+        $review->update([
+            'rating' => $rating,
+            'comment' => $comment,
+        ]);
+
+        return $review->fresh();
+    }
+
+    /**
+     * Delete a review.
+     *
+     * @param Review $review
+     * @return bool
+     */
+    public function delete(Review $review): bool
+    {
+        return $review->delete();
+    }
 }

@@ -146,6 +146,11 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class);
+    }
+
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);
