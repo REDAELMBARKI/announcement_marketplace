@@ -30,9 +30,14 @@ class AuthController extends Controller
             $userData = $user->toArray();
             $userData['role'] = $user->role ? $user->role->name : null;
 
+            // Generate Sanctum token
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
                 'status' => 'success',
                 'user'   => $userData,
+                'token'  => $token,
+                'token_type' => 'Bearer',
             ]);
         }
 
@@ -76,18 +81,42 @@ class AuthController extends Controller
         $userData = $user->toArray();
         $userData['role'] = $user->role ? $user->role->name : null;
 
+        // Generate Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'status' => 'success',
             'user'   => $userData,
+            'token'  => $token,
+            'token_type' => 'Bearer',
         ]);
     }
 
     //logout
-    public function logout()
+    public function logout(Request $request)
     {
+        if ($request->user()) {
+            $request->user()->currentAccessToken()->delete();
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Logged out successfully',
+        ]);
+    }
+
+    // Get current user
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        $user->load('role');
+        
+        $userData = $user->toArray();
+        $userData['role'] = $user->role ? $user->role->name : null;
+
+        return response()->json([
+            'status' => 'success',
+            'user'   => $userData,
         ]);
     }
 }

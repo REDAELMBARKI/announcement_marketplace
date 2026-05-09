@@ -16,9 +16,15 @@ import {
 } from "@solar-icons/react";
 import { Product, ApiResponse } from "./User/announcement/types";
 import { useTheme } from "../../context/ThemeContext";
-
+import OfferModal from "./OfferModal";
 // Configure axios baseURL for backend API
 axios.defaults.baseURL = 'http://127.0.0.1:8000';
+
+// Current user ID (get from auth context or localStorage)
+const getCurrentUserId = () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.id || 1;
+};
 
 // Review interface
 interface Review {
@@ -47,8 +53,27 @@ const Product_Details: React.FC = () => {
   const [newRating, setNewRating] = useState<number>(5);
   const [newComment, setNewComment] = useState<string>('');
   const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+  
+  // Modal states
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   console.log("Product_Details mounted, announcementSlug:", announcementSlug);
+
+  const handleChatWithSeller = async () => {
+    if (!product) return;
+    
+    try {
+      // Get or create conversation
+      const res = await axios.post(`/api/announcements/${product.slug}/conversation`);
+      if (res.data.status === 'success') {
+        const conversationSlug = res.data.conversation.slug;
+        navigate(`/chat/${conversationSlug}`);
+      }
+    } catch (err) {
+      console.error("Failed to start conversation:", err);
+      alert("Failed to start conversation. Please try again.");
+    }
+  };
 
   const toggleFavorite = async () => {
     if (!product) return;
@@ -141,7 +166,8 @@ const Product_Details: React.FC = () => {
   ].filter(Boolean) as string[];
 
   return (
-    <div className="product-details-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px', backgroundColor: colors.bgPrimary }}>
+    <>
+      <div className="product-details-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px', backgroundColor: colors.bgPrimary }}>
       {/* Breadcrumb / Back button */}
       <button 
         onClick={() => navigate(-1)} 
@@ -239,33 +265,39 @@ const Product_Details: React.FC = () => {
           </div>
 
           <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
-            <button style={{ 
-              padding: '15px', 
-              backgroundColor: colors.primary, 
-              color: colors.bgSecondary, 
-              border: 'none', 
-              borderRadius: '12px', 
-              fontWeight: '700', 
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              cursor: 'pointer'
-            }}>
+            <button 
+              onClick={handleChatWithSeller}
+              style={{ 
+                padding: '15px', 
+                backgroundColor: colors.primary, 
+                color: colors.bgSecondary, 
+                border: 'none', 
+                borderRadius: '12px', 
+                fontWeight: '700', 
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                cursor: 'pointer'
+              }}
+            >
               <MessageCircle size={20} />
               Chat with Seller
             </button>
-            <button style={{ 
-              padding: '15px', 
-              backgroundColor: colors.bgSecondary, 
-              color: colors.primary, 
-              border: `2px solid ${colors.primary}`, 
-              borderRadius: '12px', 
-              fontWeight: '700', 
-              fontSize: '16px',
-              cursor: 'pointer'
-            }}>
+            <button 
+              onClick={() => setShowOfferModal(true)}
+              style={{ 
+                padding: '15px', 
+                backgroundColor: colors.bgSecondary, 
+                color: colors.primary, 
+                border: `2px solid ${colors.primary}`, 
+                borderRadius: '12px', 
+                fontWeight: '700', 
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
               Make Offer
             </button>
           </div>
@@ -447,7 +479,24 @@ const Product_Details: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+
+    {/* Modals */}
+    {showOfferModal && product && (
+      <OfferModal
+        product={{ 
+          id: product.id, 
+          title: product.title, 
+          price: product.price, 
+          slug: product.slug,
+          currency: product.currency 
+        }}
+        onClose={() => setShowOfferModal(false)}
+        onSuccess={() => {
+          alert('Offer submitted successfully!');
+        }}
+      />
+    )}
+  </>);
 }
 
 export default Product_Details;

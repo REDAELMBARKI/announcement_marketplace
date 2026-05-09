@@ -23,17 +23,26 @@ export default function Login() {
       
       if (res.status === 200 && data.status === "success") {
         const user = data.user;
+        const token = data.token || res.data.token || res.data.access_token;
 
         // For Debug- log user object to verify role
         console.log("Logged in user object:", user);
+        console.log("Token:", token);
 
+        // Store auth data
+        if (token) {
+          localStorage.setItem("token", token);
+        }
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", user.role || "user");
+
+        // Notify other components (like Header) about login
+        window.dispatchEvent(new Event('auth-change'));
 
         const roleName = user.role || "user";
 
         if (roleName === "Admin") {
-          navigate("/admin_dashboard");
+          navigate("/");
         } else if (roleName === "Moderator") {
           navigate("/moderator_dashboard");
         } else if (roleName === "User") {

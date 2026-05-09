@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import React, { useEffect, Suspense, lazy } from "react";
+import axios from "axios";
 
 // Headers & Footer
 import Header from "./assets/components/Header.jsx";
@@ -15,6 +16,8 @@ const Our_Partners = lazy(() => import("./assets/components/Our_Partners"));
 const FAQChatBot = lazy(() => import("./assets/components/FAQChatBot"));
 const Marketplace = lazy(() => import("./assets/components/Marketplace"));
 const Product_Details = lazy(() => import("./assets/components/Product_Details"));
+const ConversationsList = lazy(() => import("./assets/components/ConversationsList"));
+const ChatPage = lazy(() => import("./assets/components/ChatPage"));
 
 // Admin
 const Admin_Dashboard = lazy(
@@ -95,7 +98,42 @@ const NotFound = lazy(() => import("./404.jsx"));
 export default function Layout() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
-  console.log("Current path:", location); // this giving me / even if m in a path liek this /add_chari
+
+  // Configure axios with token
+  useEffect(() => {
+    const updateAxiosToken = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } else {
+        delete axios.defaults.headers.common['Authorization'];
+      }
+    };
+
+    updateAxiosToken();
+    window.addEventListener('auth-change', updateAxiosToken);
+
+    const authInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          // If token is expired or invalid, log out user
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('role');
+          window.dispatchEvent(new Event('auth-change'));
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+       axios.interceptors.response.eject(authInterceptor);
+       window.removeEventListener('auth-change', updateAxiosToken);
+     };
+   }, []);
+
+  console.log("Current path:", location);
   // Paths without a header/footer
   const noHeaderFooterPaths = ["/login", "/sign_up"];
 
@@ -145,6 +183,8 @@ export default function Layout() {
           <Route path="/faq_chatbot" element={<FAQChatBot />} />
           <Route path="/announcements" element={<Marketplace />} />
           <Route path="/announcements/:announcementSlug" element={<Product_Details />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:conversationSlug" element={<ChatPage />} />
           <Route path="/our_partners" element={<Our_Partners />} />
 
           {/* Admin */}

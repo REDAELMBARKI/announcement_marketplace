@@ -2,9 +2,14 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@mui/material": "^9.0.0",
+    "@phosphor-icons/react": "^2.1.10",
     "chart.js": "^4.5.1",
     "file-saver": "^2.0.5",
     "papaparse": "^5.5.3",
     "react-router-hash-link": "^2.4.3"
+  },
+  "devDependencies": {
+    "laravel-echo": "^2.3.4",
+    "pusher-js": "^8.5.0"
   }
 }

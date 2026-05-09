@@ -43,8 +43,31 @@ function DonorSignUp() {
       const data = res.data;
 
       if (data.status === "success") {
-        setMessage("Signup successful! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 1000);
+        const user = data.user;
+        const token = data.token;
+
+        // Store auth data
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("role", user.role || "user");
+
+        // Notify other components (like Header) about login
+        window.dispatchEvent(new Event('auth-change'));
+
+        setMessage("Signup successful! Redirecting...");
+        
+        const roleName = user.role || "user";
+        setTimeout(() => {
+          if (roleName === "Admin") {
+            navigate("/");
+          } else if (roleName === "User") {
+            navigate("/user_dashboard");
+          } else {
+            navigate("/");
+          }
+        }, 1500);
       }
     } catch (err: any) {
       const data = err.response?.data;

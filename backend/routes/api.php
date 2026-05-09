@@ -9,6 +9,7 @@ use App\Http\Controllers\OpenAIController;
 use App\Http\Controllers\Home\HomepageController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ReportController;
@@ -75,16 +76,50 @@ Route::put('/users/{user:slug}', [UserProfileController::class, 'update'])->name
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/signup', [AuthController::class, 'signup'])->name('signup');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Media upload routes
-Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
-Route::post('/media/upload-multiple', [MediaController::class, 'uploadMultiple'])->name('media.upload-multiple');
-Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnouncement'])->name('media.link-to-announcement');
-Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary'])->name('media.delete-temporary');
-Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary'])->name('media.cleanup-temporary');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/me', [AuthController::class, 'me'])->name('me');
+    
+    // Media upload routes
+    Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
+    Route::post('/media/upload-multiple', [MediaController::class, 'uploadMultiple'])->name('media.upload-multiple');
+    Route::post('/media/link-to-announcement', [MediaController::class, 'linkToAnnouncement'])->name('media.link-to-announcement');
+    Route::delete('/media/temporary/{mediaId}', [MediaController::class, 'deleteTemporary'])->name('media.delete-temporary');
+    Route::post('/media/cleanup-temporary', [MediaController::class, 'cleanupTemporary'])->name('media.cleanup-temporary');
 
-// Categories routes
+    // Admin routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('announcements.index');
+        Route::get('/charities',    [AdminController::class, 'getAllCharities'])->name('charities.index');
+        Route::get('/users',        [AdminController::class, 'getAllUsers'])->name('users.index');
+        Route::get('/stats',        [AdminController::class, 'getDashboardStats'])->name('stats');
+    });
+
+    // User Management Routes
+    Route::prefix('user-management')->name('user-management.')->group(function () {
+        Route::get('/view-users', [ViewUserController::class, 'getViewUsers'])->name('view-users');
+        Route::get('/roles', [ViewUserController::class, 'getRoles'])->name('roles');
+        Route::put('/users/{id}', [ViewUserController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser'])->name('users.destroy');
+    });
+
+    // Announcements routes (authenticated)
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::post('/announcements/{announcement:slug}/favorite', [AnnouncementController::class, 'toggleFavorite'])->name('announcements.favorite');
+    Route::put('/announcements/{announcement:slug}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('/announcements/{announcement:slug}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    Route::put('/announcements/{announcement:slug}/status', [AnnouncementController::class, 'updateStatus'])->name('announcements.update-status');
+
+    // Chat routes
+    Route::get('/conversations', [ChatController::class, 'getUserConversations'])->name('conversations.index');
+    Route::post('/announcements/{announcement:slug}/conversation', [ChatController::class, 'getOrCreateConversation'])->name('conversations.get-or-create');
+    Route::get('/conversations/{conversation:slug}/messages', [ChatController::class, 'getMessages'])->name('conversations.messages');
+    Route::post('/conversations/{conversation:slug}/messages', [ChatController::class, 'sendMessage'])->name('conversations.messages.send');
+    Route::put('/conversations/{conversation:slug}/read', [ChatController::class, 'markAsRead'])->name('conversations.read');
+});
+
+// Public Categories routes
 Route::get('/categories', function () {
     $superCategories = \App\Models\Category::with('children')
         ->whereNull('parent_id')
@@ -97,22 +132,6 @@ Route::get('/categories', function () {
         'categories' => $superCategories,
     ]);
 })->name('categories.index');
-
-// Admin routes
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/announcements', [AnnouncementController::class, 'getAllAnnouncementsForAdmin'])->name('announcements.index');
-    Route::get('/charities',    [AdminController::class, 'getAllCharities'])->name('charities.index');
-    Route::get('/users',        [AdminController::class, 'getAllUsers'])->name('users.index');
-    Route::get('/stats',        [AdminController::class, 'getDashboardStats'])->name('stats');
-});
-
-// User Management Routes
-Route::prefix('user-management')->name('user-management.')->group(function () {
-    Route::get('/view-users', [ViewUserController::class, 'getViewUsers'])->name('view-users');
-    Route::get('/roles', [ViewUserController::class, 'getRoles'])->name('roles');
-    Route::put('/users/{id}', [ViewUserController::class, 'updateUser'])->name('users.update');
-    Route::delete('/users/{id}', [ViewUserController::class, 'deleteUser'])->name('users.destroy');
-});
 
 Route::post('/remote-sessions', function (Request $request) {
     return response()->json([
@@ -148,6 +167,8 @@ Route::put('/offers/{offer}/accept', [AnnouncementController::class, 'acceptOffe
 Route::put('/offers/{offer}/reject', [AnnouncementController::class, 'rejectOffer'])->middleware('auth:sanctum')->name('offers.reject');
 Route::put('/offers/{offer}/counter', [AnnouncementController::class, 'counterOffer'])->middleware('auth:sanctum')->name('offers.counter');
 Route::put('/offers/{offer}/accept-counter', [AnnouncementController::class, 'acceptCounterOffer'])->middleware('auth:sanctum')->name('offers.accept-counter');
+
+
 
 // User announcements routes
 Route::prefix('users/{user:slug}')->name('users.')->group(function () {

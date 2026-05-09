@@ -16,6 +16,7 @@
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@solar-icons/react": "^1.1.0",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
