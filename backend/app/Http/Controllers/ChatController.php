@@ -24,10 +24,10 @@ class ChatController extends Controller
     /**
      * Get or create a conversation between buyer and seller for a product.
      */
-    public function getOrCreateConversation(Product $product)
+    public function getOrCreateConversation(Product $announcement)
     {
         $buyerId = Auth::id();
-        $sellerId = $product->user_id;
+        $sellerId = $announcement->user_id;
 
         // Can't chat with yourself
         if ($buyerId === $sellerId) {
@@ -37,7 +37,7 @@ class ChatController extends Controller
             ], 422);
         }
 
-        $conversation = $this->chatService->getOrCreateConversation($product);
+        $conversation = $this->chatService->getOrCreateConversation($announcement);
 
         return response()->json([
             'status' => 'success',
@@ -52,7 +52,7 @@ class ChatController extends Controller
     {
         // Verify user is part of this conversation
         $userId = Auth::id();
-        if ($conversation->buyer_id !== $userId && $conversation->seller_id !== $userId) {
+        if (!$conversation->participants->contains($userId)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized',
@@ -64,7 +64,7 @@ class ChatController extends Controller
         return response()->json([
             'status' => 'success',
             'messages' => $messages,
-            'conversation' => $conversation->load(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar']),
+            'conversation' => $conversation->load(['product:id,title,slug,thumbnail', 'participants']),
         ]);
     }
 
@@ -79,7 +79,7 @@ class ChatController extends Controller
 
         // Verify user is part of this conversation
         $userId = Auth::id();
-        if ($conversation->buyer_id !== $userId && $conversation->seller_id !== $userId) {
+        if (!$conversation->participants->contains($userId)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized',

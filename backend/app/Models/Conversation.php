@@ -16,8 +16,6 @@ class Conversation extends Model
     protected $fillable = [
         'slug',
         'product_id',
-        'buyer_id',
-        'seller_id',
         'last_message_at',
     ];
 
@@ -39,19 +37,34 @@ class Conversation extends Model
         'last_message_at' => 'datetime',
     ];
 
+    protected $appends = ['buyer', 'seller'];
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function buyer(): BelongsTo
+    public function participants(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsToMany(User::class)
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
-    public function seller(): BelongsTo
+    /**
+     * Accessor to get the buyer participant as a single object.
+     */
+    public function getBuyerAttribute()
     {
-        return $this->belongsTo(User::class, 'seller_id');
+        return $this->participants->where('pivot.role', 'buyer')->first();
+    }
+
+    /**
+     * Accessor to get the seller participant as a single object.
+     */
+    public function getSellerAttribute()
+    {
+        return $this->participants->where('pivot.role', 'seller')->first();
     }
 
     public function messages(): HasMany

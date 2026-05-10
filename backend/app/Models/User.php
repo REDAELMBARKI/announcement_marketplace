@@ -57,6 +57,20 @@ class User extends Authenticatable
         return $this->hasMany(Favorite::class);
     }
 
+
+    /**
+     * Get all conversations for the user.
+     */
+    public function conversations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class)
+            ->withPivot('role')
+            ->withTimestamps()
+            ->orderBy('last_message_at', 'desc');
+    }
+
+
+
     /**
      * Get the role for the user.
      */

@@ -1,5 +1,7 @@
 import React, { memo, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import route from '../../utils/route';
 import { 
   ChevronLeft,
   ChevronRight,
@@ -17,16 +19,47 @@ interface MarketplaceCardProps {
   product: Product;
   view: 'grid' | 'list';
   getImageUrl: (m: any) => string | null;
-  colors: any;
 }
 
-const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, getImageUrl, colors }) => {
+const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, getImageUrl }) => {
+  const { colors } = useTheme();
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isFavorited, setIsFavorited] = useState(product.is_favorited || false);
+  const [isContacting, setIsContacting] = useState(false);
   
   const handleCardClick = () => {
-    window.location.href = `/announcements/${product.slug}`;
+    navigate(`/announcements/${product.slug}`);
+  };
+
+  const handleContact = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setIsContacting(true);
+    try {
+      const res = await axios.post(route('conversations.get-or-create', { announcement: product.slug }).toString());
+      if (res.data.status === 'success') {
+        navigate(`/chat/${res.data.conversation.slug}`);
+      }
+    } catch (err: any) {
+      console.error("Failed to start conversation:", err);
+      if (err.response?.status === 401) {
+        navigate('/login');
+      } else if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      }
+    } finally {
+      setIsContacting(false);
+    }
   };
   
   const gallery = product.gallery || [];
@@ -59,7 +92,7 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
 
   if (view === 'list') {
     return (
-      <div onClick={handleCardClick} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', transition: 'transform 0.2s', cursor: 'pointer' }}>
+      <div onClick={handleCardClick} style={{ display: 'flex', backgroundColor: colors.bgSecondary, borderRadius: '20px', overflow: 'hidden', textDecoration: 'none', color: 'inherit', boxShadow: colors.shadow, transition: 'transform 0.2s', cursor: 'pointer' }}>
         <div style={{ width: '280px', height: '210px', position: 'relative', flexShrink: 0 }}>
           <img src={allImages[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', top: '15px', left: '15px', padding: '5px 12px', borderRadius: '8px', backgroundColor: product.listing_mode === 'sell' ? colors.primary : colors.success, color: colors.bgSecondary, fontSize: '11px', fontWeight: '900' }}>
@@ -109,13 +142,10 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
                   boxShadow: 'none',
                   px: 2.5
                 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // Contact logic
-                }}
+                onClick={handleContact}
+                disabled={isContacting}
               >
-                Contact
+                {isContacting ? '...' : 'Contact'}
               </Button>
             </div>
           </div>
@@ -135,7 +165,7 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
         overflow: 'hidden', 
         textDecoration: 'none', 
         color: 'inherit',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        boxShadow: colors.shadow,
         transition: 'all 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
@@ -171,15 +201,12 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
             minWidth: 'auto',
             height: '30px',
             fontSize: '11px'
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Contact logic
-          }}
-        >
-          Contact
-        </Button>
+        }}
+        onClick={handleContact}
+        disabled={isContacting}
+      >
+        {isContacting ? '...' : 'Contact'}
+      </Button>
       </div>
 
       {/* Image Carousel */}
@@ -205,8 +232,8 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
             </div>
             {isHovered && (
               <>
-                <button onClick={prevImage} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronLeft size={20} strokeWidth={2} /></button>
-                <button onClick={nextImage} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={20} strokeWidth={2} /></button>
+                <button onClick={prevImage} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: `${colors.bgSecondary}e6`, border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronLeft size={20} strokeWidth={2} /></button>
+                <button onClick={nextImage} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', backgroundColor: `${colors.bgSecondary}e6`, border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><ChevronRight size={20} strokeWidth={2} /></button>
               </>
             )}
           </>

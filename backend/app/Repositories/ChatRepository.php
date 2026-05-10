@@ -16,17 +16,28 @@ class ChatRepository
     public function findConversationByParticipants(int $productId, int $buyerId, int $sellerId): ?Conversation
     {
         return Conversation::where('product_id', $productId)
-            ->where('buyer_id', $buyerId)
-            ->where('seller_id', $sellerId)
+            ->whereHas('participants', function ($query) use ($buyerId) {
+                $query->where('user_id', $buyerId)->where('role', 'buyer');
+            })
+            ->whereHas('participants', function ($query) use ($sellerId) {
+                $query->where('user_id', $sellerId)->where('role', 'seller');
+            })
             ->first();
     }
 
     /**
-     * Create a new conversation.
+     * Create a new conversation with participants.
      */
-    public function createConversation(array $data): Conversation
+    public function createConversation(array $data, int $buyerId, int $sellerId): Conversation
     {
-        return Conversation::create($data);
+        $conversation = Conversation::create($data);
+        
+        $conversation->participants()->attach([
+            $buyerId => ['role' => 'buyer'],
+            $sellerId => ['role' => 'seller'],
+        ]);
+
+        return $conversation;
     }
 
     /**
@@ -34,14 +45,15 @@ class ChatRepository
      */
     public function getUserConversations(int $userId): Collection
     {
-        return Conversation::where('buyer_id', $userId)
-            ->orWhere('seller_id', $userId)
-            ->with(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar'])
-            ->withCount(['messages as unread_count' => function ($query) use ($userId) {
-                $query->where('sender_id', '!=', $userId)->where('is_read', false);
-            }])
-            ->orderBy('last_message_at', 'desc')
-            ->get();
+        return Conversation::whereHas('participants', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->with(['product:id,title,slug,thumbnail', 'participants'])
+        ->withCount(['messages as unread_count' => function ($query) use ($userId) {
+            $query->where('sender_id', '!=', $userId)->where('is_read', false);
+        }])
+        ->orderBy('last_message_at', 'desc')
+        ->get();
     }
 
     /**

@@ -41,10 +41,12 @@ class OfferFactory extends Factory
             $counterPrice = $originalPrice * fake()->randomFloat(2, 0.85, 0.98); // Counter at 85-98%
         }
 
+        $buyer = User::inRandomOrder()->first();
+        
         return [
             'product_id' => $product?->id ?? 1,
-            'buyer_id' => User::inRandomOrder()->first()->id,
-            'seller_id' => $product?->user_id ?? User::inRandomOrder()->first()->id,
+            'buyer_id' => $buyer?->id ?? 1,
+            'seller_id' => $product?->user_id ?? User::inRandomOrder()->first()->id ?? 1,
             'original_price' => $originalPrice,
             'offer_price' => round($offerPrice, 2),
             'status' => $status,

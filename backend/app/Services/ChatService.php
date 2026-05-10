@@ -29,20 +29,20 @@ class ChatService
         $sellerId = $product->user_id;
 
         $conversation = $this->chatRepository->findConversationByParticipants(
-            $product->id, 
-            $buyerId, 
+            $product->id,
+            $buyerId,
             $sellerId
         );
 
         if (!$conversation) {
-            $conversation = $this->chatRepository->createConversation([
-                'product_id' => $product->id,
-                'buyer_id' => $buyerId,
-                'seller_id' => $sellerId,
-            ]);
+            $conversation = $this->chatRepository->createConversation(
+                ['product_id' => $product->id],
+                $buyerId,
+                $sellerId
+            );
         }
 
-        return $conversation->load(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar']);
+        return $conversation->load(['product:id,title,slug,thumbnail', 'participants']);
     }
 
     /**

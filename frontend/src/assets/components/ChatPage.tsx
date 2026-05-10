@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, ChevronRight, Check, CheckCheck, MessageCircle, Clock, Search } from 'lucide-react';
 import { Box as Package, Shop as Store } from '@solar-icons/react';
 import { useTheme } from "../../context/ThemeContext";
+import echo from '../../echo';
 
 interface Message {
   id: number;
@@ -13,6 +14,7 @@ interface Message {
   is_read: boolean;
   read_at?: string;
   created_at: string;
+  is_optimistic?: boolean; // New field for optimistic updates
 }
 
 interface Conversation {
@@ -46,35 +48,12 @@ const ChatPage: React.FC = () => {
   const { colors } = useTheme();
   
   // Conversations list state
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: 1,
-      slug: 'mock-slug-1',
-      product: { id: 101, title: 'Vintage Camera', slug: 'vintage-camera', price: 450, currency: 'DH', thumbnail: '' },
-      buyer: { id: 1, name: 'John Doe' },
-      seller: { id: 2, name: 'Vintage Shop' },
-      last_message_at: new Date().toISOString(),
-      unread_count: 2
-    },
-    {
-      id: 2,
-      slug: 'mock-slug-2',
-      product: { id: 102, title: 'Mountain Bike', slug: 'mountain-bike', price: 1200, currency: 'DH', thumbnail: '' },
-      buyer: { id: 3, name: 'Sarah Lee' },
-      seller: { id: 1, name: 'John Doe' },
-      last_message_at: new Date(Date.now() - 3600000).toISOString(),
-      unread_count: 0
-    }
-  ]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   
   // Active conversation state
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, content: 'Hello! Is this still available?', sender_id: 2, created_at: new Date(Date.now() - 7200000).toISOString(), is_read: true },
-    { id: 2, content: 'Yes, it is!', sender_id: 1, created_at: new Date(Date.now() - 3600000).toISOString(), is_read: true },
-    { id: 3, content: 'Great! Can I come see it today?', sender_id: 2, created_at: new Date(Date.now() - 1800000).toISOString(), is_read: false },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -84,37 +63,60 @@ const ChatPage: React.FC = () => {
 
   // Fetch all conversations
   useEffect(() => {
-    // fetchConversations();
-    // const interval = setInterval(fetchConversations, 10000);
-    // return () => clearInterval(interval);
-    setConversationsLoading(false);
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch active conversation and messages when conversationSlug changes
   useEffect(() => {
     if (conversationSlug) {
-      // fetchMessages(true);
-      // For layout preview: find conversation in mock list
-      const mockConv = conversations.find(c => c.slug === conversationSlug);
-      if (mockConv) setActiveConversation(mockConv);
-      
+      fetchMessages(true);
       // Mark as read in the local list immediately if we find it
       setConversations(prev => prev.map(c => 
         c.slug === conversationSlug ? { ...c, unread_count: 0 } : c
       ));
     } else {
       setActiveConversation(null);
-      // setMessages([]); // Keep mock messages for layout view
+      setMessages([]);
     }
   }, [conversationSlug]);
+
+  // Real-time listening
+  useEffect(() => {
+    if (!conversationSlug || !activeConversation) return;
+
+    // Listen for new messages
+    const channel = echo.private(`conversation.${activeConversation.id}`)
+      .listen('.message.sent', (e: any) => {
+        console.log('New message received:', e);
+        setMessages((prev) => {
+          if (prev.some(m => m.id === e.message.id)) return prev;
+          return [...prev, e.message];
+        });
+      })
+      .listen('.message.read', (e: any) => {
+        console.log('Messages read by other user:', e);
+        if (e.read_by !== currentUserId) {
+          setMessages((prev) => prev.map(m => 
+            m.sender_id === currentUserId ? { ...m, is_read: true, read_at: e.read_at } : m
+          ));
+        }
+      });
+
+    return () => {
+      channel.stopListening('.message.sent');
+      channel.stopListening('.message.read');
+    };
+  }, [conversationSlug, activeConversation]);
 
   // Poll for new messages in active conversation
   useEffect(() => {
     if (!conversationSlug) return;
-    // const interval = setInterval(() => {
-    //   fetchMessages(false);
-    // }, 4000);
-    // return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      fetchMessages(false);
+    }, 4000);
+    return () => clearInterval(interval);
   }, [conversationSlug]);
 
   // Scroll to bottom
@@ -141,7 +143,18 @@ const ChatPage: React.FC = () => {
     try {
       const res = await axios.get(`/api/conversations/${conversationSlug}/messages`);
       if (res.data.status === 'success') {
-        setMessages(res.data.messages);
+        const serverMessages = res.data.messages;
+        
+        setMessages(prev => {
+          // Keep only messages that are currently "Sending..." (optimistic)
+          const optimisticMessages = prev.filter(m => m.is_optimistic);
+          
+          // Merge server messages with pending optimistic ones
+          // We filter out any server messages that might have already been confirmed by handleSendMessage
+          // to prevent double-rendering while keeping the "Sending..." ones at the bottom
+          return [...serverMessages, ...optimisticMessages];
+        });
+
         setActiveConversation(res.data.conversation);
       }
     } catch (err) {
@@ -153,17 +166,36 @@ const ChatPage: React.FC = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !conversationSlug) return;
+    const content = newMessage.trim();
+    if (!content || !conversationSlug) return;
 
+    // 1. Create optimistic message
+    const tempId = Date.now();
+    const optimisticMessage: Message = {
+      id: tempId,
+      content: content,
+      sender_id: currentUserId,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      is_optimistic: true
+    };
+
+    // 2. Add to UI immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
     setSending(true);
+
     try {
       const res = await axios.post(`/api/conversations/${conversationSlug}/messages`, {
-        content: newMessage.trim(),
+        content: content,
       });
 
       if (res.data.status === 'success') {
-        setMessages((prev) => [...prev, res.data.message]);
-        setNewMessage('');
+        // 3. Replace optimistic message with actual message from server
+        setMessages(prev => prev.map(m => 
+          m.id === tempId ? res.data.message : m
+        ));
+
         // Update last message in the list
         setConversations(prev => prev.map(c => 
           c.slug === conversationSlug 
@@ -173,6 +205,9 @@ const ChatPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      // 4. Handle error: remove optimistic message or show error state
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setNewMessage(content); // Restore message text
     } finally {
       setSending(false);
     }
@@ -390,7 +425,7 @@ const ChatPage: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white',
+                  color: colors.bgSecondary,
                   fontWeight: '700'
                 }}>
                   {otherPerson?.name.charAt(0).toUpperCase()}
@@ -493,11 +528,11 @@ const ChatPage: React.FC = () => {
                         padding: '12px 16px',
                         borderRadius: mine ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                         backgroundColor: mine ? colors.primary : colors.bgTertiary,
-                        color: mine ? 'white' : colors.textPrimary,
+                        color: mine ? colors.bgSecondary : colors.textPrimary,
                         position: 'relative',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        boxShadow: colors.shadow
                       }}>
-                        <div style={{ fontSize: '14px', lineHeight: '1.5' }}>{msg.content}</div>
+                        <div style={{ fontSize: '14px', lineHeight: '1.5', opacity: msg.is_optimistic ? 0.7 : 1 }}>{msg.content}</div>
                         <div style={{ 
                           fontSize: '10px', 
                           marginTop: '4px', 
@@ -508,8 +543,8 @@ const ChatPage: React.FC = () => {
                           justifyContent: 'flex-end',
                           gap: '4px'
                         }}>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {mine && (msg.is_read ? <CheckCheck size={12} /> : <Check size={12} />)}
+                          {msg.is_optimistic ? 'Sending...' : new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {mine && !msg.is_optimistic && (msg.is_read ? <CheckCheck size={12} /> : <Check size={12} />)}
                         </div>
                       </div>
                     </div>
@@ -552,7 +587,7 @@ const ChatPage: React.FC = () => {
                   height: '48px',
                   borderRadius: '50%',
                   backgroundColor: colors.primary,
-                  color: 'white',
+                  color: colors.bgSecondary,
                   border: 'none',
                   display: 'flex',
                   alignItems: 'center',

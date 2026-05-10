@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             AnnouncementSeeder::class,
             ReviewSeeder::class,
             OfferSeeder::class,
+            ConversationSeeder::class,
+            MessageSeeder::class,
         ]);
         
         // Create admin user

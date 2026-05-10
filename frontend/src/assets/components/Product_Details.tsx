@@ -47,6 +47,7 @@ const Product_Details: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
+  const [isChatting, setIsChatting] = useState<boolean>(false);
   
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -62,6 +63,14 @@ const Product_Details: React.FC = () => {
   const handleChatWithSeller = async () => {
     if (!product) return;
     
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setIsChatting(true);
     try {
       // Get or create conversation
       const res = await axios.post(`/api/announcements/${product.slug}/conversation`);
@@ -69,9 +78,17 @@ const Product_Details: React.FC = () => {
         const conversationSlug = res.data.conversation.slug;
         navigate(`/chat/${conversationSlug}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to start conversation:", err);
-      alert("Failed to start conversation. Please try again.");
+      if (err.response?.status === 401) {
+        navigate('/login');
+      } else if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Failed to start conversation. Please try again.");
+      }
+    } finally {
+      setIsChatting(false);
     }
   };
 
@@ -267,6 +284,7 @@ const Product_Details: React.FC = () => {
           <div className="action-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
             <button 
               onClick={handleChatWithSeller}
+              disabled={isChatting}
               style={{ 
                 padding: '15px', 
                 backgroundColor: colors.primary, 
@@ -279,11 +297,12 @@ const Product_Details: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                opacity: isChatting ? 0.7 : 1
               }}
             >
               <MessageCircle size={20} />
-              Chat with Seller
+              {isChatting ? 'Starting chat...' : 'Chat with Seller'}
             </button>
             <button 
               onClick={() => setShowOfferModal(true)}

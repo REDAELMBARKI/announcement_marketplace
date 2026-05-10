@@ -203,7 +203,7 @@ const Marketplace: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+          boxShadow: colors.shadow
         }}>
           {/* Quick filter pills */}
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -284,11 +284,11 @@ const Marketplace: React.FC = () => {
               gap: '25px' 
             }}>
               {products.map(product => (
-                <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} colors={colors} />
+                <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} />
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: colors.bgSecondary, borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+            <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: colors.bgSecondary, borderRadius: '24px', boxShadow: colors.shadow }}>
               <ShoppingBag size={64} color={colors.textMuted} style={{ marginBottom: '20px' }} weight="BoldDuotone" />
               <h2 style={{ fontSize: '24px', fontWeight: '800', color: colors.textPrimary, marginBottom: '10px' }}>Aucun article trouvé</h2>
               <p style={{ color: colors.textSecondary, marginBottom: '30px' }}>Essayez d'ajuster vos filtres pour trouver ce que vous cherchez.</p>
