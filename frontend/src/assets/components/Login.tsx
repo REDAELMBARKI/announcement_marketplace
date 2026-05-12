@@ -21,20 +21,26 @@ export default function Login() {
       const data = res.data;
       console.log("Login response:", res.status, data);
       
-      if (res.status === 200 && data.status === "success") {
-        const user = data.user;
-        const token = data.token || res.data.token || res.data.access_token;
+
+
+      if (res.status === 200  && (data.status === "success" || data.success === true)) {
+
+        const token = data?.data?.token || data?.token || null;
+        const user = data?.data?.user || data?.user;
+
 
         // For Debug- log user object to verify role
         console.log("Logged in user object:", user);
         console.log("Token:", token);
 
-        // Store auth data
         if (token) {
           localStorage.setItem("token", token);
         }
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("role", user.role || "user");
+        localStorage.setItem("role", String(user.role_id));
+        localStorage.setItem("admin", String(user.role_id === 12));
+
+        const role = String(user.role_id);
 
         // Notify other components (like Header) about login
         window.dispatchEvent(new Event('auth-change'));

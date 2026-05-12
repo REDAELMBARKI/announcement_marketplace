@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import route from "../../utils/route";
 import { Product } from "../../types/Product";

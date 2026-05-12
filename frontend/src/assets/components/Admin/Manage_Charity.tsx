@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
+import api from "../../../services/api";
 
 export function Manage_Charity() {
   const [charities, setCharities] = useState([]);
@@ -30,10 +31,10 @@ export function Manage_Charity() {
 
   const fetchCharities = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/charities");
-      const data = await res.json();
-      // Handle both wrapped and direct array responses
-      setCharities(data.charities || data || []);
+      const response = await api.get("/admin/charities");
+      if (response.data.status === "success") {
+        setCharities(response.data.charities);
+      }
     } catch (err) {
       console.error("Error fetching charities:", err);
       setCharities([]);
@@ -43,11 +44,11 @@ export function Manage_Charity() {
   };
 
   const startEditing = (charity) => {
-    setEditingId(charity.charity_ID);
+    setEditingId(charity.id);
     setEditData({
-      charity_name: charity.charity_name,
-      charity_address: charity.charity_address,
-      charity_email: charity.charity_email,
+      charity_name: charity.name,
+      charity_address: charity.address,
+      charity_email: charity.email,
       contact_person: charity.contact_person,
     });
   };
@@ -59,17 +60,17 @@ export function Manage_Charity() {
 
   const saveEdit = async (id) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/charities/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editData),
+      const response = await api.put(`/admin/charities/${id}`, {
+        name: editData.charity_name,
+        address: editData.charity_address,
+        email: editData.charity_email,
+        contact_person: editData.contact_person,
       });
-      const data = await res.json();
-      if (data.status === "success") {
+      if (response.data.status === "success") {
         fetchCharities();
         setEditingId(null);
       } else {
-        alert("Error updating charity: " + data.message);
+        alert("Error updating charity: " + response.data.message);
       }
     } catch (err) {
       alert("Network error. Please try again.");
@@ -86,31 +87,23 @@ export function Manage_Charity() {
     setStatus(null);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/charities/${id}`, {
-        method: "DELETE",
-      });
+      const response = await api.delete(`/admin/charities/${id}`);
 
-      const data = await res.json();
-
-      if (data.status === "success") {
+      if (response.data.status === "success") {
         setStatus({
           type: "success",
-          message: data.message,
+          message: response.data.message,
         });
         fetchCharities();
       } else {
         setStatus({
           type: "error",
-          message: data.message,
+          message: response.data.message,
         });
       }
     } catch (err) {
-      setStatus({
-        type: "error",
-        message: "Network error. Please try again.",
-      });
+      setStatus({ type: "error", message: "Network error. Please try again." });
     }
-
     setTimeout(() => setStatus(null), 4000);
   };
 

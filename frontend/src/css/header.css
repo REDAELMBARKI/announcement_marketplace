@@ -4,7 +4,16 @@
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 200;
+  transition: padding 0.3s ease, background-color 0.3s ease;
+}
+
+.header.scrolled {
+  padding: 0.1px 0.1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.3);
 }
 
 a:link,
@@ -29,7 +38,7 @@ a:visited {
 }
 
 .brand_logo i {
-  color: #16a34a;
+  color: #ea580c;
   margin-left: 4px;
 }
 
@@ -110,7 +119,7 @@ a:visited {
 
 .search_cta {
   border-radius: 999px;
-  background: #2563eb;
+  background: #ea580c;
   color: #ffffff !important;
   padding: 10px 22px;
   font-weight: 600;
@@ -119,7 +128,7 @@ a:visited {
 }
 
 .search_cta:hover {
-  background: #1d4ed8;
+  background: #c2410c;
 }
 
 h1 {
@@ -130,9 +139,27 @@ h1 {
 }
 
 .h1,
-i {
-  color: #458d23d1;
+.header .logo i {
+  color: #ffedd5;
   font-size: 60px;
+}
+
+.header-small {
+  background: linear-gradient(120deg, #7c2d12 0%, #ea580c 55%, #fb923c 100%);
+  border-bottom: none;
+}
+
+.header-small .navbar {
+  padding: 12px 20px 20px;
+}
+
+.header-small .header_content h2,
+.header-small .header_content h3 {
+  color: #fff7ed;
+}
+
+.header-small .logo h1 a {
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {

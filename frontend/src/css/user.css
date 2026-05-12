@@ -11,8 +11,38 @@
 }
 
 /* Sidebar In Main Container*/
+.recent-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 2rem 0.75rem;
+}
+
+.recent-toolbar h3 {
+  margin: 0;
+}
+
+.recent-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: light-dark(#333, #ddd);
+}
+
+.recent-filter-select {
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid light-dark(#ccc, #555);
+  background: light-dark(#fff, #2c2c2c);
+  color: inherit;
+  font-size: 0.9rem;
+}
+
 .links {
-  background-color: #53835e;
+  background-color: #ea580c;
   width: 200px;
   display: flex;
   flex-direction: column;
@@ -45,7 +75,20 @@
 }
 
 .links li:hover {
-  background-color: #619a6f;
+  background-color: #fb923c;
+}
+
+.links li a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+}
+
+.links li a:hover {
+  color: #fff;
 }
 
 .links i {
@@ -55,7 +98,7 @@
 
 .logout-btn {
   border: none;
-  background-color: #53835e;
+  background-color: #ea580c;
   color: #fff;
   padding: 10px 20px;
   border-radius: 4px;
@@ -64,7 +107,7 @@
   font-size: 1.1rem;
 }
 .logout-btn:hover {
-  background-color: #619a6f;
+  background-color: #fb923c;
 }
 /* User Dashboard */
 .dashboard-main {
@@ -87,7 +130,7 @@
 }
 
 .stat-card {
-  background-color: #53835e;
+  background-color: #ea580c;
   color: #fff;
   padding: 2.5rem 2rem;
   border-radius: 8px;
@@ -141,7 +184,7 @@
 }
 
 .donation-history th {
-  background-color: #53835e;
+  background-color: #c2410c;
   color: #fff;
   font-weight: 600;
   padding: 1rem;
@@ -264,6 +307,30 @@
 }
 
 .new-donation button:hover {
+  background-color: light-dark(#8aa377, #656c5c);
+}
+
+/* CTA as Link (same look as button) — avoids nested button issues */
+.new-donation .cta-link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: "Iansui", cursive;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  background-color: light-dark(#fef7e4, #2a4b38);
+  color: light-dark(#1e2a22, #f5f5f5);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.new-donation .cta-link:hover {
   background-color: light-dark(#8aa377, #656c5c);
 }
 

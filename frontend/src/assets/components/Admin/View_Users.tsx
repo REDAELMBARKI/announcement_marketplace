@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import api from "../../../services/api";
 
 export function View_Users() {
   const [users, setUsers] = useState([]);
@@ -10,20 +11,15 @@ export function View_Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [charities, setCharities] = useState([]);
-  const [roles, setRoles] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const [assignedCharity, setAssignedCharity] = useState("");
   const [userRole, setUserRole] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
     fetchUsers();
-    fetchCharities();
-    fetchRoles();
   }, []);
 
   const navigate = useNavigate();
@@ -36,39 +32,24 @@ export function View_Users() {
     // }
   }, [navigate]);
 
-  const fetchUsers = () => {
-    fetch("http://localhost:8000/api/user-management/view-users")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setUsers(data.users);
-          setFilteredUsers(data.users);
-        } else showMessage("Error fetching users", "error");
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching users:", err);
-        setLoading(false);
-      });
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/user-management/view-users");
+      if (response.data.status === "success") {
+        setUsers(response.data.users);
+        setFilteredUsers(response.data.users);
+      } else showMessage("Error fetching users", "error");
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      showMessage("Error fetching users", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fetchCharities = () => {
-    fetch("http://localhost:8000/api/user-management/charities-list")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setCharities(data.charities);
-      })
-      .catch((err) => console.error("Error fetching charities:", err));
-  };
-
-  const fetchRoles = () => {
-    fetch("http://localhost:8000/api/user-management/roles")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") setRoles(data.roles);
-      })
-      .catch((err) => console.error("Error fetching roles:", err));
-  };
+  const normalizeRole = (roleName) =>
+    (roleName || "").toLowerCase() === "donor" ? "user" : (roleName || "").toLowerCase();
 
   useEffect(() => {
     let results = users;
@@ -79,7 +60,7 @@ export function View_Users() {
     }
     if (roleFilter.trim()) {
       results = results.filter(
-        (u) => (u.role_name || "").toLowerCase() === roleFilter.toLowerCase(),
+        (u) => normalizeRole(u.role_name) === roleFilter.toLowerCase(),
       );
     }
     setFilteredUsers(results);
@@ -88,7 +69,6 @@ export function View_Users() {
   const handleEdit = (user) => {
     setSelectedUser(user);
     setUserRole(user.role_name || "");
-    setAssignedCharity(user.charity_ID || "");
     setShowEditModal(true);
   };
 
@@ -97,84 +77,44 @@ export function View_Users() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!userToDelete) return;
-
-    fetch(
-      `http://localhost:8000/api/user-management/users/${userToDelete.user_ID}`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      },
-    )
-      .then(async (res) => {
-        // Some delete endpoints return no JSON body- avoid crash
-        let data = {};
-        try {
-          data = await res.json();
-        } catch (e) {
-          // No JSON returned- treat HTTP 200 as success
-          if (res.ok) {
-            data = { status: "success" };
-          } else {
-            throw new Error("Non-JSON response from server");
-          }
-        }
-
-        if (data.status === "success") {
-          showMessage("User deleted successfully", "success");
-
-          setUsers((prev) =>
-            prev.filter((u) => u.user_ID !== userToDelete.user_ID),
-          );
-          setFilteredUsers((prev) =>
-            prev.filter((u) => u.user_ID !== userToDelete.user_ID),
-          );
-        } else {
-          showMessage(data.message || "Error deleting user", "error");
-        }
-
-        setShowDeleteModal(false);
-        setUserToDelete(null);
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        showMessage("Network error occurred", "error");
-        setShowDeleteModal(false);
-      });
+    try {
+      const response = await api.delete(`/user-management/users/${userToDelete.user_ID}`);
+      if (response.data.status === "success") {
+        showMessage("User deleted successfully", "success");
+        fetchUsers();
+      } else showMessage(response.data.message || "Error deleting user", "error");
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      showMessage("Error deleting user", "error");
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
   };
 
-  const handleUpdateUser = (e) => {
+  const handleUpdateUser = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
 
     const updateData = {};
-    // Promote charity_staff- admin
     if (userRole === "admin") updateData.role_name = "admin";
-    // Update assigned charity
-    if (selectedUser.role_name === "charity_staff")
-      updateData.charity_id = assignedCharity;
 
-    fetch(
-      `http://localhost:8000/api/user-management/users/${selectedUser.user_ID}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      },
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          showMessage("User updated successfully", "success");
-          fetchUsers();
-          setShowEditModal(false);
-        } else showMessage(data.message || "Error updating user", "error");
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        showMessage("Network error occurred", "error");
-      });
+    try {
+      const response = await api.put(
+        `/user-management/users/${selectedUser.user_ID}`,
+        updateData
+      );
+      if (response.data.status === "success") {
+        showMessage("User updated successfully", "success");
+        fetchUsers();
+        setShowEditModal(false);
+      } else showMessage(response.data.message || "Error updating user", "error");
+    } catch (err) {
+      console.error("Error updating user:", err);
+      showMessage("Error updating user", "error");
+    }
   };
 
   const showMessage = (text, type) => {
@@ -220,11 +160,8 @@ export function View_Users() {
           onChange={(e) => setRoleFilter(e.target.value)}
         >
           <option value="">All Roles</option>
-          {roles.map((role) => (
-            <option key={role.role_id} value={role.role_name}>
-              {role.role_name}
-            </option>
-          ))}
+          <option value="admin">Admin</option>
+          <option value="user">Users</option>
         </select>
         <button className="filter-button" onClick={handleFilterReset}>
           Reset
@@ -243,7 +180,6 @@ export function View_Users() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Assigned Charity</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -254,8 +190,7 @@ export function View_Users() {
                       <td>{user.user_ID}</td>
                       <td>{user.user_name}</td>
                       <td>{user.user_email}</td>
-                      <td>{user.role_name}</td>
-                      <td>{user.charity_name || "N/A"}</td>
+                      <td>{normalizeRole(user.role_name) === "user" ? "user" : user.role_name}</td>
                       <td>
                         {user.role_name === "charity_staff" && (
                           <button onClick={() => handleEdit(user)}>Edit</button>
@@ -270,7 +205,7 @@ export function View_Users() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6">No users found.</td>
+                    <td colSpan="5">No users found.</td>
                   </tr>
                 )}
               </tbody>
@@ -287,21 +222,6 @@ export function View_Users() {
             <form onSubmit={handleUpdateUser}>
               {selectedUser.role_name === "charity_staff" && (
                 <>
-                  <div className="form-group">
-                    <label>Assign to Charity:</label>
-                    <select
-                      value={assignedCharity}
-                      onChange={(e) => setAssignedCharity(e.target.value)}
-                      required
-                    >
-                      <option value="">Select Charity</option>
-                      {charities.map((c) => (
-                        <option key={c.charity_ID} value={c.charity_ID}>
-                          {c.charity_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div className="form-group">
                     <label>Change role to Admin:</label>
                     <select

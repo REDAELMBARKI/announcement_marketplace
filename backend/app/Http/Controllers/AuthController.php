@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Role;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -19,29 +19,39 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        //find user by email
+        // unified auth on users table
         $user = User::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
+            $avatarUrl = null;
+            if (! empty($user->avatar_path)) {
+                $avatarUrl = asset('storage/'.ltrim($user->avatar_path, '/'));
+            }
 
-            // Load user with role relationship
-            $user->load('role');
-            
-            $userData = $user->toArray();
-            $userData['role'] = $user->role ? $user->role->name : null;
+            $userData = [
+                'id' => $user->id,
+                'user_name' => $user->name,
+                'user_email' => $user->email,
+                'role_id' => $user->role_id,
+                'avatar_url' => $avatarUrl,
+            ];
 
-            // Generate Sanctum token
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = JWTAuth::fromUser($user);
 
             return response()->json([
+                'success' => true,
+                'data' => [
+                    'token' => $token,
+                    'user' => $userData,
+                ],
                 'status' => 'success',
                 'user'   => $userData,
-                'token'  => $token,
-                'token_type' => 'Bearer',
+                'token' => $token,
             ]);
         }
 
         return response()->json([
+            'success' => false,
             'status'  => 'error',
             'message' => 'Invalid credentials',
         ], 401);
@@ -59,47 +69,50 @@ class AuthController extends Controller
         //manual duplicate check
         if (User::where('email', $request->email)->exists()) {
             return response()->json([
+                'success' => false,
                 'status'  => 'error',
                 'message' => 'An account with this email already exists.',
             ], 409);
         }
 
-        //get user role
-        $userRole = Role::where('slug', 'user')->first();
-
-        // Create user
+        // default role 10 = donor (frontend-compatible)
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->fullName,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id'  => $userRole->id,
+            'role_id' => 10,
         ]);
 
-        // Load role relationship
-        $user->load('role');
-
-        $userData = $user->toArray();
-        $userData['role'] = $user->role ? $user->role->name : null;
-
-        // Generate Sanctum token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $userData = [
+            'id' => $user->id,
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+            'role_id' => $user->role_id,
+        ];
 
         return response()->json([
+            'success' => true,
+            'data' => $userData,
             'status' => 'success',
             'user'   => $userData,
-            'token'  => $token,
-            'token_type' => 'Bearer',
         ]);
     }
 
     //logout
     public function logout(Request $request)
     {
-        if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+        try {
+            JWTAuth::parseToken()->invalidate(true);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid token',
+            ], 401);
         }
 
         return response()->json([
+            'success' => true,
+            'data' => null,
             'status' => 'success',
             'message' => 'Logged out successfully',
         ]);

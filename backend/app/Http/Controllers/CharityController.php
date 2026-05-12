@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Charity;
-use App\Models\DomainUser;
-use App\Models\CharityStaff;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class CharityController extends Controller
 {
@@ -19,9 +19,7 @@ class CharityController extends Controller
     // get single charity with staff, donations, and inventory
     public function show($id)
     {
-        return response()->json(
-            Charity::with(['staff', 'donations', 'inventory'])->findOrFail($id)
-        );
+        return response()->json(Charity::findOrFail($id));
     }
 
     // create a new charity and its staff
@@ -53,28 +51,29 @@ class CharityController extends Controller
             ]);
 
             // try to find existing user by email
-            $user = DomainUser::where('user_email', $request->staff_email)->first();
+            $user = User::where('email', $request->staff_email)->first();
 
             // if user doesn't exist then create a new one
             if (!$user) {
-                $user = DomainUser::create([
-                    'user_name'     => $request->staff_username,
-                    'user_email'    => $request->staff_email,
-                    'user_password' => password_hash($request->staff_password, PASSWORD_DEFAULT),
+                $user = User::create([
+                    'name'          => $request->staff_username,
+                    'email'         => $request->staff_email,
+                    'password'      => Hash::make($request->staff_password),
                     'role_id'       => 11, //charity staff role
                 ]);
             }
 
             // check if this user is already linked to the charity
-            $linkExists = CharityStaff::where('charity_ID', $charity->charity_ID)
-                ->where('user_ID', $user->user_ID)
+            $linkExists = DB::table('Charity_Staff')
+                ->where('charity_ID', $charity->charity_ID)
+                ->where('user_ID', $user->id)
                 ->exists();
 
             // if the link does not exist, create it
             if (!$linkExists) {
-                CharityStaff::create([
+                DB::table('Charity_Staff')->insert([
                     'charity_ID' => $charity->charity_ID,
-                    'user_ID'    => $user->user_ID,
+                    'user_ID'    => $user->id,
                 ]);
             }
 
@@ -135,37 +134,25 @@ class CharityController extends Controller
     }
 
     // deletes a charity and its staff links
-public function destroy($id)
-{
-    try {
-        $charity = Charity::with('donations')->findOrFail($id);
+    public function destroy($id)
+    {
+        try {
+            $charity = Charity::findOrFail($id);
 
-        // stop deletion if donations exist
-        if ($charity->donations()->count() > 0) {
+            DB::table('Charity_Staff')->where('charity_ID', $id)->delete();
+            $charity->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Charity account deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'You cannot delete this charity because it has donations attached to it.'
-            ], 409);
+                'message' => 'Failed to delete charity: '.$e->getMessage(),
+            ], 500);
         }
-
-        // remove any staff that are linked
-        CharityStaff::where('charity_ID', $id)->delete();
-
-        // delete the charity
-        $charity->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Charity account deleted successfully.'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to delete charity: ' . $e->getMessage()
-        ], 500);
     }
-}
-
 
     // get simplified list of charities for dropdowns
     public function getCharitiesList()
@@ -180,7 +167,7 @@ public function destroy($id)
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to fetch charities: ' . $e->getMessage()
+                'message' => 'Failed to fetch charities: '.$e->getMessage(),
             ], 500);
         }
     }

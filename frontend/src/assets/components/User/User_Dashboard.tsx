@@ -1,66 +1,94 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../../services/api";
 import route from "../../../utils/route";
 import "../../../css/user.css";
+import MyImpactView from "../../../views/MyImpactView";
+
+type ProductRow = Record<string, unknown>;
 
 export default function User_Dashboard() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const [user, setUser] = useState(null);
-  const [donations, setDonations] = useState([]);
-  const [charities, setCharities] = useState([]);
-  const [loadingCharities, setLoadingCharities] = useState(true);
+  const [user, setUser] = useState<Record<string, unknown> | null>(null);
+  const [allListings, setAllListings] = useState<ProductRow[]>([]);
+  const [donationListings, setDonationListings] = useState<ProductRow[]>([]);
+  const [foundations, setFoundations] = useState<{ id: number; name: string; phone?: string }[]>([]);
+  const [loadingFoundations, setLoadingFoundations] = useState(true);
+  const [recentFilter, setRecentFilter] = useState<"all" | "donations" | "sale">("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    const role = localStorage.getItem("role");
-
-    // if (!storedUser || !role) {
-    //   navigate("/login");
-    //   return;
-    // }
-
     const parsedUser = storedUser
-      ? JSON.parse(storedUser)
+      ? (JSON.parse(storedUser) as Record<string, unknown>)
       : { user_ID: 0, user_name: "Guest", donor: {} };
-
-    // Protect by ID unless admin
-    // if (id && parseInt(id) !== parsedUser.user_ID && role !== "99") {
-    //   navigate("/login");
-    //   return;
-    // }
-
     setUser(parsedUser);
   }, [id, navigate]);
 
   useEffect(() => {
-    if (!user?.donor?.donor_ID) return;
+    const uid = user?.id as number | undefined;
+    if (!uid) return;
 
-    axios.get(route('reports.donations', { donor_id: user.donor.donor_ID }).toString())
-      .then((res) => {
-        if (res.data.status === "success") setDonations(res.data.donations);
+    Promise.all([
+      api.get<{ status: string; products: ProductRow[] }>(route("user.announcements", { userId: uid }).toString()),
+      api.get<{ status: string; products: ProductRow[] }>(route("user.donations", { userId: uid }).toString()),
+    ])
+      .then(([annRes, donRes]) => {
+        const ann = annRes.data.status === "success" && Array.isArray(annRes.data.products) ? annRes.data.products : [];
+        const don = donRes.data.status === "success" && Array.isArray(donRes.data.products) ? donRes.data.products : [];
+        setAllListings(ann);
+        setDonationListings(don);
       })
-      .catch((err) => console.error("Donation fetch error:", err));
+      .catch((err) => console.error("Listings fetch error:", err));
   }, [user]);
 
   useEffect(() => {
-    axios.get(route('admin.charities.index').toString())
+    api
+      .get<{ status: string; foundations: { id: number; name: string; phone?: string }[] }>("/foundations")
       .then((res) => {
-        setCharities(res.data);
-        setLoadingCharities(false);
+        if (res.data.status === "success" && Array.isArray(res.data.foundations)) {
+          setFoundations(res.data.foundations);
+        }
       })
-      .catch(() => setLoadingCharities(false));
+      .catch(() => setFoundations([]))
+      .finally(() => setLoadingFoundations(false));
   }, []);
 
-  const getCharityName = (id) => {
-    const c = charities.find((x) => x.charity_ID === id);
-    return c ? c.charity_name : "Unknown";
+  const displayedRows = useMemo(() => {
+    let rows: ProductRow[] = [];
+    if (recentFilter === "donations") {
+      rows = donationListings;
+    } else if (recentFilter === "sale") {
+      rows = allListings.filter((p) => p.listing_mode === "sell");
+    } else {
+      rows = allListings;
+    }
+    const sorted = [...rows].sort((a, b) => {
+      const ta = a.created_at ? new Date(String(a.created_at)).getTime() : 0;
+      const tb = b.created_at ? new Date(String(b.created_at)).getTime() : 0;
+      return tb - ta;
+    });
+    return sorted.slice(0, 8);
+  }, [recentFilter, allListings, donationListings]);
+
+  const donationThumbUrl = (d: ProductRow) => {
+    const thumb = d.thumbnail as { url?: string; file_path?: string; path?: string } | undefined;
+    if (!thumb) return null;
+    if (thumb.url && String(thumb.url).startsWith("http")) return String(thumb.url);
+    const path = thumb.file_path || thumb.path;
+    if (!path) return null;
+    const clean = String(path).replace(/^public\//, "").replace(/^\/+/, "");
+    const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://127.0.0.1:8000";
+    return `${base}/storage/${clean}`;
   };
+
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -71,14 +99,13 @@ export default function User_Dashboard() {
   return (
     <>
       <div className="user-dashboard-container">
-        {/* LEFT SIDEBAR */}
         <div className="dashboard-left">
           <div className="dashboard">
             <aside className="links">
               <ul>
                 <li>
                   <i className="fa-solid fa-gauge"></i>
-                  <Link to="/my_impact">My Impact</Link>
+                  <Link to="/user_dashboard">My Impact</Link>
                 </li>
                 <li>
                   <i className="fa-solid fa-shop"></i>
@@ -98,7 +125,7 @@ export default function User_Dashboard() {
                 </li>
                 <li>
                   <i className="fa-solid fa-arrow-right-from-bracket"></i>
-                  <button className="logout-btn" onClick={handleLogout}>
+                  <button type="button" className="logout-btn" onClick={handleLogout}>
                     Logout
                   </button>
                 </li>
@@ -106,88 +133,89 @@ export default function User_Dashboard() {
             </aside>
 
             <main className="dashboard-main">
-              <h2>Welcome, {user.user_name}</h2>
-
-              <div className="stats-container">
-                <div className="stat-card">
-                  <i className="fa-solid fa-earth-africa"></i>
-                  <p className="stat-number">
-                    {(donations.length * 1.5).toFixed(1)}kg
-                  </p>
-                  <p className="stat-text">CO₂ Saved</p>
-                </div>
-
-                <div className="stat-card">
-                  <i className="fa-solid fa-shirt"></i>
-                  <p className="stat-number">{donations.length}</p>
-                  <p className="stat-text">Total Items Donated</p>
-                </div>
-
-                <div className="stat-card">
-                  <i className="fa-solid fa-heart"></i>
-                  <p className="stat-number">{donations.length}</p>
-                  <p className="stat-text">People Helped</p>
-                </div>
-              </div>
+              <h2>Welcome, {(user.user_name as string) ?? (user.name as string) ?? "Guest"}</h2>
+              <MyImpactView />
             </main>
           </div>
         </div>
 
-        {/* RIGHT — ANNOUNCEMENT ENTRY */}
         <div className="dashboard-right">
           <div className="new-donation">
-            <h3>Kids Marketplace</h3>
+            <h3>Your marketplace</h3>
             <p>
-              Add a new kids product announcement to sell or donate clothing,
-              shoes, and accessories.
+              Post anything you want to sell or give away. Buyers and donors connect with you directly by phone to
+              arrange pickup or delivery.
             </p>
-            {loadingCharities ? (
-              <p>Loading charities...</p>
+            {loadingFoundations ? (
+              <p>Loading partner foundations…</p>
             ) : (
               <p>
-                {charities.length} charities available for donation routing.
+                {foundations.length} verified foundations you can support when you donate.
               </p>
             )}
-            <button type="button" onClick={() => navigate("/add_announcement")}>
-              Add Announcement
-            </button>
+            <Link to="/add_announcement" className="cta-link">
+              Add announcement
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* DONATION HISTORY */}
       <div className="donation-history full-width">
-        <h3>Recent Donations</h3>
+        <div className="recent-toolbar">
+          <h3>Recent announcements &amp; donations</h3>
+          <label className="recent-filter-label">
+            <span>Show</span>
+            <select
+              className="recent-filter-select"
+              value={recentFilter}
+              onChange={(e) => setRecentFilter(e.target.value as "all" | "donations" | "sale")}
+            >
+              <option value="all">All listings</option>
+              <option value="donations">Donations only</option>
+              <option value="sale">For sale only</option>
+            </select>
+          </label>
+        </div>
 
         <table>
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Size</th>
+              <th>Type</th>
+              <th>Title</th>
+              <th>Size / notes</th>
               <th>Image</th>
-              <th>Date Submitted</th>
-              <th>Charity</th>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Phone</th>
               <th>Status</th>
-              <th>Pickup Address</th>
+              <th>Pickup</th>
             </tr>
           </thead>
 
           <tbody>
-            {donations.length > 0 ? (
-              donations.slice(0, 4).map((d) => {
-                const item = d.items?.[0];
-                const url = item?.item_image
-                  ? `http://localhost:8000/storage/${item.item_image.replace("public/", "")}`
-                  : null;
+            {displayedRows.length > 0 ? (
+              displayedRows.map((d) => {
+                const rowId = d.id as number;
+                const title = (d.title as string) ?? "—";
+                const mode = (d.listing_mode as string) ?? "—";
+                const sizes = Array.isArray(d.sizes) ? (d.sizes as string[]).join(", ") : "—";
+                const url = donationThumbUrl(d);
+                const created = d.created_at ? new Date(String(d.created_at)).toLocaleDateString() : "—";
+                const cat = (d.super_category as { name?: string } | undefined)?.name ?? "—";
+                const status = (d.status as string) ?? "—";
+                const pickup = (d.pickup_address as string) ?? "—";
+                const phone = (d.contact_phone as string) ?? "—";
 
                 return (
-                  <tr key={d.donation_ID}>
-                    <td>{item?.item_name ?? "N/A"}</td>
-                    <td>{item?.item_size ?? "N/A"}</td>
+                  <tr key={rowId}>
+                    <td>{mode === "sell" ? "Sale" : "Donation"}</td>
+                    <td>{title}</td>
+                    <td>{sizes}</td>
                     <td>
                       {url ? (
                         <img
                           src={url}
+                          alt=""
                           style={{
                             width: "50px",
                             borderRadius: "4px",
@@ -199,26 +227,50 @@ export default function User_Dashboard() {
                           }}
                         />
                       ) : (
-                        "N/A"
+                        "—"
                       )}
                     </td>
-
-                    <td>{new Date(d.donation_date).toLocaleDateString()}</td>
-                    <td>{getCharityName(d.charity_ID)}</td>
-                    <td>{d.donation_status}</td>
-                    <td>{d.pickup_address}</td>
+                    <td>{created}</td>
+                    <td>{cat}</td>
+                    <td>{phone}</td>
+                    <td>{status}</td>
+                    <td>{pickup}</td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="7">No donations yet.</td>
+                <td colSpan={9}>Nothing to show for this filter yet.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
+      {modalOpen && modalImage ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "1rem",
+          }}
+          onClick={() => setModalOpen(false)}
+        >
+          <img
+            src={modalImage}
+            alt="Listing"
+            style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
     </>
   );
 }
