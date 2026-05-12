@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -36,10 +35,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Product::class);
     }
 
-    public function role(): BelongsTo
-    {
-        return $this->belongsTo(Role::class, 'role_id', 'role_ID');
-    }
+
 
     public function charity(): HasOne
     {
