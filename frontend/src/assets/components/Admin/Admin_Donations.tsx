@@ -38,7 +38,7 @@ export function Admin_Donations() {
     const fetchDonations = async () => {
       setLoading(true);
       try {
-        const response = await api.get("/admin/donations");
+        const response = await api.get("/api/admin/donations");
         if (response.data.status === "success") {
           setDonations(response.data.donations);
           setFilteredDonations(response.data.donations);

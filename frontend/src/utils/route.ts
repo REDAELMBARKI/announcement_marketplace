@@ -10,7 +10,12 @@ const Ziggy: any = {"url":"http://127.0.0.1:8000","port":null,"defaults":{},"rou
 const ziggyRoute = (name: string, params?: any, absolute: boolean = false) => {
     try {
         // @ts-ignore
-        return route(name, params, absolute, Ziggy).toString();
+        const generated = route(name, params, absolute, Ziggy).toString();
+        // Ensure relative routes start with a slash for consistency with manual calls
+        if (!absolute && !generated.startsWith('/')) {
+            return `/${generated}`;
+        }
+        return generated;
     } catch (error) {
         console.error(`Ziggy Error: Could not generate URL for route "${name}"`, error);
         return '';

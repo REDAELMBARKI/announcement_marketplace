@@ -40,9 +40,10 @@ class ProductRequest extends FormRequest
             'season'            => 'nullable|string',
             'sizes'             => 'nullable|array',
             'colors'            => 'nullable|array',
+            'city_id'           => 'nullable|exists:cities,id',
             'pickup_address'    => 'nullable|string',
             'handover_method'   => 'nullable|string',
-            'phone_contact'     => [$required, 'string', 'regex:/^(?:\+212|0|212)[5-7]\d{8}$/'],
+            'contact_phone'     => [$required, 'string', 'regex:/^(?:\+212|0|212)[5-7]\d{8}$/'],
             'sub_category_ids'  => 'nullable|array',
             'sub_category_ids.*' => 'exists:categories,id',
             'media_ids'         => 'nullable|array',
@@ -59,7 +60,7 @@ class ProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'phone_contact.regex' => 'Le numéro de téléphone doit être un numéro marocain valide.',
+            'contact_phone.regex' => 'Le numéro de téléphone doit être un numéro marocain valide.',
         ];
     }
 }

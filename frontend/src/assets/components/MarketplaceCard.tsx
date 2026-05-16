@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import axios from 'axios';
+import api from '../../services/api';
 import { 
   ChevronLeft,
   ChevronRight,
@@ -52,9 +52,24 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
     const newStatus = !isFavorited;
     setIsFavorited(newStatus);
     
-    // Proactively implement the API call
-    axios.post(`/api/announcements/${product.slug}/favorite`, { favorite: newStatus })
+     // Proactively implement the API call
+    api.post(`/api/announcements/${product.slug}/favorite`, { favorite: newStatus })
       .catch(err => console.error("Favorite toggle error:", err));
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "";
+    return name.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getAvatarColor = (name: string) => {
+    if (!name) return colors.coral;
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 65%, 45%)`;
   };
 
   if (view === 'list') {
@@ -69,8 +84,19 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
         <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: colors.coral, color: colors.bgSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800' }}>
-                {product.user?.name?.charAt(0)}
+              <div style={{ 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '50%', 
+                backgroundColor: getAvatarColor(product.user?.name || ""), 
+                color: colors.bgSecondary, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '12px', 
+                fontWeight: '800' 
+              }}>
+                {getInitials(product.user?.name || "")}
               </div>
               <span style={{ fontSize: '14px', fontWeight: '700', color: colors.textPrimary }}>{product.user?.name}</span>
             </div>
@@ -146,8 +172,19 @@ const MarketplaceCard: React.FC<MarketplaceCardProps> = memo(({ product, view, g
       {/* Seller Row */}
       <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: colors.coral, color: colors.bgSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800' }}>
-            {product.user?.name?.charAt(0)}
+          <div style={{ 
+            width: '28px', 
+            height: '28px', 
+            borderRadius: '50%', 
+            backgroundColor: getAvatarColor(product.user?.name || ""), 
+            color: colors.bgSecondary, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontSize: '10px', 
+            fontWeight: '800' 
+          }}>
+            {getInitials(product.user?.name || "")}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: colors.textPrimary }}>{product.user?.name}</span>

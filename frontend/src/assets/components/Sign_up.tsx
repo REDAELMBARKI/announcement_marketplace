@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/api";
 import route from "../../utils/route";
 import "../../css/sign_up_login.css";
 
@@ -34,7 +34,7 @@ function DonorSignUp() {
     }
 
     try {
-      const res = await axios.post(route('signup').toString(), {
+      const res = await api.post(route('signup').toString(), {
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
@@ -51,7 +51,7 @@ function DonorSignUp() {
           localStorage.setItem("token", token);
         }
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("role", user.role || "user");
+        localStorage.setItem("role", String(user.role_id));
 
         // Notify other components (like Header) about login
         window.dispatchEvent(new Event('auth-change'));

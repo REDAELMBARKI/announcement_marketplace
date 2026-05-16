@@ -21,7 +21,7 @@ class AdminPendingModerationItemDTO
             id: (int) $product->id,
             type: (string) $product->listing_mode,
             title: (string) $product->title,
-            city: (string) optional($product->addresses->first())->city ?: 'N/A',
+            city: (string) ($product->address?->city?->name ?: 'N/A'),
             time_ago: Carbon::parse($product->created_at)->diffForHumans(),
         );
     }

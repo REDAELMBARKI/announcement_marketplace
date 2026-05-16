@@ -19,22 +19,13 @@ class AddressFactory extends Factory
      */
     public function definition(): array
     {
-        $cities = [
-            'Marrakech' => ['Guéliz', 'Ménara', 'Medina', 'Hivernage', 'Agdal'],
-            'Casablanca' => ['Anfa', 'Maârif', 'Ain Sebaa', 'Sidi Maârouf', 'Hay Hassani'],
-            'Rabat' => ['Agdal', 'Hassan', 'Yacoub Al-Mansour', 'Souissi', 'Ocean'],
-            'Fès' => ['Nouveau', 'Medina', 'Agdal', 'Zouagha', 'Saïss'],
-            'Tangier' => ['Medina', 'Malabata', 'Briech', 'Marchan', 'Mnar'],
-        ];
-
-        $city = fake()->randomElement(array_keys($cities));
-        $district = fake()->randomElement($cities[$city]);
+        $city = \App\Models\City::inRandomOrder()->first() ?? \App\Models\City::create(['name' => 'Casablanca']);
 
         return [
-            'addressable_id' => Product::inRandomOrder()->first()->id,
+            'addressable_id' => Product::factory(),
             'addressable_type' => Product::class,
-            'city' => $city,
-            'district' => $district,
+            'city_id' => $city->id,
+            'district' => fake()->word(),
             'address_line' => fake()->streetAddress(),
             'lat' => fake()->latitude(31.0, 35.0), // Morocco latitude range
             'lng' => fake()->longitude(-10.0, -1.0), // Morocco longitude range

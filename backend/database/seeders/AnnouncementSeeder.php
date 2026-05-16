@@ -242,11 +242,9 @@ class AnnouncementSeeder extends Seeder
             $product->categories()->attach($category->id);
 
             // Create Moroccan address
-            $cities = ['Marrakech', 'Casablanca', 'Rabat', 'Tanger', 'Fès', 'Meknès', 'Oujda', 'Agadir'];
-            Address::factory()->create([
-                'addressable_id' => $product->id,
-                'addressable_type' => Product::class,
-                'city' => $cities[array_rand($cities)],
+            $randomCity = \App\Models\City::inRandomOrder()->first();
+            $product->address()->create([
+                'city_id' => $randomCity->id,
                 'district' => fake()->word(),
                 'address_line' => fake()->streetAddress(),
             ]);

@@ -35,7 +35,7 @@ return [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
             //config pour sqlite //
-            'database' => env('DB_DATABASE'),
+            'database' => env('DB_DATABASE', database_path('marketDB.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,

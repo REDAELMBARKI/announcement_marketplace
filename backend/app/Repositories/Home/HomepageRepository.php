@@ -16,20 +16,21 @@ class HomepageRepository implements HomepageRepositoryInterface
 {
     public function __construct(
         private Category $category,
-        private Product $product
+        private Product $product,
+        private User $user
     ) {}
     public function getStats(): array
     {
         return [
-            'total_products' => Product::whereIn('status', ['sell', 'donate'])->count(),
-            'total_users' => User::count(),
-            'total_donations' => Product::where('listing_mode', 'donate')->where('status', 'donate')->count(),
+            'total_products' => $this->product->whereIn('status', ['sell', 'donate'])->count(),
+            'total_users' => $this->user->count(),
+            'total_donations' => $this->product->where('listing_mode', 'donate')->where('status', 'donate')->count(),
         ];
     }
 
     public function getFeaturedCategories(): Collection
     {
-        return Category::select(['id', 'name', 'slug', 'icon', 'sort_order'])
+        return $this->category->select(['id', 'name', 'slug', 'icon', 'sort_order'])
             ->whereNull('parent_id')
             ->where('is_active', true)
             ->with(['thumbnail'])
@@ -42,11 +43,11 @@ class HomepageRepository implements HomepageRepositoryInterface
 
     public function getPopularProducts(array $filters): Collection
     {
-        $query = Product::select([
+        $query = $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('status', ['sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10);
@@ -64,7 +65,7 @@ class HomepageRepository implements HomepageRepositoryInterface
 
     public function getNewArrivals(): Collection
     {
-        return Product::select([
+        return $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
@@ -77,7 +78,7 @@ class HomepageRepository implements HomepageRepositoryInterface
 
     public function getProductsByCategory(int $categoryId, int $limit = 10): Collection
     {
-        return Product::select([
+        return $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
@@ -91,11 +92,11 @@ class HomepageRepository implements HomepageRepositoryInterface
 
     public function getAllProductsByCategory(): array
     {
-        $categories = Category::whereNull('parent_id')->where('is_active', true)->get();
+        $categories = $this->category->whereNull('parent_id')->where('is_active', true)->get();
         $result = [];
         
         foreach ($categories as $category) {
-            $products = Product::select([
+            $products = $this->product->select([
                 'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
                 'views_count', 'favorites_count', 'created_at', 'user_id'
             ])

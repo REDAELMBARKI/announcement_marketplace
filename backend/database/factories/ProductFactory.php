@@ -40,7 +40,6 @@ class ProductFactory extends Factory
             'price' => $price,
             'currency' => 'MAD',
             'price_negotiable' => fake()->boolean(30),
-            'pickup_address' => fake()->address(),
             'handover_method' => fake()->randomElement($handoverMethods),
             'status' => fake()->randomElement($statuses),
             'condition' => fake()->randomElement($conditions),

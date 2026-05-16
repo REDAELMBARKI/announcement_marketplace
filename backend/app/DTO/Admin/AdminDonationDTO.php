@@ -25,7 +25,7 @@ class AdminDonationDTO
     public static function fromProduct(Product $product): self
     {
         $mappedStatus = match ($product->status) {
-            'active', 'pending' => 'Pending',
+            'pending' => 'Pending',
             'donated', 'approved' => 'Approved',
             'rejected', 'declined' => 'Declined',
             default => ucfirst((string) $product->status),

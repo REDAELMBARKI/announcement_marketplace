@@ -226,6 +226,7 @@ class UserImpactDemoSeeder extends Seeder
             foreach ($rows as $idx => $row) {
                 $created = $now->copy()->subDays($row['days_ago'])->setTime(10, 30, 0);
                 $phoneSuffix = str_pad((string) (($idx % 90) + 10), 2, '0', STR_PAD_LEFT);
+                $randomCity = \App\Models\City::inRandomOrder()->first();
                 $product = Product::query()->create([
                     'user_id' => $donor->id,
                     'super_category_id' => $row['super']->id,
@@ -236,7 +237,6 @@ class UserImpactDemoSeeder extends Seeder
                     'price' => $row['listing_mode'] === 'sell' ? 9.99 : 0,
                     'currency' => 'GBP',
                     'price_negotiable' => false,
-                    'pickup_address' => '10 Demo Street, UK',
                     'contact_phone' => '+447700900'.$phoneSuffix,
                     'handover_method' => 'pickup',
                     'status' => $row['status'],
@@ -251,6 +251,11 @@ class UserImpactDemoSeeder extends Seeder
                     'favorites_count' => 0,
                     'created_at' => $created,
                     'updated_at' => $created,
+                ]);
+
+                $product->address()->create([
+                    'city_id' => $randomCity->id,
+                    'address_line' => '10 Demo Street',
                 ]);
 
                 Media::query()->create([

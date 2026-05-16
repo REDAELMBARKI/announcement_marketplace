@@ -35,7 +35,7 @@ export function View_Users() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/user-management/view-users");
+      const response = await api.get("/api/user-management/view-users");
       if (response.data.status === "success") {
         setUsers(response.data.users);
         setFilteredUsers(response.data.users);
@@ -80,7 +80,7 @@ export function View_Users() {
   const confirmDelete = async () => {
     if (!userToDelete) return;
     try {
-      const response = await api.delete(`/user-management/users/${userToDelete.user_ID}`);
+      const response = await api.delete(`/api/user-management/users/${userToDelete.user_ID}`);
       if (response.data.status === "success") {
         showMessage("User deleted successfully", "success");
         fetchUsers();
@@ -103,7 +103,7 @@ export function View_Users() {
 
     try {
       const response = await api.put(
-        `/user-management/users/${selectedUser.user_ID}`,
+        `/api/user-management/users/${selectedUser.user_ID}`,
         updateData
       );
       if (response.data.status === "success") {

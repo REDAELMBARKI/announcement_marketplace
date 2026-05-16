@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/api";
 import route from "../../utils/route";
 import { 
   Search, 
@@ -79,7 +79,7 @@ const Marketplace: React.FC = () => {
 
   // Fetch Initialization Data
   useEffect(() => {
-    axios.get(route('marketplace.init-data').toString())
+    api.get(route('marketplace.init-data').toString())
       .then(res => {
         if (res.data.status === "success") {
           setInitData(res.data);
@@ -108,7 +108,7 @@ const Marketplace: React.FC = () => {
     if (filters.age_range.length > 0) params['age_range'] = filters.age_range;
     if (filters.sizes.length > 0) params['sizes'] = filters.sizes;
 
-    axios.get(route('marketplace.listings', params).toString())
+    api.get(route('marketplace.listings', params).toString())
       .then(res => {
         if (res.data.status === "success") {
           const productsArray = res.data.data.data || res.data.data;

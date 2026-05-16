@@ -123,8 +123,9 @@ class ReportController extends Controller
                 $join->on('users.id', '=', 'addresses.addressable_id')
                     ->where('addresses.addressable_type', '=', $userAddressType);
             })
+            ->leftJoin('cities', 'addresses.city_id', '=', 'cities.id')
             ->select(
-                DB::raw("COALESCE(addresses.city, 'Unknown') as city"),
+                DB::raw("COALESCE(cities.name, addresses.city, 'Unknown') as city"),
                 DB::raw('COUNT(users.id) as users_count')
             )
             ->groupBy('city')

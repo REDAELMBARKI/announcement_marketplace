@@ -20,7 +20,10 @@ class AnnouncementService
     public function createAnnouncement(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            $data['status'] = 'active'; // Default status for new announcements
+            // Do not set status to 'sell' or 'donate' as they are listing_modes, not statuses
+            // Status will remain 'draft' by default or we can set it to something else if needed
+            // However, based on the migration, 'draft' is the only 'available' starting point.
+            
             $data['sizes'] = $this->parseListField($data['sizes'] ?? null);
             $data['colors'] = $this->parseListField($data['colors'] ?? null);
 
@@ -62,6 +65,17 @@ class AnnouncementService
         // Link media if provided
         if (!empty($data['media_ids'])) {
             $this->announcementRepository->linkMediaToProduct($data['media_ids'], $product);
+        }
+
+        // Sync city/address if provided
+        if (!empty($data['city_id'])) {
+            $product->address()->updateOrCreate(
+                [], // Since each product typically has one pickup address
+                [
+                    'city_id' => $data['city_id'],
+                    'address_line' => $data['pickup_address'] ?? null,
+                ]
+            );
         }
     }
 

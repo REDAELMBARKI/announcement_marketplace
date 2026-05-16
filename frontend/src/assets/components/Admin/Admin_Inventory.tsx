@@ -53,7 +53,7 @@ export function Admin_Inventory() {
     const fetchInventory = async () => {
       setLoading(true);
       try {
-        const response = await api.get("/admin/inventory");
+        const response = await api.get("/api/admin/inventory");
         if (response.data.status === "success") {
           const items = response.data.inventory.map(item => ({
             inventory_ID: item.id,

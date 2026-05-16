@@ -16,7 +16,7 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
         return Product::query()
             ->where('listing_mode', 'donate')
             ->where('status', '!=', 'draft')
-            ->with(['user', 'categories', 'items', 'addresses', 'thumbnail'])
+            ->with(['user', 'categories', 'items', 'address', 'thumbnail'])
             ->orderByDesc('created_at')
             ->get();
     }
@@ -52,7 +52,7 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
     public function countActiveProducts(): int
     {
         return Product::query()
-            ->whereIn('status', ['active', 'pending', 'donate', 'sell'])
+            ->whereIn('status', ['pending', 'donate', 'sell'])
             ->count();
     }
 

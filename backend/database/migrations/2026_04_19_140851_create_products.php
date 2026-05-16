@@ -14,7 +14,7 @@ return new class extends Migration
             // Works for users (home address) and products (pickup location)
             $table->morphs('addressable');
  
-            $table->string('city');
+            $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
             $table->string('district')->nullable();
             $table->string('address_line')->nullable();  // street / landmark
             $table->decimal('lat', 10, 7)->nullable();   // for map pin
@@ -43,14 +43,11 @@ return new class extends Migration
             $table->string('currency', 10)->default('MAD');
             $table->boolean('price_negotiable')->default(false);
             
-            $table->string('pickup_address')->nullable();
             $table->string('contact_phone', 32);
             $table->enum('handover_method', ['pickup', 'delivery', 'both'])->nullable();
 
             // Status lifecycle
             $table->enum('status', [
-                'sell',
-                'donate',
                 'reserved',
                 'sold',
                 'donated',

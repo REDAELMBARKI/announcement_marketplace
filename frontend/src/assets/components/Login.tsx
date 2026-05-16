@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/api";
 import route from "../../utils/route";
 import "../../css/sign_up_login.css";
 
@@ -16,7 +16,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await axios.post(route('login').toString(), { email, password });
+      const res = await api.post(route('login').toString(), { email, password });
 
       const data = res.data;
       console.log("Login response:", res.status, data);
@@ -38,7 +38,7 @@ export default function Login() {
         }
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", String(user.role_id));
-        localStorage.setItem("admin", String(user.role_id === 12));
+        localStorage.setItem("admin", String(user.role_id === 1));
 
         const role = String(user.role_id);
 

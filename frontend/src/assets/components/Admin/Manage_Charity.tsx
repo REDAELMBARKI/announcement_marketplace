@@ -31,7 +31,7 @@ export function Manage_Charity() {
 
   const fetchCharities = async () => {
     try {
-      const response = await api.get("/admin/charities");
+      const response = await api.get("/api/admin/charities");
       if (response.data.status === "success") {
         setCharities(response.data.charities);
       }

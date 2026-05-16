@@ -26,7 +26,9 @@ class ProductResource extends JsonResource
             'price' => $this->price,
             'currency' => $this->currency,
             'price_negotiable' => (bool) $this->price_negotiable,
-            'pickup_address' => $this->pickup_address,
+            'pickup_address' => $this->address?->address_line,
+            'city' => $this->address?->city?->name,
+            'city_id' => $this->address?->city_id,
             'contact_phone' => $this->contact_phone,
             'handover_method' => $this->handover_method,
             'status' => $this->status,
@@ -53,7 +55,7 @@ class ProductResource extends JsonResource
             'thumbnail' => new MediaResource($this->whenLoaded('thumbnail')),
             'gallery' => MediaResource::collection($this->whenLoaded('gallery')),
             'items' => $this->whenLoaded('items'),
-            'addresses' => $this->whenLoaded('addresses'),
+            'address' => $this->whenLoaded('address'),
         ];
     }
 }

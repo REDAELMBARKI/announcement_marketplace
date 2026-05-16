@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../../services/api";
 import route from "../../../utils/route";
 import "../../../css/records.css";
 
@@ -52,9 +52,9 @@ export default function My_Donations() {
     }
 
     setLoading(true);
-    axios
+    api
       .get<{ status: string; products: DonationProduct[] }>(
-        route("user.donations", { userId: user.id }).toString(),
+        route("user.donations", { user: user.id }).toString(),
       )
       .then((res) => {
         if (res.data.status === "success" && Array.isArray(res.data.products)) {

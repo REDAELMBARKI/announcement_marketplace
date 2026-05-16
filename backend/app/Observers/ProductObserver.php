@@ -26,8 +26,8 @@ class ProductObserver
         $product->favorites()->delete();
         $product->tags()->detach();
         
-        // Clear addresses
-        $product->addresses()->delete();
+        // Clear address
+        $product->address()->delete();
         
         // Clear conversations
         $product->conversations()->delete();

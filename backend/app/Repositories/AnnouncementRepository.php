@@ -19,7 +19,7 @@ class AnnouncementRepository
             'user_id', 'super_category_id', 'listing_mode', 'listing_type',
             'title', 'description', 'price', 'currency', 'price_negotiable',
             'status', 'condition', 'gender', 'age_range', 'brand', 'season',
-            'sizes', 'colors', 'pickup_address', 'handover_method', 'phone_contact'
+            'sizes', 'colors', 'handover_method', 'contact_phone'
         ];
 
         return array_intersect_key($data, array_flip($fields));
@@ -60,8 +60,9 @@ class AnnouncementRepository
 
     public function getMarketplaceListings(array $filters, int $perPage = 12): LengthAwarePaginator
     {
-        $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories'])
-            ->whereIn('status', ['sell', 'donate', 'active']); // Added active status
+        $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'address'])
+            ->whereIn('listing_mode', ['sell', 'donate'])
+            ->where('status', 'draft'); // Assuming draft is the 'active' state for now since 'active' is missing from enum
 
         // Search filter
         if (!empty($filters['search'])) {

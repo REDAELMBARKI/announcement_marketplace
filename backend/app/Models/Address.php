@@ -13,7 +13,7 @@ class Address extends Model
     protected $fillable = [
         'addressable_id',
         'addressable_type',
-        'city',
+        'city_id',
         'district',
         'address_line',
         'lat',
@@ -22,6 +22,7 @@ class Address extends Model
     ];
 
     protected $casts = [
+        'city_id' => 'integer',
         'lat' => 'decimal:7',
         'lng' => 'decimal:7',
         'is_default' => 'boolean',
@@ -42,5 +43,10 @@ class Address extends Model
     public function addressable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 }

@@ -2,19 +2,27 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Heart, Store, ChatCircleText, SignOut, User, List, CaretDown } from "@phosphor-icons/react";
 import { useTheme } from "../../context/ThemeContext";
+import api from "../../services/api";
+import route from "../../utils/route";
 import "../../css/header.css";
 
 interface UserData {
   id: number;
-  name: string;
+  name?: string;
+  user_name?: string;
   email?: string;
+  user_email?: string;
   avatar?: string;
+  avatar_url?: string;
 }
 
 function Header() {
   const navigate = useNavigate();
   const { colors } = useTheme();
   const [user, setUser] = useState<UserData | null>(null);
+
+  const displayName = user?.name || user?.user_name || "";
+  const displayEmail = user?.email || user?.user_email || "";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -22,6 +30,7 @@ function Header() {
     // Check if user is logged in
     const checkAuth = () => {
       const storedUser = localStorage.getItem('user');
+   
       const token = localStorage.getItem('token');
       if (storedUser && token) {
         setUser(JSON.parse(storedUser));
@@ -62,9 +71,7 @@ function Header() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await axios.post(route('logout').toString(), {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post(route('logout').toString());
       }
     } catch (err) {
       console.error("Logout error:", err);
@@ -80,7 +87,18 @@ function Header() {
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (!name) return "";
+    return name.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getAvatarColor = (name: string) => {
+    if (!name) return colors.primary;
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 65%, 45%)`; // Persistent color based on name
   };
 
   return (
@@ -135,10 +153,10 @@ function Header() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  {user.avatar ? (
+                  {user.avatar || user.avatar_url ? (
                     <img
-                      src={user.avatar}
-                      alt={user.name}
+                      src={user.avatar || user.avatar_url}
+                      alt={displayName}
                       style={{
                         width: '32px',
                         height: '32px',
@@ -151,7 +169,7 @@ function Header() {
                       width: '32px',
                       height: '32px',
                       borderRadius: '50%',
-                      backgroundColor: colors.primary,
+                      backgroundColor: getAvatarColor(displayName),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -159,7 +177,7 @@ function Header() {
                       fontSize: '12px',
                       fontWeight: '600',
                     }}>
-                      {getInitials(user.name)}
+                      {getInitials(displayName)}
                     </div>
                   )}
                   <span style={{ 
@@ -171,7 +189,7 @@ function Header() {
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}>
-                    {user.name}
+                    {displayName}
                   </span>
                   <CaretDown size={16} color={colors.textSecondary} style={{ 
                     transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -196,10 +214,10 @@ function Header() {
                   }}>
                     <div style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}` }}>
                       <p style={{ margin: 0, fontWeight: '600', color: colors.textPrimary, fontSize: '14px' }}>
-                        {user.name}
+                        {displayName}
                       </p>
                       <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: colors.textMuted }}>
-                        {user.email}
+                        {displayEmail}
                       </p>
                     </div>
 

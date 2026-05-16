@@ -86,13 +86,13 @@ export function Admin_Dashboard() {
       const nextErrors: Record<string, string> = {};
 
       const requests = await Promise.allSettled([
-        api.get("/admin/stats"),
-        api.get("/admin/stats/type-split"),
-        api.get("/admin/stats/funnel"),
-        api.get("/admin/stats/categories"),
-        api.get("/admin/stats/user-retention"),
-        api.get("/admin/stats/hourly-activity"),
-        api.get("/admin/moderation/pending?limit=5"),
+        api.get("/api/admin/stats"),
+        api.get("/api/admin/stats/type-split"),
+        api.get("/api/admin/stats/funnel"),
+        api.get("/api/admin/stats/categories"),
+        api.get("/api/admin/stats/user-retention"),
+        api.get("/api/admin/stats/hourly-activity"),
+        api.get("/api/admin/moderation/pending?limit=5"),
       ]);
 
       const [statsRes, splitRes, funnelRes, categoriesRes, retentionRes, hourlyRes, pendingRes] =

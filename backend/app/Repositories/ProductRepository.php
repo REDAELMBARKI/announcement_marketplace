@@ -17,7 +17,7 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function getById(int $id): ?Product
     {
-        return Product::with(['superCategory', 'subCategories', 'thumbnail', 'gallery', 'user', 'items', 'addresses'])
+        return Product::with(['superCategory', 'subCategories', 'thumbnail', 'gallery', 'user', 'items', 'address'])
             ->findOrFail($id);
     }
 

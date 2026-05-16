@@ -41,13 +41,15 @@ const My_Announcements: React.FC = () => {
       navigate("/login");
       return;
     }
-    const parsed = JSON.parse(raw) as { id?: number };
-    if (!parsed?.id) {
+    const user = JSON.parse(raw) as { id?: number; slug?: string };
+    if (!user?.id) {
       navigate("/login");
       return;
     }
 
-    axios.get(`/api/users/${user.slug}/announcements`)
+    const userSlug = user.slug || user.id.toString();
+
+    api.get(`/api/user/${userSlug}/announcements`)
       .then((res) => {
         if (res.data.status === "success") {
           const productsArray = res.data.products?.data || res.data.products;
@@ -68,7 +70,7 @@ const My_Announcements: React.FC = () => {
       if (!product) return;
 
       try {
-        const res = await axios.delete(route('announcements.destroy', { announcement: product.slug }).toString());
+        const res = await api.delete(route('announcements.destroy', { announcement: product.slug }).toString());
         if (res.data.status === "success") {
           setProducts(products.filter((p) => p.id !== id));
         }

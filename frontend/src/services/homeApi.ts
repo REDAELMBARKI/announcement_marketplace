@@ -1,21 +1,9 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://127.0.0.1:8000';
+import api from './api';
 
 class HomeApi {
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
-  }
-
   async request(url, options = {}) {
     try {
-      const response = await this.api({
+      const response = await api({
         url,
         ...options,
       });
@@ -35,7 +23,8 @@ class HomeApi {
 
   // Homepage specific methods
   async getHomepageData(params = {}) {
-    return this.get('/api/homepage', params);
+    // Add /api prefix if not using the api service's default (which we removed /api from)
+    return this.get('/api/homepage', { params });
   }
 }
 

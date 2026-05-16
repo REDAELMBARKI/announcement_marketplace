@@ -46,15 +46,15 @@ export function Data_Reports() {
           inventoryRes,
           timeBasedRes,
         ] = await Promise.all([
-          api.get("/reports/users"),
-          api.get("/reports/top-users"),
-          api.get("/reports/user-activity"),
-          api.get("/reports/location"),
-          api.get("/reports/sales"),
-          api.get("/reports/donations"),
-          api.get("/reports/listings-performance"),
-          api.get("/reports/inventory"),
-          api.get("/reports/time-based"),
+          api.get("/api/reports/users"),
+          api.get("/api/reports/top-users"),
+          api.get("/api/reports/user-activity"),
+          api.get("/api/reports/location"),
+          api.get("/api/reports/sales"),
+          api.get("/api/reports/donations"),
+          api.get("/api/reports/listings-performance"),
+          api.get("/api/reports/inventory"),
+          api.get("/api/reports/time-based"),
         ]);
 
         setReportsData({

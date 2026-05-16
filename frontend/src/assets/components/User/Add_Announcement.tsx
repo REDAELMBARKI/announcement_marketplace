@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../../../services/api";
 import ziggyRoute from "../../../utils/route";
 import {
   Palette,
@@ -41,6 +41,7 @@ import {
   OutlinedInput,
   FormHelperText,
   InputLabel,
+  Snackbar,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
@@ -112,10 +113,10 @@ interface FormState {
   season: string;
   sizes: string[];
   colors: string[];
-  city: string;
+  city_id: string;
   handover_method: string;
   pickup_address: string;
-  phone_contact: string;
+  contact_phone: string;
   custom_colors: { name: string; hex: string }[];
 }
 
@@ -213,7 +214,7 @@ interface Product {
   colors?: string[];
   city: string;
   pickup_address: string;
-  phone_contact: string;
+  contact_phone: string;
   handover_method: string;
   thumbnail?: { url: string; id: number };
   gallery?: { url: string; id: number }[];
@@ -237,7 +238,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     if (userSlug && announcementSlug && !product) {
       const fetchProduct = async () => {
         try {
-        const response = await axios.get(ziggyRoute('announcements.show', { 
+        const response = await api.get(ziggyRoute('announcements.show', { 
           announcement: announcementSlug 
         }));
         if (response.data.status === "success") {
@@ -254,6 +255,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
 
   const [stepKey, setStepKey] = useState<string>("category");
   const [status, setStatus] = useState<StatusMessage | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>(
     Array(8).fill(null).map(() => ({ status: 'idle', url: null, id: null }))
@@ -293,9 +295,9 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     price: "",
     currency: "MAD",
     price_negotiable: false,
-    city: "",
+    city_id: "",
     pickup_address: "",
-    phone_contact: "+212",
+    contact_phone: "+212",
     handover_method: "both",
     custom_colors: [],
   });
@@ -307,7 +309,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   useEffect(() => {
     const fetchInitData = async () => {
       try {
-        const response = await axios.get(ziggyRoute('marketplace.init-data'));
+        const response = await api.get(ziggyRoute('marketplace.init-data'));
         if (response.data.status === "success") {
           setCategories(response.data.categories || []);
           setAttributes({
@@ -343,9 +345,9 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               price: String(product.price),
               currency: product.currency,
               price_negotiable: product.price_negotiable,
-              city: product.city,
+              city_id: String(product.city_id || ""),
               pickup_address: product.pickup_address,
-              phone_contact: product.phone_contact,
+              contact_phone: product.contact_phone || (product as any).phone_contact,
               handover_method: product.handover_method,
               custom_colors: [], // Assuming custom colors aren't separate in backend yet
             });
@@ -436,12 +438,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     }
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
-      if (!form.city) errors.city = "Choisissez une ville.";
+      if (!form.city_id) errors.city_id = "Choisissez une ville.";
       if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
-      if (!form.phone_contact.trim() || form.phone_contact === "+212") {
-        errors.phone_contact = "Le numéro de téléphone est obligatoire.";
-      } else if (!/^\+212[5-7]\d{8}$/.test(form.phone_contact)) {
-        errors.phone_contact = "Format: 9 chiffres après +212, commençant par 5, 6 ou 7.";
+      if (!form.contact_phone.trim() || form.contact_phone === "+212") {
+        errors.contact_phone = "Le numéro de téléphone est obligatoire.";
+      } else if (!/^\+212[5-7]\d{8}$/.test(form.contact_phone)) {
+        errors.contact_phone = "Format: 9 chiffres après +212, commençant par 5, 6 ou 7.";
       }
     }
     return errors;
@@ -487,7 +489,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       // Set collection based on slot index (0 is thumbnail, others gallery)
       formData.append('collection', index === 0 ? 'thumbnail' : 'gallery');
 
-      const response = await axios.post(ziggyRoute('media.upload'), formData, {
+      const response = await api.post(ziggyRoute('media.upload'), formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           'Accept': 'application/json'
@@ -544,7 +546,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     const slot = uploadSlots[indexToRemove];
     if (slot.id) {
       try {
-        await axios.delete(ziggyRoute('media.delete-temporary', { mediaId: slot.id }));
+        await api.delete(ziggyRoute('media.delete-temporary', { mediaId: slot.id }));
       } catch (error) {
         console.error('Failed to delete temporary media:', error);
       }
@@ -579,7 +581,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     const payload = {
       ...form,
       user_id: user.id,
-      city: form.city,
+      city_id: form.city_id,
       price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
       media_ids: mediaIds,
@@ -588,21 +590,31 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     try {
       let response;
       if (isEditMode && product) {
-        response = await axios.put(ziggyRoute('announcements.update', { 
+        response = await api.put(ziggyRoute('announcements.update', { 
           announcement: product.slug 
         }), payload);
       } else {
-        response = await axios.post(ziggyRoute('announcements.store'), payload);
+        response = await api.post(ziggyRoute('announcements.store'), payload);
       }
 
       if (response.data.status === "success") {
         setStatus({ type: "success", message: isEditMode ? "Annonce mise à jour avec succès." : "Annonce publiée avec succès." });
-        setTimeout(() => navigate("/my_announcements"), 1200);
+        setToastOpen(true);
+        const targetSlug = response.data.product?.slug || product?.slug;
+        setTimeout(() => {
+          if (targetSlug) {
+            navigate(`/announcements/${targetSlug}`);
+          } else {
+            navigate("/user_dashboard");
+          }
+        }, 1200);
         return;
       }
       setStatus({ type: "error", message: response.data.message || "Erreur de validation." });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Erreur réseau.";
+      const errorMessage = error.response?.data?.errors 
+        ? Object.values(error.response.data.errors).flat().join(', ') 
+        : (error.response?.data?.message || "Erreur réseau.");
       setStatus({ type: "error", message: errorMessage });
     }
   };
@@ -1151,11 +1163,11 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               <CustomSelect
                 label="Ville"
                 options={attributes.cities}
-                value={form.city}
-                onChange={(val) => updateField("city", val)}
+                value={form.city_id}
+                onChange={(val) => updateField("city_id", val)}
                 placeholder="Choisissez votre ville..."
-                error={!!fieldErrors.city}
-                helperText={fieldErrors.city}
+                error={!!fieldErrors.city_id}
+                helperText={fieldErrors.city_id}
               />
             </Box>
 
@@ -1179,18 +1191,18 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
 
             {/* Contact Téléphonique - Single row alone */}
             <Box sx={{ width: '100%' }}>
-              <FormControl fullWidth variant="outlined" error={!!fieldErrors.phone_contact}>
-                <InputLabel htmlFor="phone-contact">Numéro de téléphone</InputLabel>
+              <FormControl fullWidth variant="outlined" error={!!fieldErrors.contact_phone}>
+                <InputLabel htmlFor="contact-phone">Numéro de téléphone</InputLabel>
                 <OutlinedInput
-                  id="phone-contact"
+                  id="contact-phone"
                   label="Numéro de téléphone"
                   placeholder="6XXXXXXXX"
-                  value={(form.phone_contact || "").replace('+212', '')}
+                  value={(form.contact_phone || "").replace('+212', '')}
                   onChange={(e) => {
                     let val = e.target.value.replace(/\D/g, '');
                     if (val.startsWith('0')) val = val.substring(1);
                     if (val.length > 9) val = val.substring(0, 9);
-                    updateField("phone_contact", `+212${val}`);
+                    updateField("contact_phone", `+212${val}`);
                   }}
                   startAdornment={
                     <InputAdornment position="start">
@@ -1201,9 +1213,9 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                     </InputAdornment>
                   }
                 />
-                {fieldErrors.phone_contact && (
-                  <FormHelperText id="phone-contact-error-text">
-                    {fieldErrors.phone_contact}
+                {fieldErrors.contact_phone && (
+                  <FormHelperText id="contact-phone-error-text">
+                    {fieldErrors.contact_phone}
                   </FormHelperText>
                 )}
               </FormControl>
@@ -1463,7 +1475,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               <Box sx={{ mt: 4, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <MapPin size={18} color="#64748b" />
                 <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                  {form.city ? `${form.city}, ` : ""}{form.pickup_address || "Localisation..."}
+                  {form.city_id ? `${attributes.cities.find(c => String(c.id || c.value) === String(form.city_id))?.label || ""}, ` : ""}{form.pickup_address || "Localisation..."}
                 </Typography>
               </Box>
             </Paper>
@@ -1479,6 +1491,22 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
           </Box>
         </Grid>
       </Grid>
+
+      {/* Success Toast */}
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={4000}
+        onClose={() => setToastOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setToastOpen(false)} 
+          severity="success" 
+          sx={{ width: '100%', borderRadius: 3, fontWeight: 600, boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}
+        >
+          {isEditMode ? "Annonce mise à jour avec succès !" : "Félicitations ! Votre annonce a été publiée avec succès."}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

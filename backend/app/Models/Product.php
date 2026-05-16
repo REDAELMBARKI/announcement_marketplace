@@ -38,8 +38,7 @@ class Product extends Model
         'price',
         'currency',
         'price_negotiable',
-        'pickup_address',
-        'phone_contact',
+        'contact_phone',
         'handover_method',
         'status',
         'condition',
@@ -112,9 +111,9 @@ class Product extends Model
         return $this->hasMany(ProductItem::class);
     }
 
-    public function addresses(): MorphMany
+    public function address(): MorphOne
     {
-        return $this->morphMany(Address::class, 'addressable');
+        return $this->morphOne(Address::class, 'addressable');
     }
 
     public function media(): MorphMany

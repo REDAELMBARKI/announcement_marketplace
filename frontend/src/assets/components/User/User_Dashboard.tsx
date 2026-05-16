@@ -24,17 +24,17 @@ export default function User_Dashboard() {
     const storedUser = localStorage.getItem("user");
     const parsedUser = storedUser
       ? (JSON.parse(storedUser) as Record<string, unknown>)
-      : { user_ID: 0, user_name: "Guest", donor: {} };
+      : { id: 0, name: "Guest", donor: {} };
     setUser(parsedUser);
   }, [id, navigate]);
 
   useEffect(() => {
-    const uid = user?.id as number | undefined;
+    const uid = (user?.id || user?.user_ID) as number | undefined;
     if (!uid) return;
 
     Promise.all([
-      api.get<{ status: string; products: ProductRow[] }>(route("user.announcements", { userId: uid }).toString()),
-      api.get<{ status: string; products: ProductRow[] }>(route("user.donations", { userId: uid }).toString()),
+      api.get<{ status: string; products: ProductRow[] }>(route("user.announcements", { user: uid }).toString()),
+      api.get<{ status: string; products: ProductRow[] }>(route("user.donations", { user: uid }).toString()),
     ])
       .then(([annRes, donRes]) => {
         const ann = annRes.data.status === "success" && Array.isArray(annRes.data.products) ? annRes.data.products : [];
@@ -47,7 +47,7 @@ export default function User_Dashboard() {
 
   useEffect(() => {
     api
-      .get<{ status: string; foundations: { id: number; name: string; phone?: string }[] }>("/foundations")
+      .get<{ status: string; foundations: { id: number; name: string; phone?: string }[] }>("/api/foundations")
       .then((res) => {
         if (res.data.status === "success" && Array.isArray(res.data.foundations)) {
           setFoundations(res.data.foundations);
@@ -133,7 +133,7 @@ export default function User_Dashboard() {
             </aside>
 
             <main className="dashboard-main">
-              <h2>Welcome, {(user.user_name as string) ?? (user.name as string) ?? "Guest"}</h2>
+              <h2>Welcome, {(user.name as string) ?? (user.user_name as string) ?? "Guest"}</h2>
               <MyImpactView />
             </main>
           </div>

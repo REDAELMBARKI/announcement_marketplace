@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -23,6 +22,8 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
+            $user->load('role'); // Load role relationship
+
             $avatarUrl = null;
             if (! empty($user->avatar_path)) {
                 $avatarUrl = asset('storage/'.ltrim($user->avatar_path, '/'));
@@ -33,10 +34,12 @@ class AuthController extends Controller
                 'user_name' => $user->name,
                 'user_email' => $user->email,
                 'role_id' => $user->role_id,
+                'role' => $user->role ? $user->role->name : 'User', // Include role name
                 'avatar_url' => $avatarUrl,
             ];
 
-            $token = JWTAuth::fromUser($user);
+            // Use Sanctum for token generation
+            $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'success' => true,
@@ -83,18 +86,27 @@ class AuthController extends Controller
             'role_id' => 10,
         ]);
 
+        $user->load('role');
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         $userData = [
             'id' => $user->id,
             'user_name' => $user->name,
             'user_email' => $user->email,
             'role_id' => $user->role_id,
+            'role' => $user->role ? $user->role->name : 'User',
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $userData,
+            'data' => [
+                'token' => $token,
+                'user' => $userData,
+            ],
             'status' => 'success',
             'user'   => $userData,
+            'token' => $token,
         ]);
     }
 
@@ -102,12 +114,13 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
-            JWTAuth::parseToken()->invalidate(true);
+            // Use Sanctum to delete the current token
+            $request->user()->currentAccessToken()->delete();
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid token',
-            ], 401);
+                'message' => 'Failed to logout',
+            ], 500);
         }
 
         return response()->json([

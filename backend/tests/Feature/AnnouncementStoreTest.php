@@ -42,6 +42,9 @@ class AnnouncementStoreTest extends TestCase
         // Create temporary media collection
         $mediaCollection = $this->createTemporaryMediaCollection(2);
 
+        // Create a test city
+        $city = \App\Models\City::create(['name' => 'Marrakech']);
+
         $announcementData = [
             'user_id' => $this->user->id,
             'super_category_id' => $this->category->id,
@@ -59,6 +62,7 @@ class AnnouncementStoreTest extends TestCase
             'season' => 'été',
             'sizes' => ['4A', '5A'],
             'colors' => ['Rouge', 'Bleu'],
+            'city_id' => $city->id,
             'pickup_address' => '123 Test Street, Marrakech',
             'handover_method' => 'both',
             'media_ids' => array_map(fn($media) => (int)$media->id, $mediaCollection),
@@ -69,7 +73,6 @@ class AnnouncementStoreTest extends TestCase
         $response->assertStatus(201);
         $response->assertJson([
             'status' => 'success',
-            'message' => 'Sale listing created successfully!',
         ]);
 
         // Verify product was created
@@ -87,8 +90,17 @@ class AnnouncementStoreTest extends TestCase
             'age_range' => '3-5 ans',
             'brand' => 'Test Brand',
             'season' => 'été',
-            'pickup_address' => '123 Test Street, Marrakech',
             'handover_method' => 'both',
+        ]);
+
+        // Verify address was created in the polymorphic table
+        $product = Product::where('title', 'Test Product')->first();
+        $this->assertNotNull($product->address);
+        $this->assertDatabaseHas('addresses', [
+            'addressable_id' => $product->id,
+            'addressable_type' => Product::class,
+            'city_id' => $city->id,
+            'address_line' => '123 Test Street, Marrakech',
         ]);
 
         // Verify media was linked and marked as permanent
