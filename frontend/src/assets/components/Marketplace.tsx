@@ -23,6 +23,7 @@ import { useTheme } from "../../context/ThemeContext";
 import Sidebar from "./Marketplace/Sidebar";
 import { Product } from "./User/announcement/types";
 import MarketplaceCard from "./MarketplaceCard";
+import CustomSelect from "./common/CustomSelect";
 
 // --- Types ---
 interface InitData {
@@ -81,6 +82,7 @@ const Marketplace: React.FC = () => {
   useEffect(() => {
     api.get(route('marketplace.init-data').toString())
       .then(res => {
+        console.log("Marketplace Init Data:", res.data);
         if (res.data.status === "success") {
           setInitData(res.data);
         }
@@ -196,57 +198,66 @@ const Marketplace: React.FC = () => {
         <div style={{ 
           position: 'sticky', 
           top: '80px', 
-          zIndex: 100, 
-          backgroundColor: colors.bgSecondary, 
-          padding: '12px 40px', 
-          borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+          zIndex: 5,
+          backgroundColor: colors.bgPrimary, 
+          padding: '20px 40px',
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          borderBottom: `1px solid ${colors.sidebarBorder || colors.border}`
         }}>
-          {/* Quick filter pills */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['all', 'sell', 'donate', 'swap'].map(m => {
-              // mode is an array in filters, but for top bar we treat it as single select for simplicity or check if includes
-              const active = m === 'all' ? filters.mode.length === 0 : filters.mode.includes(m);
-              const labels: any = { all: 'Tous', sell: 'À vendre', donate: 'Gratuit', swap: 'Échange' };
-              return (
-                <button 
-                  key={m}
-                  onClick={() => m === 'all' ? handleFilterChange('mode', []) : handleToggleArrayFilter('mode', m)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '800', color: colors.textPrimary, margin: 0 }}>Marketplace</h1>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ position: 'relative', width: '300px' }}>
+                <Search 
+                  size={18} 
                   style={{ 
-                    padding: '8px 20px', 
-                    borderRadius: '20px', 
-                    border: active ? 'none' : `1px solid ${colors.border}`,
-                    backgroundColor: active ? colors.coral : colors.bgSecondary,
-                    color: active ? colors.bgSecondary : colors.textSecondary,
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    position: 'absolute', 
+                    left: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    color: colors.textMuted,
+                    zIndex: 1
+                  }} 
+                />
+                <input 
+                  type="text"
+                  placeholder="Rechercher un article..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 15px 10px 40px',
+                    borderRadius: '12px',
+                    border: `1px solid ${colors.sidebarBorder || colors.border}`,
+                    backgroundColor: colors.bgSecondary,
+                    color: colors.textPrimary,
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
                   }}
-                >
-                  {labels[m]}
-                </button>
-              );
-            })}
+                  onFocus={(e) => e.target.style.borderColor = colors.coral}
+                  onBlur={(e) => e.target.style.borderColor = colors.sidebarBorder || colors.border}
+                />
+              </div>
+
+              <div style={{ width: '200px' }}>
+                <CustomSelect 
+                  multiple={true}
+                  searchable={true}
+                  options={initData?.cities || []}
+                  value={filters.cities || []}
+                  onChange={(val) => handleFilterChange('cities', val)}
+                  placeholder="Toutes les villes"
+                  icon={<MapPin size={18} weight="BoldDuotone" color={colors.iconCoral} />}
+                />
+              </div>
+            </div>
           </div>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', color: colors.textSecondary }}>Trier par:</span>
-              <select 
-                value={filters.sort}
-                onChange={(e) => handleFilterChange('sort', e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.textPrimary, cursor: 'pointer', outline: 'none', backgroundColor: colors.bgSecondary }}
-              >
-                <option value="newest">Plus récent</option>
-                <option value="price_asc">Prix croissant</option>
-                <option value="price_desc">Prix décroissant</option>
-              </select>
-            </div>
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div style={{ display: 'flex', backgroundColor: colors.bgTertiary, padding: '4px', borderRadius: '8px' }}>
               <button 
                 onClick={() => handleFilterChange('view', 'grid')}
@@ -260,11 +271,6 @@ const Marketplace: React.FC = () => {
               >
                 <List size={18} strokeWidth={2} />
               </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', backgroundColor: colors.coralLight, color: colors.coral, borderRadius: '20px', fontSize: '13px', fontWeight: '600' }}>
-              <MapPin size={14} weight="BoldDuotone" color={colors.iconCoral} />
-              <span>Agadir</span>
             </div>
           </div>
         </div>

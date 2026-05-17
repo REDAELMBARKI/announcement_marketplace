@@ -52,8 +52,9 @@ return new class extends Migration
                 'sold',
                 'donated',
                 'closed',
+                'published',
                 'draft'
-            ])->default('draft');
+            ])->default('published');
 
             $table->string('condition')->nullable();  // new, like_new, good, fair — for single items
             $table->string('gender')->nullable();     // boy, girl, unisex — for single items

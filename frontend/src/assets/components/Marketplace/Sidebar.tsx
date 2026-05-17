@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             options={initData?.cities || []}
             value={filters.cities || []}
             onChange={(val) => onFilterChange('cities', val)}
-            placeholder="Choisir ville - secteur"
+            placeholder="Toutes les villes"
             icon={<MapPin size={18} weight="BoldDuotone" color={colors.iconCoral} />}
           />
           {/* Selected city pills */}

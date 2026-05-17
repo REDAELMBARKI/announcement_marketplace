@@ -49,6 +49,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
+            ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10);
 
@@ -71,6 +72,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
+            ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -84,6 +86,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
+            ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->where('super_category_id', $categoryId)
             ->orderBy('views_count', 'desc')
             ->limit($limit)
@@ -102,6 +105,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             ])
                 ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
                 ->whereIn('listing_mode', ['sell', 'donate'])
+                ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
                 ->where('super_category_id', $category->id)
                 ->orderBy('views_count', 'desc')
                 ->limit(10)

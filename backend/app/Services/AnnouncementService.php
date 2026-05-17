@@ -20,10 +20,7 @@ class AnnouncementService
     public function createAnnouncement(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            // Do not set status to 'sell' or 'donate' as they are listing_modes, not statuses
-            // Status will remain 'draft' by default or we can set it to something else if needed
-            // However, based on the migration, 'draft' is the only 'available' starting point.
-            
+            $data['status'] = 'published';
             $data['sizes'] = $this->parseListField($data['sizes'] ?? null);
             $data['colors'] = $this->parseListField($data['colors'] ?? null);
 
@@ -120,13 +117,26 @@ class AnnouncementService
         $categories = Category::whereNull('parent_id')
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get(['id', 'name', 'icon', 'slug']);
+            ->get(['id', 'name', 'icon', 'slug'])
+            ->map(fn($category) => [
+                'id' => (string) $category->id,
+                'label' => $category->name,
+                'value' => (string) $category->id,
+                'icon' => $category->icon,
+                'slug' => $category->slug,
+            ]);
 
         $attributes = $this->filterAttributeRepository->getAllGrouped();
 
+        $cities = \App\Models\City::all()->map(fn($city) => [
+            'id' => (string) $city->id,
+            'label' => $city->name,
+            'value' => (string) $city->id,
+        ]);
+
         return [
             'categories' => $categories,
-            'cities' => $attributes->get('cities', []),
+            'cities' => $cities,
             'ageRanges' => $attributes->get('ageRanges', []),
             'clothingSizes' => $attributes->get('clothingSizes', []),
             'shoeSizes' => $attributes->get('shoeSizes', []),

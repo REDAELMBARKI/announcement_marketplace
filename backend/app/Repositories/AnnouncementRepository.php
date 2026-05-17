@@ -62,7 +62,7 @@ class AnnouncementRepository
     {
         $query = Product::with(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'address'])
             ->whereIn('listing_mode', ['sell', 'donate'])
-            ->where('status', 'draft'); // Assuming draft is the 'active' state for now since 'active' is missing from enum
+            ->whereIn('status', ['published', 'draft', 'sell', 'donate']);
 
         // Search filter
         if (!empty($filters['search'])) {
@@ -70,6 +70,13 @@ class AnnouncementRepository
             $query->where(function (Builder $q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // City filter
+        if (!empty($filters['cities'])) {
+            $query->whereHas('address', function ($q) use ($filters) {
+                $q->whereIn('city_id', (array) $filters['cities']);
             });
         }
 
