@@ -50,8 +50,8 @@ class ProductResource extends JsonResource
             // Relationships
             'user' => $this->whenLoaded('user'),
             'super_category' => $this->whenLoaded('superCategory'),
-            'sub_categories' => $this->whenLoaded('subCategories'),
-            'categories' => $this->whenLoaded('subCategories'), // for backward compatibility
+            'sub_categories' => $this->whenLoaded('subCategories') ?: $this->whenLoaded('categories'),
+            'categories' => $this->whenLoaded('categories') ?: $this->whenLoaded('subCategories'), // for backward compatibility
             'thumbnail' => new MediaResource($this->whenLoaded('thumbnail')),
             'gallery' => MediaResource::collection($this->whenLoaded('gallery')),
             'items' => $this->whenLoaded('items'),

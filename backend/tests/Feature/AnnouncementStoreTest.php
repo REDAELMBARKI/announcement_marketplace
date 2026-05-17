@@ -147,6 +147,7 @@ class AnnouncementStoreTest extends TestCase
             'season' => 'été',
             'sizes' => ['4A'],
             'colors' => ['Rouge'],
+            'city_id' => 1,
             'pickup_address' => '123 Test Street, Marrakech',
             'handover_method' => 'both',
             // Missing media_ids

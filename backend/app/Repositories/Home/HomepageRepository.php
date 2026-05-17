@@ -22,9 +22,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     public function getStats(): array
     {
         return [
-            'total_products' => $this->product->whereIn('status', ['sell', 'donate'])->count(),
+            'total_products' => $this->product->whereIn('listing_mode', ['sell', 'donate'])->count(),
             'total_users' => $this->user->count(),
-            'total_donations' => $this->product->where('listing_mode', 'donate')->where('status', 'donate')->count(),
+            'total_donations' => $this->product->where('listing_mode', 'donate')->count(),
         ];
     }
 
@@ -35,7 +35,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             ->where('is_active', true)
             ->with(['thumbnail'])
             ->withCount(['superCategoryProducts as products_count' => function ($query) {
-                $query->whereIn('status', ['sell', 'donate']);
+                $query->whereIn('listing_mode', ['sell', 'donate']);
             }])
             ->orderBy('sort_order')
             ->get();
@@ -48,7 +48,7 @@ class HomepageRepository implements HomepageRepositoryInterface
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
             ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
-            ->whereIn('status', ['sell', 'donate'])
+            ->whereIn('listing_mode', ['sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10);
 
@@ -69,8 +69,8 @@ class HomepageRepository implements HomepageRepositoryInterface
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
-            ->whereIn('status', ['sell', 'donate'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+            ->whereIn('listing_mode', ['sell', 'donate'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -82,8 +82,8 @@ class HomepageRepository implements HomepageRepositoryInterface
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
             'views_count', 'favorites_count', 'created_at', 'user_id'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
-            ->whereIn('status', ['sell', 'donate'])
+            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+            ->whereIn('listing_mode', ['sell', 'donate'])
             ->where('super_category_id', $categoryId)
             ->orderBy('views_count', 'desc')
             ->limit($limit)
@@ -100,8 +100,8 @@ class HomepageRepository implements HomepageRepositoryInterface
                 'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
                 'views_count', 'favorites_count', 'created_at', 'user_id'
             ])
-                ->with(['user:id,name', 'categories:id,name,slug', 'addresses', 'thumbnail', 'gallery'])
-                ->whereIn('status', ['sell', 'donate'])
+                ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+                ->whereIn('listing_mode', ['sell', 'donate'])
                 ->where('super_category_id', $category->id)
                 ->orderBy('views_count', 'desc')
                 ->limit(10)
@@ -118,7 +118,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         return Tag::select(['tags.id', 'tags.name', 'tags.slug'])
             ->join('product_tag', 'tags.id', '=', 'product_tag.tag_id')
             ->join('products', 'product_tag.product_id', '=', 'products.id')
-            ->whereIn('products.status', ['sell', 'donate'])
+            ->whereIn('products.listing_mode', ['sell', 'donate'])
             ->groupBy('tags.id', 'tags.name', 'tags.slug')
             ->orderByRaw('COUNT(product_tag.product_id) DESC')
             ->limit(15)
@@ -130,7 +130,7 @@ class HomepageRepository implements HomepageRepositoryInterface
         return User::select('users.id', 'users.name')
             ->selectRaw('COALESCE(AVG(reviews.rating), 0) as avg_rating, COUNT(reviews.id) as total_reviews')
             ->withCount(['products' => function ($query) {
-                $query->whereIn('status', ['sell', 'donate']);
+                $query->whereIn('listing_mode', ['sell', 'donate']);
             }])
             ->leftJoin('reviews', 'users.id', '=', 'reviews.reviewed_id')
             ->groupBy('users.id', 'users.name')

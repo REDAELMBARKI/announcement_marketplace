@@ -35,20 +35,21 @@ const ChatModal: React.FC<ChatModalProps> = ({ product, currentUserId, onClose }
       const convRes = await axios.post(`/api/announcements/${product.slug}/conversation`);
       
       if (convRes.data.status === 'success') {
-        const conversationId = convRes.data.conversation.id;
+        const conversationSlug = convRes.data.conversation.slug;
         
         // 2. Send initial message
-        await axios.post(`/api/conversations/${conversationId}/messages`, {
+        await axios.post(`/api/conversations/${conversationSlug}/messages`, {
           content: message.trim()
         });
         
         // 3. Navigate to chat page
         onClose();
-        navigate(`/chat/${conversationId}`);
+        navigate(`/chat/${conversationSlug}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to start conversation:', err);
-      alert('Failed to start conversation. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to start conversation. Please try again.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

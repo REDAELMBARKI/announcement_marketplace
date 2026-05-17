@@ -26,7 +26,9 @@ class Conversation extends Model
         parent::boot();
 
         static::creating(function ($conversation) {
-            $conversation->slug = Str::random(20);
+            if (empty($conversation->slug)) {
+                $conversation->slug = Str::random(20);
+            }
         });
     }
 

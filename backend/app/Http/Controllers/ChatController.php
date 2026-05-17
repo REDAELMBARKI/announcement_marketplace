@@ -64,7 +64,13 @@ class ChatController extends Controller
         return response()->json([
             'status' => 'success',
             'messages' => $messages,
-            'conversation' => $conversation->load(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar']),
+            'conversation' => $conversation->load([
+                'product' => function ($query) {
+                    $query->select('id', 'title', 'slug')->with('thumbnail');
+                },
+                'buyer:id,name,avatar_path',
+                'seller:id,name,avatar_path'
+            ]),
         ]);
     }
 

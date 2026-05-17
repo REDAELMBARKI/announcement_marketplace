@@ -52,7 +52,8 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
     public function countActiveProducts(): int
     {
         return Product::query()
-            ->whereIn('status', ['pending', 'donate', 'sell'])
+            ->whereIn('listing_mode', ['donate', 'sell'])
+            ->where('status', 'draft')
             ->count();
     }
 

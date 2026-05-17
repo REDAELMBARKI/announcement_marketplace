@@ -7,6 +7,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 
-Broadcast::channel('coversation.{id}' , function($user , $id){
-     return $user->conversations()->where('conversation_id' , $id)->exists();
+Broadcast::channel('conversation.{id}', function ($user, $id) {
+    $conversation = \App\Models\Conversation::find($id);
+    if (!$conversation) return false;
+    return (int) $user->id === (int) $conversation->buyer_id || (int) $user->id === (int) $conversation->seller_id;
 });

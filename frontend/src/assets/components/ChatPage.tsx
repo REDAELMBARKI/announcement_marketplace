@@ -84,37 +84,28 @@ const ChatPage: React.FC = () => {
 
   // Fetch all conversations
   useEffect(() => {
-    // fetchConversations();
+    fetchConversations();
     // const interval = setInterval(fetchConversations, 10000);
     // return () => clearInterval(interval);
-    setConversationsLoading(false);
   }, []);
 
   // Fetch active conversation and messages when conversationSlug changes
   useEffect(() => {
     if (conversationSlug) {
-      // fetchMessages(true);
-      // For layout preview: find conversation in mock list
-      const mockConv = conversations.find(c => c.slug === conversationSlug);
-      if (mockConv) setActiveConversation(mockConv);
-      
-      // Mark as read in the local list immediately if we find it
-      setConversations(prev => prev.map(c => 
-        c.slug === conversationSlug ? { ...c, unread_count: 0 } : c
-      ));
+      fetchMessages(true);
     } else {
       setActiveConversation(null);
-      // setMessages([]); // Keep mock messages for layout view
+      setMessages([]);
     }
   }, [conversationSlug]);
 
   // Poll for new messages in active conversation
   useEffect(() => {
     if (!conversationSlug) return;
-    // const interval = setInterval(() => {
-    //   fetchMessages(false);
-    // }, 4000);
-    // return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      fetchMessages(false);
+    }, 4000);
+    return () => clearInterval(interval);
   }, [conversationSlug]);
 
   // Scroll to bottom

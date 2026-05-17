@@ -116,7 +116,7 @@ class ReportController extends Controller
 
     public function usersByCity(): JsonResponse
     {
-        $userAddressType = User::class;
+        $userAddressType = (new User())->getMorphClass();
 
         $rows = User::query()
             ->leftJoin('addresses', function ($join) use ($userAddressType) {
@@ -125,10 +125,10 @@ class ReportController extends Controller
             })
             ->leftJoin('cities', 'addresses.city_id', '=', 'cities.id')
             ->select(
-                DB::raw("COALESCE(cities.name, addresses.city, 'Unknown') as city"),
+                DB::raw("COALESCE(cities.name, 'Unknown') as city"),
                 DB::raw('COUNT(users.id) as users_count')
             )
-            ->groupBy('city')
+            ->groupBy(DB::raw("COALESCE(cities.name, 'Unknown')"))
             ->orderByDesc('users_count')
             ->get()
             ->map(fn ($row) => [

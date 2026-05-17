@@ -213,7 +213,7 @@ class AnnouncementController extends Controller
     {
         try {
             $request->validate([
-                'status' => 'required|string|in:inactive,sold,donated,sell,donate'
+                'status' => 'required|string|in:reserved,sold,donated,closed,draft'
             ]);
 
             $announcement->update(['status' => $request->status]);
@@ -244,7 +244,7 @@ class AnnouncementController extends Controller
 
         return response()->json([
             'status'   => 'success',
-            'products' => ProductResource::collection($products)->resolve(),
+            'products' => ProductResource::collection($products),
         ]);
     }
 

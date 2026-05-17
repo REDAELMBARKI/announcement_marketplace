@@ -103,6 +103,13 @@ class User extends Authenticatable implements JWTSubject
         'email',
     ];
 
+    protected $appends = ['avatar'];
+
+    public function getAvatarAttribute()
+    {
+        return $this->avatar_path ? asset('storage/' . ltrim($this->avatar_path, '/')) : null;
+    }
+
     /**
      * get attributes to be cast.
      *

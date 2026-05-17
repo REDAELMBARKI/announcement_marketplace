@@ -42,7 +42,13 @@ class ChatService
             ]);
         }
 
-        return $conversation->load(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar']);
+        return $conversation->load([
+            'product' => function ($query) {
+                $query->select('id', 'title', 'slug')->with('thumbnail');
+            },
+            'buyer:id,name,avatar_path',
+            'seller:id,name,avatar_path'
+        ]);
     }
 
     /**
@@ -76,7 +82,7 @@ class ChatService
         $this->chatRepository->updateLastMessageTime($conversation);
 
         // Load sender info for response
-        $message->load('sender:id,name,avatar');
+        $message->load('sender:id,name,avatar_path');
 
         // Broadcast the message via Reverb
         broadcast(new MessageSent($message, $conversation))->toOthers();

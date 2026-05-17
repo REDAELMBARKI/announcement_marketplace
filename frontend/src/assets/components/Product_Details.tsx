@@ -69,9 +69,10 @@ const Product_Details: React.FC = () => {
         const conversationSlug = res.data.conversation.slug;
         navigate(`/chat/${conversationSlug}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to start conversation:", err);
-      alert("Failed to start conversation. Please try again.");
+      const errorMessage = err.response?.data?.message || "Failed to start conversation. Please try again.";
+      alert(errorMessage);
     }
   };
 

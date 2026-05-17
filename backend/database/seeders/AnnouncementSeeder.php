@@ -227,7 +227,7 @@ class AnnouncementSeeder extends Seeder
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
                 'price' => fake()->randomFloat(2, 50, 500),
                 'listing_mode' => $mode,
-                'status' => $mode, // Use the mode as status (sell or donate)
+                'status' => 'draft', // Set status to draft by default
                 'user_id' => $user->id,
                 'super_category_id' => $parentCategory->id,
                 'views_count' => fake()->numberBetween(10, 1000),
@@ -235,7 +235,6 @@ class AnnouncementSeeder extends Seeder
                 'condition' => fake()->randomElement(['Neuf', 'Très bon état', 'Bon état']),
                 'age_range' => fake()->randomElement(['0-2 ans', '2-5 ans', '5-8 ans', '8-12 ans']),
                 'contact_phone' => '06' . fake()->numerify('########'),
-                'phone_contact' => '+2126' . fake()->numerify('########'),
             ]);
 
             // Link to category (sub-category)

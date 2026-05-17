@@ -36,7 +36,13 @@ class ChatRepository
     {
         return Conversation::where('buyer_id', $userId)
             ->orWhere('seller_id', $userId)
-            ->with(['product:id,title,slug,thumbnail', 'buyer:id,name,avatar', 'seller:id,name,avatar'])
+            ->with([
+                'product' => function ($query) {
+                    $query->select('id', 'title', 'slug')->with('thumbnail');
+                },
+                'buyer:id,name,avatar_path',
+                'seller:id,name,avatar_path'
+            ])
             ->withCount(['messages as unread_count' => function ($query) use ($userId) {
                 $query->where('sender_id', '!=', $userId)->where('is_read', false);
             }])
@@ -50,7 +56,7 @@ class ChatRepository
     public function getConversationMessages(int $conversationId): Collection
     {
         return Message::where('conversation_id', $conversationId)
-            ->with('sender:id,name,avatar')
+            ->with('sender:id,name,avatar_path')
             ->orderBy('created_at', 'asc')
             ->get();
     }
