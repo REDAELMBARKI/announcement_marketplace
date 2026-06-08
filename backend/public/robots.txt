@@ -24,4 +24,4 @@ User-agent: *
 Disallow:
 
 # Sitemap location to improve SEO crawling
-Sitemap: https://www.letusdonate.uk/sitemap.xml
+Sitemap: https://www.announcementsmarketplace.com/sitemap.xml

@@ -28,8 +28,8 @@ class OpenAIController extends Controller
             $client = \OpenAI::client($apiKey);
 
             $faqContext = "
-            FAQ for LetUsDonate:
-            1. What makes LetUsDonate Different?
+            FAQ for Announcements Marketplace:
+            1. What makes Announcements Marketplace Different?
             - Eco-friendly donations.
             - Choose collection or drop-off.
             - Track your impact.

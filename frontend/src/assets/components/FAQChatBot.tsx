@@ -5,7 +5,7 @@ export default function FAQChatBot() {
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hello I'm Chati! Ask me anything about LetUsDonate.uk",
+      text: "Hello I'm Chati! Ask me anything about Announcements Marketplace",
     },
   ]);
 

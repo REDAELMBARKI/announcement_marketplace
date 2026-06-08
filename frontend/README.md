@@ -1,16 +1,44 @@
-# React + Vite
+# Announcements Marketplace - Frontend 🎨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The interactive user interface for Announcements Marketplace, a hybrid platform for local selling and circular giving, built with React and TypeScript.
 
-Currently, two official plugins are available:
+## 🏗️ Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The frontend is organized by domain and feature to support both commerce and donation workflows:
 
-## React Compiler
+- **src/assets/components:** Domain-specific UI components (Admin, Charity, User, Marketplace).
+- **src/components:** Shared UI components and complex modules like the Impact & Sales Dashboard.
+- **src/context:** Global state management using React Context (e.g., Theme).
+- **src/services:** API communication layer.
+- **src/types:** TypeScript interfaces and type definitions.
+- **src/css:** Feature-specific styling.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+- **React 18+**
+- **TypeScript**
+- **Vite** (Build tool)
+- **Lucide React** (Icons)
+- **CSS3** (Modular styling)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚦 Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+3. Build for production:
+   ```bash
+   npm run build
+   ```
+
+## ✨ Key Interfaces
+
+- **Hybrid Marketplace:** Comprehensive discovery for items to buy or receive as donations.
+- **Impact & Sales Dashboard:** Data visualization for both social contributions and local trade.
+- **Chat Interface:** Real-time coordination between buyers, sellers, and donors.
+- **Admin/Charity Portals:** Role-specific management tools for marketplace health and donation distribution.
