@@ -10,14 +10,14 @@ class SecurityHeaders
     {
         $response = $next($request);
 
-        // CSP header
+        // CSP header - expanded for development and external assets
         $response->headers->set('Content-Security-Policy',
-            "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " .
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " .
-            "img-src 'self' data:; " .
-            "font-src 'self' https://cdnjs.cloudflare.com; " .
-            "connect-src 'self' http://127.0.0.1:8000 http://localhost:5173; "
+            "default-src 'self' *; " .
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' *; " .
+            "style-src 'self' 'unsafe-inline' *; " .
+            "img-src 'self' data: *; " .
+            "font-src 'self' data: *; " .
+            "connect-src 'self' *; "
         );
 
         // Clickjacking protection

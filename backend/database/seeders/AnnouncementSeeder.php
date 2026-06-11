@@ -20,7 +20,7 @@ class AnnouncementSeeder extends Seeder
     public function run(): void
     {
         // Disable foreign key checks temporarily
-        DB::statement('PRAGMA foreign_keys=OFF');
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         // Clear existing data
         $this->clearExistingData();
@@ -32,11 +32,8 @@ class AnnouncementSeeder extends Seeder
         $this->createReviews();
         $this->createFavorites();
 
-        // Verify no empty sections
-        // $this->verifyDataIntegrity();
-
         // Re-enable foreign key checks
-        DB::statement('PRAGMA foreign_keys=ON');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $this->command->info('Announcement data seeded successfully!');
     }
@@ -59,139 +56,137 @@ class AnnouncementSeeder extends Seeder
     {
         // Create 5 specific Moroccan users
         $users = [
-            ['name' => 'Fatima Alami', 'slug' => 'fatima-alami' ,  'email' => 'fatima@example.com', 'rating' => 4.8, 'role_id' => 2],
-            ['name' => 'Youssef Benkiran' , 'slug' => 'youssef-benkiran' , 'email' => 'youssef@example.com', 'rating' => 4.5, 'role_id' => 2],
-            ['name' => 'Amina Rachidi', 'slug' => 'amina-rachidi' ,  'email' => 'amina@example.com', 'rating' => 4.9, 'role_id' => 2],
-            ['name' => 'Karim El Mardi', 'slug' => 'karim-el-mardi' ,  'email' => 'karim@example.com', 'rating' => 4.7, 'role_id' => 2],
-            ['name' => 'Sofia Mansouri', 'slug' => 'sofia-mansouri' ,  'email' => 'sofia@example.com', 'rating' => 4.6, 'role_id' => 2],
+            ['name' => 'Fatima Alami', 'slug' => 'fatima-alami' ,  'email' => 'fatima@example.com', 'rating' => 4.8, 'role_id' => 10],
+            ['name' => 'Youssef Benkiran' , 'slug' => 'youssef-benkiran' , 'email' => 'youssef@example.com', 'rating' => 4.5, 'role_id' => 10],
+            ['name' => 'Amina Rachidi', 'slug' => 'amina-rachidi' ,  'email' => 'amina@example.com', 'rating' => 4.9, 'role_id' => 10],
+            ['name' => 'Karim El Mardi', 'slug' => 'karim-el-mardi' ,  'email' => 'karim@example.com', 'rating' => 4.7, 'role_id' => 10],
+            ['name' => 'Sofia Mansouri', 'slug' => 'sofia-mansouri' ,  'email' => 'sofia@example.com', 'rating' => 4.6, 'role_id' => 10],
         ];
 
         foreach ($users as $userData) {
-            User::factory()->create([
+            $user = User::factory()->create([
                 'name' => $userData['name'],
                 'slug' => $userData['slug'],
                 'email' => $userData['email'],
                 'rating' => $userData['rating'],
                 'role_id' => $userData['role_id'],
             ]);
+
+            Media::create([
+                'mediable_id' => $user->id,
+                'mediable_type' => User::class,
+                'collection' => 'avatar',
+                'disk' => 'public',
+                'path' => 'avatars/' . $user->slug . '.jpg',
+                'url' => 'https://i.pravatar.cc/150?u=' . $user->email,
+                'file_name' => 'avatar.jpg',
+            ]);
         }
     }
 
     private function createCategories(): void
     {
-        // Create 8 top-level super categories with their sub-categories
+        // Create 6 top-level categories matching the frontend Add_Announcement.tsx
         $superCategories = [
-            [
-                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'gamepad-2',
-                'image' => 'https://images.unsplash.com/photo-1531346727404-cc74a445f02c?auto=format&fit=crop&q=80&w=800',
-                'subcategories' => [
-                    ['name' => 'Jouets éducatifs', 'slug' => 'jouets-educatifs'],
-                    ['name' => 'Peluches', 'slug' => 'peluches'],
-                    ['name' => 'Jeux de construction', 'slug' => 'jeux-construction'],
-                    ['name' => 'Figurines', 'slug' => 'figurines'],
-                    ['name' => 'Véhicules', 'slug' => 'vehicules'],
-                ]
-            ],
             [
                 'name' => 'Vêtements', 'slug' => 'vetements', 'icon' => 'shirt',
                 'image' => 'https://images.unsplash.com/photo-1556905055-8f358a7a4bb4?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
-                    ['name' => 'T-shirts', 'slug' => 't-shirts'],
-                    ['name' => 'Pantalons', 'slug' => 'pantalons'],
-                    ['name' => 'Robes', 'slug' => 'robes'],
-                    ['name' => 'Costumes traditionnels', 'slug' => 'costumes-traditionnels'],
-                    ['name' => 'Pyjamas', 'slug' => 'pyjamas'],
-                ]
-            ],
-            [
-                'name' => 'Livres', 'slug' => 'livres', 'icon' => 'book-open',
-                'image' => 'https://images.unsplash.com/photo-1491843351663-8511e81d312a?auto=format&fit=crop&q=80&w=800',
-                'subcategories' => [
-                    ['name' => 'Contes marocains', 'slug' => 'contes-marocains'],
-                    ['name' => 'Livres éducatifs', 'slug' => 'livres-educatifs'],
-                    ['name' => 'Coloriages', 'slug' => 'coloriages'],
-                    ['name' => 'Histoires', 'slug' => 'histoires'],
-                ]
-            ],
-            [
-                'name' => 'Mobilier', 'slug' => 'mobilier', 'icon' => 'package',
-                'image' => 'https://images.unsplash.com/photo-1533091902244-f9a912da2a5e?auto=format&fit=crop&q=80&w=800',
-                'subcategories' => [
-                    ['name' => 'Lits bébé', 'slug' => 'lits-bebe'],
-                    ['name' => 'Chambres enfant', 'slug' => 'chambres-enfant'],
-                    ['name' => 'Tables et chaises', 'slug' => 'tables-chaises'],
-                    ['name' => 'Rangements', 'slug' => 'rangements'],
-                ]
-            ],
-            [
-                'name' => 'Bébé', 'slug' => 'bebe', 'icon' => 'baby',
-                'image' => 'https://images.unsplash.com/photo-1522771935876-2497116a7a9e?auto=format&fit=crop&q=80&w=800',
-                'subcategories' => [
-                    ['name' => 'Poussettes', 'slug' => 'poussettes'],
-                    ['name' => 'Porte-bébés', 'slug' => 'porte-bebes'],
-                    ['name' => 'Allaitement', 'slug' => 'allaitement'],
-                    ['name' => 'Doudous', 'slug' => 'doudous'],
-                ]
-            ],
-            [
-                'name' => 'Jeux', 'slug' => 'jeux', 'icon' => 'dice-5',
-                'image' => 'https://images.unsplash.com/photo-1558023784-f8343393cb06?auto=format&fit=crop&q=80&w=800',
-                'subcategories' => [
-                    ['name' => 'Jeux de société', 'slug' => 'jeux-societe'],
-                    ['name' => 'Jeux d\'extérieur', 'slug' => 'jeux-exterieur'],
-                    ['name' => 'Puzzles', 'slug' => 'puzzles'],
-                    ['name' => 'Jeux vidéo', 'slug' => 'jeux-video'],
+                    ['name' => 'Hauts & T-shirts', 'slug' => 'hauts-t-shirts'],
+                    ['name' => 'Pantalons & Jeans', 'slug' => 'pantalons-jeans'],
+                    ['name' => 'Robes & Jupes', 'slug' => 'robes-jupes'],
+                    ['name' => 'Pulls & Cardigans', 'slug' => 'pulls-cardigans'],
+                    ['name' => 'Manteaux & Vestes', 'slug' => 'manteaux-vestes'],
+                    ['name' => 'Ensembles', 'slug' => 'ensembles'],
+                    ['name' => 'Pyjamas & Maillots', 'slug' => 'pyjamas-maillots'],
+                    ['name' => 'Sous-vêtements', 'slug' => 'sous-vetements'],
+                    ['name' => 'Accessoires', 'slug' => 'accessoires'],
                 ]
             ],
             [
                 'name' => 'Chaussures', 'slug' => 'chaussures', 'icon' => 'footprints',
                 'image' => 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
-                    ['name' => 'Chaussures sport', 'slug' => 'chaussures-sport'],
-                    ['name' => 'Chaussures cuir', 'slug' => 'chaussures-cuir'],
-                    ['name' => 'Sandales', 'slug' => 'sandales'],
-                    ['name' => 'Bottes', 'slug' => 'bottes'],
+                    ['name' => 'Baskets & Sneakers', 'slug' => 'baskets-sneakers'],
+                    ['name' => 'Bottes & Bottines', 'slug' => 'bottes-bottines'],
+                    ['name' => 'Sandales & Tongs', 'slug' => 'sandales-tongs'],
+                    ['name' => 'Chaussures de ville', 'slug' => 'chaussures-ville'],
+                    ['name' => 'Chaussons', 'slug' => 'chaussons'],
                 ]
             ],
             [
-                'name' => 'Activités', 'slug' => 'activites', 'icon' => 'palette',
-                'image' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800',
+                'name' => 'Jouets', 'slug' => 'jouets', 'icon' => 'gamepad-2',
+                'image' => 'https://images.unsplash.com/photo-1531346727404-cc74a445f02c?auto=format&fit=crop&q=80&w=800',
                 'subcategories' => [
-                    ['name' => 'Peinture', 'slug' => 'peinture'],
-                    ['name' => 'Musique', 'slug' => 'musique'],
-                    ['name' => 'Sport', 'slug' => 'sport'],
-                    ['name' => 'Loisirs créatifs', 'slug' => 'loisirs-creatifs'],
+                    ['name' => 'Éveil & Premier âge', 'slug' => 'eveil-premier-age'],
+                    ['name' => 'Jeux de société', 'slug' => 'jeux-societe'],
+                    ['name' => 'Poupées & Figurines', 'slug' => 'poupees-figurines'],
+                    ['name' => 'Véhicules & Circuits', 'slug' => 'vehicules-circuits'],
+                    ['name' => 'Jeux de construction', 'slug' => 'jeux-construction'],
+                    ['name' => 'Jeux d\'imitation', 'slug' => 'jeux-imitation'],
+                    ['name' => 'Peluches', 'slug' => 'peluches'],
+                    ['name' => 'Plein air', 'slug' => 'plein-air'],
+                ]
+            ],
+            [
+                'name' => 'Puériculture', 'slug' => 'puericulture', 'icon' => 'baby',
+                'image' => 'https://images.unsplash.com/photo-1522771935876-2497116a7a9e?auto=format&fit=crop&q=80&w=800',
+                'subcategories' => [
+                    ['name' => 'Sommeil', 'slug' => 'sommeil'],
+                    ['name' => 'Repas', 'slug' => 'repas'],
+                    ['name' => 'Bain & Soins', 'slug' => 'bain-soins'],
+                    ['name' => 'Sécurité', 'slug' => 'securite'],
+                    ['name' => 'Poussettes & Sièges auto', 'slug' => 'poussettes-sieges-auto'],
+                    ['name' => 'Portage', 'slug' => 'portage'],
+                ]
+            ],
+            [
+                'name' => 'Livres & Éveil', 'slug' => 'livres-eveil', 'icon' => 'book',
+                'image' => 'https://images.unsplash.com/photo-1491843351663-8511e81d312a?auto=format&fit=crop&q=80&w=800',
+                'subcategories' => [
+                    ['name' => 'Albums illustrés', 'slug' => 'albums-illustres'],
+                    ['name' => 'Contes & Histoires', 'slug' => 'contes-histoires'],
+                    ['name' => 'Livres sonores', 'slug' => 'livres-sonores'],
+                    ['name' => 'Livres à toucher', 'slug' => 'livres-toucher'],
+                    ['name' => 'Activités & Coloriages', 'slug' => 'activites-coloriages'],
+                ]
+            ],
+            [
+                'name' => 'Autre', 'slug' => 'autre', 'icon' => 'package',
+                'image' => 'https://images.unsplash.com/photo-1533091902244-f9a912da2a5e?auto=format&fit=crop&q=80&w=800',
+                'subcategories' => [
+                    ['name' => 'Mobilier', 'slug' => 'mobilier'],
+                    ['name' => 'Décoration', 'slug' => 'decoration'],
+                    ['name' => 'Matériel de sport', 'slug' => 'materiel-sport'],
+                    ['name' => 'Divers', 'slug' => 'divers'],
                 ]
             ],
         ];
 
-        foreach ($superCategories as $index => $superCategory) {
-            $parent = Category::factory()->create([
-                'name' => $superCategory['name'],
-                'slug' => $superCategory['slug'],
-                'icon' => $superCategory['icon'],
+        foreach ($superCategories as $super) {
+            $parent = Category::create([
+                'name' => $super['name'],
+                'slug' => $super['slug'],
+                'icon' => $super['icon'],
                 'is_active' => true,
-                'sort_order' => $index + 1,
-                'parent_id' => null,
             ]);
 
-            // Create category image
-            Media::factory()->create([
+            Media::create([
                 'mediable_id' => $parent->id,
                 'mediable_type' => Category::class,
-                'collection' => 'thumbnail',
-                'url' => $superCategory['image'],
+                'collection' => 'category',
+                'disk' => 'public',
+                'path' => 'categories/' . $parent->slug . '.jpg',
+                'url' => $super['image'],
+                'file_name' => 'category.jpg',
             ]);
 
-            // Create sub-categories for this super category
-            foreach ($superCategory['subcategories'] as $subIndex => $subCategory) {
-                Category::factory()->create([
-                    'name' => $subCategory['name'],
-                    'slug' => $subCategory['slug'],
-                    'icon' => null,
-                    'is_active' => true,
-                    'sort_order' => $subIndex + 1,
+            foreach ($super['subcategories'] as $sub) {
+                Category::create([
+                    'name' => $sub['name'],
+                    'slug' => $sub['slug'],
                     'parent_id' => $parent->id,
+                    'is_active' => true,
                 ]);
             }
         }
@@ -199,14 +194,10 @@ class AnnouncementSeeder extends Seeder
 
     private function createProducts(): void
     {
+        $users = User::all();
         $categories = Category::whereNotNull('parent_id')->get();
-        $users = User::whereIn("id" , [1,6])->get();
 
-        // Realistic Moroccan kids product names
         $productNames = [
-            'Jouet Educatif Enfant Maroc', 'Vêtement Traditionnel Enfant', 'Livre Contes Marocains',
-            'Lit Bébé Design Marocain', 'Poussette Luxe', 'Jeu de Société Arabe',
-            'Chaussures Enfant Cuir', 'Kit Activité Créative', 'Tablette Éducative Enfant',
             'Vélo Enfant Sécurisé', 'Costume Traditionnel Maroc', 'Puzzle Géographie Maroc',
             'Sac à Dos École Maroc', 'Jouet Bois Artisanal', 'Robe Enfant Soie',
             'Livre Histoire Maroc', 'Meuble Chambre Enfant', 'Jeu Construction Maroc',
@@ -227,7 +218,7 @@ class AnnouncementSeeder extends Seeder
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
                 'price' => fake()->randomFloat(2, 50, 500),
                 'listing_mode' => $mode,
-                'status' => 'draft', // Set status to draft by default
+                'status' => 'published',
                 'user_id' => $user->id,
                 'super_category_id' => $parentCategory->id,
                 'views_count' => fake()->numberBetween(10, 1000),
@@ -313,49 +304,15 @@ class AnnouncementSeeder extends Seeder
     {
         $products = Product::all();
         $users = User::all();
-        $usedPairs = [];
 
         foreach ($products as $product) {
-            // Create 1-5 favorites per product
-            $favoriteCount = rand(1, 5);
-            
-            for ($i = 0; $i < $favoriteCount; $i++) {
-                $user = $users->random();
-                $pairKey = $user->id . '-' . $product->id;
-                
-                // Ensure unique user-product pair
-                if (!in_array($pairKey, $usedPairs)) {
-                    $usedPairs[] = $pairKey;
-                    Favorite::factory()->create([
-                        'user_id' => $user->id,
-                        'product_id' => $product->id,
-                    ]);
-                }
-            }
-        }
-    }
-
-    private function verifyDataIntegrity(): void
-    {
-        // Verify minimum data requirements
-        if (User::count() < 5) {
-            throw new Exception('Insufficient users seeded');
-        }
-        if (Category::count() < 8) {
-            throw new Exception('Insufficient categories seeded');
-        }
-        if (Product::count() < 20) {
-            throw new Exception('Insufficient products seeded');
-        }
-        if (Review::count() < 60) {
-            throw new Exception('Insufficient reviews seeded');
-        }
-        
-        // Verify each category has products
-        $categories = Category::all();
-        foreach ($categories as $category) {
-            if ($category->products()->count() < 2) {
-                throw new Exception("Category {$category->name} has insufficient products");
+            // Randomly select 0-3 users to favorite this product
+            $favoritedBy = $users->random(fake()->numberBetween(0, 3));
+            foreach ($favoritedBy as $user) {
+                Favorite::create([
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                ]);
             }
         }
     }

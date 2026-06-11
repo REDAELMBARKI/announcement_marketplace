@@ -39,13 +39,34 @@ class AnnouncementRepository
 
     public function linkMediaToProduct(array $mediaIds, Product $product): void
     {
-        Media::whereIn('id', $mediaIds)
-            ->whereNull('mediable_id')
-            ->update([
-                'mediable_id' => $product->id,
-                'mediable_type' => Product::class,
-                'is_temporary' => false,
-            ]);
+        $mediaItems = Media::whereIn('id', $mediaIds)
+            ->where('is_temporary', true)
+            ->get();
+
+        foreach ($mediaItems as $media) {
+            $oldPath = $media->path;
+            $newPath = 'products/' . basename($oldPath);
+
+            // Move file if it exists and is in temp_media
+            if (str_starts_with($oldPath, 'temp_media/') && \Illuminate\Support\Facades\Storage::disk($media->disk)->exists($oldPath)) {
+                \Illuminate\Support\Facades\Storage::disk($media->disk)->move($oldPath, $newPath);
+                
+                $media->update([
+                    'mediable_id' => $product->id,
+                    'mediable_type' => Product::class,
+                    'is_temporary' => false,
+                    'path' => $newPath,
+                    'url' => \Illuminate\Support\Facades\Storage::disk($media->disk)->url($newPath),
+                ]);
+            } else {
+                // Fallback for media already in products or other folders
+                $media->update([
+                    'mediable_id' => $product->id,
+                    'mediable_type' => Product::class,
+                    'is_temporary' => false,
+                ]);
+            }
+        }
     }
 
     public function createProductItem(array $data): ProductItem

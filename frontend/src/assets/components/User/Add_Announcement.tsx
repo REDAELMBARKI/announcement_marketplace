@@ -53,36 +53,26 @@ import {
 } from "./announcement/Shared";
 import "../../../css/add_announcement.css";
 
-// Sub-categories data
-const SUB_CATEGORIES_MAP: Record<string, string[]> = {
-  "Vêtements": ["Hauts & T-shirts", "Pantalons & Jeans", "Robes & Jupes", "Pulls & Cardigans", "Manteaux & Vestes", "Ensembles", "Pyjamas & Maillots", "Sous-vêtements", "Accessoires"],
-  "Chaussures": ["Baskets & Sneakers", "Bottes & Bottines", "Sandales & Tongs", "Chaussures de ville", "Chaussons"],
-  "Jouets": ["Éveil & Premier âge", "Jeux de société", "Poupées & Figurines", "Véhicules & Circuits", "Jeux de construction", "Jeux d'imitation", "Peluches", "Plein air"],
-  "Puériculture": ["Sommeil", "Repas", "Bain & Soins", "Sécurité", "Poussettes & Sièges auto", "Portage"],
-  "Livres & Éveil": ["Albums illustrés", "Contes & Histoires", "Livres sonores", "Livres à toucher", "Activités & Coloriages"],
-  "Autre": ["Mobilier", "Décoration", "Matériel de sport", "Divers"]
-};
-
-// Color mapping for French names to Hex
-const COLOR_MAP: Record<string, string> = {
-  "Noir": "#000000",
-  "Blanc": "#FFFFFF",
-  "Gris": "#808080",
-  "Rouge": "#FF0000",
-  "Bleu": "#0000FF",
-  "Vert": "#008000",
-  "Jaune": "#FFFF00",
-  "Rose": "#FFC0CB",
-  "Violet": "#800080",
-  "Orange": "#FFA500",
-  "Marron": "#A52A2A",
-  "Beige": "#F5F5DC",
-  "Marine": "#000080",
-  "Ciel": "#87CEEB",
-  "Doré": "#FFD700",
-  "Argenté": "#C0C0C0",
-  "Multicolore": "linear-gradient(45deg, red, blue, green, yellow)"
-};
+  // Color mapping for French names to Hex (base map, will be augmented by API)
+  const COLOR_MAP: Record<string, string> = {
+    "Noir": "#000000",
+    "Blanc": "#FFFFFF",
+    "Gris": "#808080",
+    "Rouge": "#FF0000",
+    "Bleu": "#0000FF",
+    "Vert": "#008000",
+    "Jaune": "#FFFF00",
+    "Rose": "#FFC0CB",
+    "Violet": "#800080",
+    "Orange": "#FFA500",
+    "Marron": "#A52A2A",
+    "Beige": "#F5F5DC",
+    "Marine": "#000080",
+    "Ciel": "#87CEEB",
+    "Doré": "#FFD700",
+    "Argenté": "#C0C0C0",
+    "Multicolore": "linear-gradient(45deg, red, blue, green, yellow)"
+  };
 
 // Types
 interface Category {
@@ -400,12 +390,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     clearFieldError('super_category_id');
   };
 
-  const handleSubCategoryChange = (selectedNames: string[]) => {
+  const handleSubCategoryChange = (selectedIds: number[]) => {
     setForm(prev => ({
       ...prev,
-      sub_category_names: selectedNames
+      sub_category_ids: selectedIds
     }));
-    clearFieldError('sub_category_names');
+    clearFieldError('sub_category_ids');
   };
 
   const clearFieldError = (key: string) =>
@@ -420,7 +410,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     const errors: FieldErrors = {};
     if (targetStepKey === "category") {
       if (!form.super_category_id) errors.super_category_id = "Choisissez une catégorie principale.";
-      if (form.sub_category_names.length === 0) errors.sub_category_names = "Choisissez une sous-catégorie.";
+      if (form.sub_category_ids.length === 0) errors.sub_category_ids = "Choisissez une sous-catégorie.";
     }
     if (targetStepKey === "product") {
       if (!form.title.trim()) errors.title = "Le titre est obligatoire.";
@@ -489,12 +479,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       // Set collection based on slot index (0 is thumbnail, others gallery)
       formData.append('collection', index === 0 ? 'thumbnail' : 'gallery');
 
-      const response = await api.post(ziggyRoute('media.upload'), formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Accept': 'application/json'
-        }
-      });
+      const response = await api.post(ziggyRoute('media.upload'), formData);
 
       if (response.data.status === 'success') {
         setUploadSlots(prev => {
@@ -511,7 +496,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
         ? Object.values(error.response.data.errors).flat().join(', ') 
         : (error.response?.data?.message || error.message || 'Upload failed');
       
-      console.error('Full upload error details:', error.response?.data || error);
+      console.error('Upload error:', errorMessage);
       
       setUploadSlots(prev => {
         const next = [...prev];
@@ -653,7 +638,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               </Typography>
             )}
 
-            {form.super_category_name && (
+            {form.super_category_id && (
               <Box className="aa-subcategories-container" sx={{ mt: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <Box sx={{ width: 4, height: 24, bgcolor: '#3b82f6', borderRadius: 1 }} />
@@ -665,16 +650,16 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                 <CustomSelect
                   label="Sélectionner des sous-catégories"
                   multiple={true}
-                  options={(SUB_CATEGORIES_MAP[form.super_category_name] || []).map((name, index) => ({
-                    id: `${form.super_category_id}-${index}`,
-                    label: name,
-                    value: name,
+                  options={(categories.find(c => Number(c.id) === Number(form.super_category_id))?.children || []).map((child) => ({
+                    id: String(child.id),
+                    label: child.label || child.name,
+                    value: Number(child.id),
                     icon: <Shapes size={16} />
                   }))}
-                  value={form.sub_category_names}
-                  onChange={(val) => handleSubCategoryChange(val as string[])}
-                  error={!!fieldErrors.sub_category_names}
-                  helperText={fieldErrors.sub_category_names}
+                  value={form.sub_category_ids}
+                  onChange={(val) => handleSubCategoryChange(val as number[])}
+                  error={!!fieldErrors.sub_category_ids}
+                  helperText={fieldErrors.sub_category_ids}
                 />
               </Box>
             )}
@@ -910,13 +895,14 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               <CustomSelect
                 multiple={true}
                 options={attributes.colors.map(o => {
-                  const label = typeof o === 'string' ? o : (o as any).label;
-                  const value = typeof o === 'string' ? o : (o as any).value || (o as any).id;
+                  const label = o.label || o.name;
+                  const value = o.value || o.id;
+                  const hex = o.hex || (COLOR_MAP[label] || value);
                   return {
-                    id: value,
+                    id: String(value),
                     label: label,
-                    value: value,
-                    hex: COLOR_MAP[label] || value
+                    value: label, // We use name as value for now based on form state
+                    hex: hex
                   };
                 })}
                 value={form.colors}

@@ -17,7 +17,7 @@ import {
   UsersGroupRounded as People
 } from '@solar-icons/react';
 import { useTheme } from '../../../context/ThemeContext';
-import CustomSelect from '../common/CustomSelect';
+import CustomSelect from '../Common/CustomSelect';
 
 interface SidebarProps {
   initData: any;

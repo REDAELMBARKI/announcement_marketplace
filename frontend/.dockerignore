@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+
+# Build files
+dist
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+server.log
+
+# Testing
+coverage
+*.test.ts
+*.test.tsx
+
+# Misc
+*.swp
+*.swo
+*~
+.DS_Store

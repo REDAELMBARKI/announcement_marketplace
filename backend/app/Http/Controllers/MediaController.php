@@ -16,9 +16,9 @@ class MediaController extends Controller
     {
         try {
             $validated = $request->validate([
-                'image' => ['required', 'image', 'max:4096'],
-                'collection' => ['nullable', 'string', 'in:thumbnail,gallery'],
-                'mediable_type' => ['required', 'string', 'in:product,user,category'],
+                'image' => ['required', 'image', 'max:8192'], // Increased max size
+                'collection' => ['nullable', 'string'], // Allow any collection string
+                'mediable_type' => ['required', 'string', 'in:product,user,category,hero_slider,banner'],
             ]);
 
             if (!$request->hasFile('image')) {
@@ -31,9 +31,8 @@ class MediaController extends Controller
             $image = $request->file('image');
             $collection = $validated['collection'] ?? 'gallery';
             
-            // Store the image
-            $folder = strtolower($validated['mediable_type']) . 's'; // "product" → "products" 
-            $path = $image->store($folder, 'public');
+            // Store the image in temp_media folder
+            $path = $image->store('temp_media', 'public');
 
             if (!$path) {
                 throw new \Exception('Failed to store image on disk.');
@@ -45,7 +44,7 @@ class MediaController extends Controller
                 'mediable_type' => null, 
                 'disk' => 'public',
                 'path' => $path,
-                'url' => url('storage/' . $path),
+                'url' => Storage::disk('public')->url($path),
                 'file_name' => $image->getClientOriginalName(),
                 'mime_type' => $image->getMimeType(),
                 'size' => $image->getSize(),
@@ -57,6 +56,7 @@ class MediaController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Image uploaded successfully.',
+                'id' => $media->id,
                 'mediaId' => $media->id,
                 'url' => $media->url,
             ], 201);
@@ -100,19 +100,19 @@ class MediaController extends Controller
                 'mediable_type' => null,
                 'disk' => 'public',
                 'path' => $path,
-                'url' => url('storage/' . $path),
+                'url' => Storage::disk('public')->url($path),
                 'file_name' => $image->getClientOriginalName(),
                 'mime_type' => $image->getMimeType(),
                 'size' => $image->getSize(),
                 'collection' => 'gallery',
                 'sort_order' => $index,
-                'is_temporary' => true, // Mark as temporary initially
+                'is_temporary' => true, 
             ]);
 
             $uploadedMedia[] = [
+                'id' => $media->id,
                 'mediaId' => $media->id,
                 'url' => $media->url,
-                'fileName' => $media->file_name,
             ];
         }
 
@@ -138,6 +138,25 @@ class MediaController extends Controller
 
         foreach ($validated['media_ids'] as $mediaId) {
             $media = Media::findOrFail($mediaId);
+            
+            if ($media->is_temporary && str_starts_with($media->path, 'temp_media/')) {
+                $oldPath = $media->path;
+                $newPath = 'products/' . basename($oldPath);
+
+                if (Storage::disk($media->disk)->exists($oldPath)) {
+                    Storage::disk($media->disk)->move($oldPath, $newPath);
+                    
+                    $media->update([
+                        'mediable_id' => $product->id,
+                        'mediable_type' => Product::class,
+                        'is_temporary' => false,
+                        'path' => $newPath,
+                        'url' => Storage::disk($media->disk)->url($newPath),
+                    ]);
+                    continue;
+                }
+            }
+
             $media->update([
                 'mediable_id' => $product->id,
                 'mediable_type' => Product::class,

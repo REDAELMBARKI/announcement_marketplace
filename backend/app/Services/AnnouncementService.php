@@ -116,14 +116,23 @@ class AnnouncementService
     {
         $categories = Category::whereNull('parent_id')
             ->where('is_active', true)
+            ->with(['children' => function($query) {
+                $query->where('is_active', true)->orderBy('sort_order');
+            }])
             ->orderBy('sort_order')
-            ->get(['id', 'name', 'icon', 'slug'])
+            ->get()
             ->map(fn($category) => [
                 'id' => (string) $category->id,
                 'label' => $category->name,
                 'value' => (string) $category->id,
                 'icon' => $category->icon,
                 'slug' => $category->slug,
+                'children' => $category->children->map(fn($child) => [
+                    'id' => (string) $child->id,
+                    'label' => $child->name,
+                    'value' => (string) $child->id,
+                    'slug' => $child->slug,
+                ]),
             ]);
 
         $attributes = $this->filterAttributeRepository->getAllGrouped();

@@ -1,0 +1,4 @@
+docker-compose*
+.gitignore
+composer*
+package

@@ -33,8 +33,9 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'user_name' => $user->name,
                 'user_email' => $user->email,
-                'role_id' => $user->role_id,
-                'role' => $user->role ? $user->role->name : 'User', // Include role name
+                'role_id' => $user->role->id,
+                'role' => $user->role ? $user->role->name : 'user',
+                'claims' => $user->role ? $user->role->claims : [],
                 'avatar_url' => $avatarUrl,
             ];
 
@@ -78,9 +79,9 @@ class AuthController extends Controller
             ], 409);
         }
 
-        // default role 10 = donor (frontend-compatible)
+        // default role 10 = donor
         $user = User::create([
-            'name' => $request->fullName,
+            'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role_id' => 10,
@@ -95,7 +96,8 @@ class AuthController extends Controller
             'user_name' => $user->name,
             'user_email' => $user->email,
             'role_id' => $user->role_id,
-            'role' => $user->role ? $user->role->name : 'User',
+            'role' => $user->role ? $user->role->name : 'donor',
+            'claims' => $user->role ? $user->role->claims : [],
         ];
 
         return response()->json([
@@ -107,7 +109,7 @@ class AuthController extends Controller
             'status' => 'success',
             'user'   => $userData,
             'token' => $token,
-        ]);
+        ], 201);
     }
 
     //logout

@@ -3,9 +3,10 @@ import React, { useEffect, Suspense, lazy } from "react";
 import axios from "axios";
 
 // Headers & Footer
-import Header from "./assets/components/Header.jsx";
-import Header_alt from "./assets/components/Header_alt.jsx";
-import Footer from "./assets/components/Footer.jsx";
+import Header from "./assets/components/Header.tsx";
+import Header_alt from "./assets/components/Header_alt.tsx";
+import Footer from "./assets/components/Footer.tsx";
+import RoleCheck from "./assets/components/Common/RoleCheck";
 
 // lazy-load all page components
 const Home = lazy(() => import("./assets/components/Home"));
@@ -188,31 +189,31 @@ export default function Layout() {
           <Route path="/our_partners" element={<Our_Partners />} />
 
           {/* Admin */}
-          <Route path="/admin_dashboard" element={<Admin_Dashboard />} />
-          <Route path="/add_charity" element={<Add_Charity />} />
-          <Route path="/data_reports" element={<Data_Reports />} />
-          <Route path="/view_users" element={<View_Users />} />
-          <Route path="/admin_inventory" element={<Admin_Inventory />} />
-          <Route path="/admin_donations" element={<Admin_Donations />} />
-          <Route path="/manage_charity" element={<Manage_Charity />} />
+          <Route path="/admin_dashboard" element={<RoleCheck allowedRoles={['admin']}><Admin_Dashboard /></RoleCheck>} />
+          <Route path="/add_charity" element={<RoleCheck allowedRoles={['admin']}><Add_Charity /></RoleCheck>} />
+          <Route path="/data_reports" element={<RoleCheck allowedRoles={['admin']}><Data_Reports /></RoleCheck>} />
+          <Route path="/view_users" element={<RoleCheck allowedRoles={['admin']}><View_Users /></RoleCheck>} />
+          <Route path="/admin_inventory" element={<RoleCheck allowedRoles={['admin']}><Admin_Inventory /></RoleCheck>} />
+          <Route path="/admin_donations" element={<RoleCheck allowedRoles={['admin']}><Admin_Donations /></RoleCheck>} />
+          <Route path="/manage_charity" element={<RoleCheck allowedRoles={['admin']}><Manage_Charity /></RoleCheck>} />
 
           {/* Charity */}
-          <Route path="/charity_dashboard" element={<Charity_Dashboard />} />
-          <Route path="/view_inventory" element={<View_Inventory />} />
-          <Route path="/view_donations" element={<View_Donations />} />
+          <Route path="/charity_dashboard" element={<RoleCheck allowedRoles={['admin', 'charity_staff']}><Charity_Dashboard /></RoleCheck>} />
+          <Route path="/view_inventory" element={<RoleCheck allowedRoles={['admin', 'charity_staff']}><View_Inventory /></RoleCheck>} />
+          <Route path="/view_donations" element={<RoleCheck allowedRoles={['admin', 'charity_staff']}><View_Donations /></RoleCheck>} />
           <Route
             path="/distribution_records"
-            element={<Distribution_Records />}
+            element={<RoleCheck allowedRoles={['admin', 'charity_staff']}><Distribution_Records /></RoleCheck>}
           />
-          <Route path="/approve_donations" element={<Approve_Donations />} />
+          <Route path="/approve_donations" element={<RoleCheck allowedRoles={['admin', 'charity_staff']}><Approve_Donations /></RoleCheck>} />
 
           {/* User */}
-          <Route path="/user_dashboard" element={<User_Dashboard />} />
-          <Route path="/my_donations" element={<My_Donations />} />
-          <Route path="/my_impact" element={<My_Impact />} />
-          <Route path="/my_profile" element={<My_Profile />} />
-          <Route path="/my_announcements" element={<My_Announcements />} />
-          <Route path="/add_announcement" element={<Add_Announcement />} />
+          <Route path="/user_dashboard" element={<RoleCheck allowedRoles={['admin', 'donor']}><User_Dashboard /></RoleCheck>} />
+          <Route path="/my_donations" element={<RoleCheck allowedRoles={['admin', 'donor']}><My_Donations /></RoleCheck>} />
+          <Route path="/my_impact" element={<RoleCheck allowedRoles={['admin', 'donor']}><My_Impact /></RoleCheck>} />
+          <Route path="/my_profile" element={<RoleCheck allowedRoles={['admin', 'donor', 'charity_staff']}><My_Profile /></RoleCheck>} />
+          <Route path="/my_announcements" element={<RoleCheck allowedRoles={['admin', 'donor']}><My_Announcements /></RoleCheck>} />
+          <Route path="/add_announcement" element={<RoleCheck allowedRoles={['admin', 'donor']}><Add_Announcement /></RoleCheck>} />
           <Route path="/users/:userSlug/announcements/:announcementSlug" element={<Add_Announcement />} />
 
           {/* Footer items */}

@@ -17,17 +17,12 @@ return new class extends Migration
             $table->string('disk')->default('public');        // s3, public, local
             $table->string('path');                           // full path in disk
             $table->string('url')->nullable();                // public URL (cached)
-            $table->string('file_name');
+            $table->string('file_name')->nullable();
             $table->string('mime_type')->nullable();
             $table->unsignedBigInteger('size')->nullable();   // bytes
 
             // Type of media within its context
-            $table->enum('collection', [
-                'avatar',       // user profile picture
-                'thumbnail',    // product main/cover image
-                'gallery',      // product extra photos
-                'document',     // any file attachment
-            ])->default('gallery');
+            $table->string('collection')->default('gallery'); // avatar, thumbnail, gallery, slider, banner, category etc.
             $table->unsignedInteger('sort_order')->default(0); // ordering within gallery
             $table->boolean('is_temporary')->default(false); // for temporary uploads   
             $table->timestamps();

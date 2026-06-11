@@ -74,6 +74,17 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Role::class);
     }
 
+    public function media(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Media::class, 'mediable');
+    }
+
+    public function avatar(): \Illuminate\Database\Eloquent\Relations\MorphOne
+    {
+        return $this->morphOne(Media::class, 'mediable')
+            ->where('collection', 'avatar');
+    }
+
     /**
      * attributes that are mass assignable.
      *
@@ -85,7 +96,6 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role_id',
-        'avatar_path',
     ];
 
     /**
@@ -103,9 +113,9 @@ class User extends Authenticatable implements JWTSubject
         'email',
     ];
 
-    protected $appends = ['avatar'];
+    protected $appends = ['avatar_url'];
 
-    public function getAvatarAttribute()
+    public function getAvatarUrlAttribute()
     {
         return $this->avatar_path ? asset('storage/' . ltrim($this->avatar_path, '/')) : null;
     }

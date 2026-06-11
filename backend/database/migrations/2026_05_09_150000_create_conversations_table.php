@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::dropIfExists('conversations');
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
             $table->string('slug')->unique();

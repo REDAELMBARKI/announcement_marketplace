@@ -17,7 +17,7 @@ class DemoUserSeeder extends Seeder
                 'name' => 'Demo User',
                 'slug' => 'demo-user',
                 'password' => Hash::make('password123'),
-                'role_id' => 2,
+                'role_id' => 10,
             ]
         );
 

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  # Only for building images, no running containers
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: 1000
+    image: redaelmbarki/announcement-app-backend:latest
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: redaelmbarki/announcement-app-frontend:latest

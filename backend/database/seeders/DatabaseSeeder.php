@@ -16,7 +16,6 @@ class DatabaseSeeder extends Seeder
     {
         // Run seeders in order
         $this->call([
-            RoleSeeder::class,
             HeroSliderSeeder::class,
             BannerSeeder::class,
             FilterAttributeSeeder::class,
@@ -31,7 +30,7 @@ class DatabaseSeeder extends Seeder
             'slug' => 'admin-user',
             'email' => 'admin@example.com',
             'password' => Hash::make('password'),
-            'role_id' => 1, // Admin role
+            'role_id' => 12, // Admin role
         ]);
         
         // Create regular user
@@ -40,7 +39,7 @@ class DatabaseSeeder extends Seeder
             'slug' => 'test-user',
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
-            'role_id' => 2, // User role
+            'role_id' => 10, // donor role
         ]);
     }
 }

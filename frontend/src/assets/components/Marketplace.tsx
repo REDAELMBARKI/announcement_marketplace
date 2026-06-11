@@ -23,7 +23,7 @@ import { useTheme } from "../../context/ThemeContext";
 import Sidebar from "./Marketplace/Sidebar";
 import { Product } from "./User/announcement/types";
 import MarketplaceCard from "./MarketplaceCard";
-import CustomSelect from "./common/CustomSelect";
+import CustomSelect from "./Common/CustomSelect";
 
 // --- Types ---
 interface InitData {

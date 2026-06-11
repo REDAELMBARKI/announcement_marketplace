@@ -49,29 +49,6 @@ return new class extends Migration
             $table->unique(['reporter_id', 'product_id']); // one report per user per product
         });
 
-         Schema::create('conversations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->foreignId('buyer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('seller_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('last_message_at')->nullable();
-            $table->timestamps();
- 
-            $table->unique(['product_id', 'buyer_id']); // one thread per product per buyer
-        });
- 
-      
-        Schema::create('messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('conversation_id')->constrained('conversations')->cascadeOnDelete();
-            $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
-            $table->text('body');
-            $table->boolean('is_read')->default(false);
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
@@ -94,10 +71,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('reports');
         Schema::dropIfExists('reviews');
-        Schema::dropIfExists('messages');
         Schema::dropIfExists('favorites');
-        Schema::dropIfExists('conversations');
         Schema::dropIfExists('notifications');
-
     }
 };

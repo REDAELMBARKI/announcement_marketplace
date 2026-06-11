@@ -38,20 +38,20 @@ export default function Login() {
         }
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", String(user.role_id));
-        localStorage.setItem("admin", String(user.role_id === 1));
-
-        const role = String(user.role_id);
+        localStorage.setItem("role_name", user.role);
+        localStorage.setItem("claims", JSON.stringify(user.claims || []));
+        localStorage.setItem("admin", String(user.role === 'admin'));
 
         // Notify other components (like Header) about login
         window.dispatchEvent(new Event('auth-change'));
 
-        const roleName = user.role || "user";
+        const roleName = (user.role || "donor").toLowerCase();
 
-        if (roleName === "Admin") {
+        if (roleName === "admin") {
           navigate("/");
-        } else if (roleName === "Moderator") {
-          navigate("/moderator_dashboard");
-        } else if (roleName === "User") {
+        } else if (roleName === "charity_staff") {
+          navigate("/charity_dashboard");
+        } else if (roleName === "donor") {
           navigate("/user_dashboard");
         } else {
           console.log("Unknown role:", roleName);

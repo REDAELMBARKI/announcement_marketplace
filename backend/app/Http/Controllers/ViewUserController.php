@@ -18,7 +18,7 @@ class ViewUserController extends Controller
                 'user_name' => $user->name,
                 'user_email' => $user->email,
                 'role_id' => $user->role_id,
-                'role_name' => $user->role?->role_name ?? 'user',
+                'role_name' => $user->role?->name ?? 'donor',
                 'created_date' => $user->created_at->format('Y-m-d'),
             ];
         });
@@ -49,9 +49,9 @@ class ViewUserController extends Controller
         
         // Map role_name to role_id if provided (for compatibility with some frontend logic)
         if ($request->has('role_name')) {
-            $role = Role::where('role_name', $request->role_name)->first();
+            $role = Role::where('name', $request->role_name)->first();
             if ($role) {
-                $data['role_id'] = $role->role_ID;
+                $data['role_id'] = $role->id;
             }
         }
 

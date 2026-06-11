@@ -35,7 +35,7 @@ function DonorSignUp() {
 
     try {
       const res = await api.post(route('signup').toString(), {
-        fullName: formData.fullName,
+        name: formData.fullName,
         email: formData.email,
         password: formData.password,
       });
@@ -52,17 +52,19 @@ function DonorSignUp() {
         }
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", String(user.role_id));
+        localStorage.setItem("role_name", user.role);
+        localStorage.setItem("claims", JSON.stringify(user.claims || []));
 
         // Notify other components (like Header) about login
         window.dispatchEvent(new Event('auth-change'));
 
         setMessage("Signup successful! Redirecting...");
         
-        const roleName = user.role || "user";
+        const roleName = (user.role || "donor").toLowerCase();
         setTimeout(() => {
-          if (roleName === "Admin") {
+          if (roleName === "admin") {
             navigate("/");
-          } else if (roleName === "User") {
+          } else if (roleName === "donor") {
             navigate("/user_dashboard");
           } else {
             navigate("/");

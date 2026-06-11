@@ -19,8 +19,8 @@ class AdminDashboardSeeder extends Seeder
 {
     public function run(): void
     {
-        // Disable foreign key checks for SQLite
-        DB::statement('PRAGMA foreign_keys=OFF');
+        // Disable foreign key checks for MySQL
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         // Clear existing data (keeping Roles)
         Address::query()->delete();
@@ -129,7 +129,7 @@ class AdminDashboardSeeder extends Seeder
             ]);
         }
 
-        DB::statement('PRAGMA foreign_keys=ON');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
         $this->command->info('Admin Dashboard test data seeded successfully!');
     }
 }
