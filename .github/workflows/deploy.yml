@@ -1,0 +1,12 @@
+name : "CI/CD file" 
+
+on: 
+   push :
+     branches : [main]
+
+jobs:
+   deploy :
+       name : "deploy the app in aws"
+       steps :
+          - name : "build the images frontend && backend with compose file builder"
+            uses : 

@@ -3,6 +3,7 @@ version: '3.8'
 services:
   backend:
     image: redaelmbarki/announcement-app-backend:latest
+    # build : ./backend
     container_name: announcement-backend-prod
     ports:
       - "8000:80"
@@ -20,9 +21,10 @@ services:
 
   frontend:
     image: redaelmbarki/announcement-app-frontend:latest
+    # build: ./frontend
     container_name: announcement-frontend-prod
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     networks:

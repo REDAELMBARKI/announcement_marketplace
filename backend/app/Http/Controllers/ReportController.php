@@ -254,4 +254,16 @@ class ReportController extends Controller
             'time_based_report' => $this->timeBased()->getData(true)['data'],
         ]);
     }
+
+    public function sustainability(): JsonResponse
+    {
+        return $this->success([
+            'total_co2_reduced' => 0,
+        ]);
+    }
+
+    public function charities(): JsonResponse
+    {
+        return $this->success([]);
+    }
 }

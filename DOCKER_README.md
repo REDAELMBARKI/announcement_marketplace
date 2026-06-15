@@ -31,12 +31,12 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## Docker Compose Files
 
-### docker-compose.yml
+### docker-compose.yml (Build Only)
 - **Purpose**: Build and push images
 - **Only contains**: `build` and `image` sections
 - **No containers, networks, or volumes**
 
-### docker-compose.prod.yml
+### docker-compose.prod.yml (Production Only)
 - **Purpose**: Run the full application in production
 - **Contains everything**: containers, networks, volumes, ports, environment
 - **Pulls images from Docker Hub**
@@ -69,5 +69,5 @@ docker-compose -f docker-compose.prod.yml logs -f
 ---
 
 ## Ports
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8000
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:8000
