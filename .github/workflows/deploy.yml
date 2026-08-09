@@ -32,4 +32,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             curl -fsSL -O https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml
+            docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
