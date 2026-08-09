@@ -14,7 +14,8 @@ export function View_Inventory() {
   const [filters, setFilters] = useState({ category: "", type: "" });
 
   useEffect(() => {
-    let url = "http://localhost:8000/api/inventory";
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    let url = `${baseUrl}/api/inventory`;
 
     // Charity sees only their inventory
     if (role === "11" && user.charity_ID) {

@@ -17,8 +17,8 @@ import {
 import { Product, ApiResponse } from "./User/announcement/types";
 import { useTheme } from "../../context/ThemeContext";
 import OfferModal from "./OfferModal";
-// Configure axios baseURL for backend API
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+// Use global api service or dynamic baseURL
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 // Current user ID (get from auth context or localStorage)
 const getCurrentUserId = () => {
@@ -113,7 +113,8 @@ const Product_Details: React.FC = () => {
   const getImageUrl = (media: any) => {
     if (!media) return null;
     if (media.url && media.url.startsWith('http')) return media.url;
-    return `http://127.0.0.1:8000/storage/${media.file_path.replace("public/", "")}`;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    return `${baseUrl}/storage/${media.file_path.replace("public/", "")}`;
   };
 
   useEffect(() => {

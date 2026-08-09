@@ -63,12 +63,13 @@ const ConversationsList: React.FC = () => {
 
   const getImageUrl = (thumbnail: any) => {
     if (!thumbnail) return null;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
     if (typeof thumbnail === 'string') {
       if (thumbnail.startsWith('http')) return thumbnail;
-      return `http://127.0.0.1:8000/storage/${thumbnail.replace("public/", "")}`;
+      return `${baseUrl}/storage/${thumbnail.replace("public/", "")}`;
     }
     if (thumbnail.url && thumbnail.url.startsWith('http')) return thumbnail.url;
-    if (thumbnail.file_path) return `http://127.0.0.1:8000/storage/${thumbnail.file_path.replace("public/", "")}`;
+    if (thumbnail.file_path) return `${baseUrl}/storage/${thumbnail.file_path.replace("public/", "")}`;
     return null;
   };
 

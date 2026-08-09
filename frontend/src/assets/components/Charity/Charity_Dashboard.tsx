@@ -30,9 +30,10 @@ export function Charity_Dashboard() {
 
   // Fetch all charities and find assigned one
   useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
     const fetchCharities = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/charities");
+        const res = await fetch(`${baseUrl}/api/charities`);
         const data = await res.json();
         const allCharities = data.charities || data || [];
         const assigned = allCharities.find(
@@ -50,17 +51,18 @@ export function Charity_Dashboard() {
   useEffect(() => {
     if (!user.charity_ID) return;
 
+    const baseUrl = import.meta.env.VITE_API_URL || "";
     const fetchData = async () => {
       try {
         const donationRes = await fetch(
-          `http://127.0.0.1:8000/api/charity/${user.charity_ID}/donations`,
+          `${baseUrl}/api/charity/${user.charity_ID}/donations`,
         );
         const donationJson = await donationRes.json();
         const donationList =
           donationJson.status === "success" ? donationJson.donations || [] : [];
 
         const inventoryRes = await fetch(
-          `http://127.0.0.1:8000/api/inventory?charity_ID=${user.charity_ID}`,
+          `${baseUrl}/api/inventory?charity_ID=${user.charity_ID}`,
         );
         const inventoryJson = await inventoryRes.json();
         const inventoryList = inventoryJson.inventory || [];

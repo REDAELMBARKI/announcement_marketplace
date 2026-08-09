@@ -81,7 +81,7 @@ export default function User_Dashboard() {
     const path = thumb.file_path || thumb.path;
     if (!path) return null;
     const clean = String(path).replace(/^public\//, "").replace(/^\/+/, "");
-    const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://127.0.0.1:8000";
+    const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "";
     return `${base}/storage/${clean}`;
   };
 

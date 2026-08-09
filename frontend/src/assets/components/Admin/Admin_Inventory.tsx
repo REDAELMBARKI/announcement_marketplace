@@ -16,7 +16,8 @@ export function Admin_Inventory() {
 
   const buildImageUrl = (path) => {
     if (!path) return null;
-    return `http://localhost:8000/storage/${path.replace("public/", "")}`;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    return `${baseUrl}/storage/${path.replace("public/", "")}`;
   };
 
   const navigate = useNavigate();

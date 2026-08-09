@@ -20,16 +20,18 @@ export function Charity_Donations() {
     if (!path) return null;
     path = path.replace(/^public\//, "").replace(/^\/+/, "");
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    return `http://localhost:8000/storage/${path}`;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    return `${baseUrl}/storage/${path}`;
   };
 
   //Fetch assigned charity details (like Charity_Dashboard logic)
   useEffect(() => {
     if (!charityId) return;
 
+    const baseUrl = import.meta.env.VITE_API_URL || "";
     const fetchCharity = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/charities");
+        const res = await fetch(`${baseUrl}/api/charities`);
         const data = await res.json();
         const allCharities = data.charities || data || [];
         const assigned = allCharities.find((c) => c.charity_ID === charityId);
@@ -46,10 +48,11 @@ export function Charity_Donations() {
   useEffect(() => {
     if (!charityId) return;
 
+    const baseUrl = import.meta.env.VITE_API_URL || "";
     const fetchDonations = async () => {
       try {
         const res = await fetch(
-          `http://127.0.0.1:8000/api/charity/${charityId}/donations`,
+          `${baseUrl}/api/charity/${charityId}/donations`,
         );
         const data = await res.json();
         const donationList =

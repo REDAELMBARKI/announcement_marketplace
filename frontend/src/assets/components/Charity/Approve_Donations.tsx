@@ -23,7 +23,8 @@ export default function Approve_Donations() {
       return;
     }
 
-    fetch(`http://localhost:8000/api/charity/${charityId}/donations`)
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${baseUrl}/api/charity/${charityId}/donations`)
       .then((res) => res.json())
       .then((data) => {
         if (data.status === "success") {
@@ -53,14 +54,16 @@ export default function Approve_Donations() {
 
     if (path.startsWith("http")) return path;
 
-    return `http://localhost:8000/storage/${path}`;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    return `${baseUrl}/storage/${path}`;
   };
 
   //approve or decline donation
   const handleUpdateStatus = async (donationId, newStatus) => {
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
       const res = await fetch(
-        `http://localhost:8000/api/donations/${donationId}/status`,
+        `${baseUrl}/api/donations/${donationId}/status`,
         {
           method: "POST",
           headers: {

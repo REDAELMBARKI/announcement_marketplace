@@ -21,7 +21,8 @@ export default function FAQChatBot() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/ask-faq", {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${baseUrl}/api/ask-faq`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: userMsg }),

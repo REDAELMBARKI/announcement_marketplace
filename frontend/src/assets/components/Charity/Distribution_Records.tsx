@@ -19,7 +19,8 @@ export default function Charity_Distribution_Records() {
   };
 
   const loadInventory = () => {
-    fetch(`http://localhost:8000/api/inventory?charity_ID=${charityId}`)
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${baseUrl}/api/inventory?charity_ID=${charityId}`)
       .then((res) => res.json())
       .then((data) => {
         setItems(data.inventory || []);
@@ -37,8 +38,9 @@ export default function Charity_Distribution_Records() {
 
   const handleDistribute = async (inventoryId) => {
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
       const res = await fetch(
-        `http://localhost:8000/api/inventory/${inventoryId}/distribute`,
+        `${baseUrl}/api/inventory/${inventoryId}/distribute`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

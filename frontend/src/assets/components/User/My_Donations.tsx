@@ -29,7 +29,7 @@ function getImageUrl(media: Thumbnail | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith("http")) return path;
   const clean = path.replace(/^public\//, "").replace(/^\/+/, "");
-  const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "http://127.0.0.1:8000";
+  const base = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, "") || "";
   return `${base}/storage/${clean}`;
 }
 

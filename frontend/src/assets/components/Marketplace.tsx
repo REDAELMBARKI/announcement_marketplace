@@ -169,7 +169,8 @@ const Marketplace: React.FC = () => {
   const getImageUrl = (media: any) => {
     if (!media) return null;
     if (media.url && media.url.startsWith('http')) return media.url;
-    return `http://127.0.0.1:8000/storage/${media.file_path.replace("public/", "")}`;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    return `${baseUrl}/storage/${media.file_path.replace("public/", "")}`;
   };
 
   return (
