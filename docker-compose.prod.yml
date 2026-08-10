@@ -16,6 +16,8 @@ services:
       - DB_CONNECTION=sqlite
       - WWWGROUP=1000
       - APP_URL=http://13.60.219.215
+      - FRONTEND_URL=http://13.60.219.215,http://localhost
+      - SANCTUM_STATEFUL_DOMAINS=13.60.219.215,localhost
     networks:
       - announcement-network
     restart: unless-stopped
