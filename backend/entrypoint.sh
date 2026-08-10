@@ -25,6 +25,12 @@ fi
 echo "Running database migrations..."
 php artisan migrate --force
 
+# Clear cached config, routes, and application cache
+echo "Clearing application cache..."
+php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
+
 # Link storage
 echo "Linking storage..."
 php artisan storage:link
