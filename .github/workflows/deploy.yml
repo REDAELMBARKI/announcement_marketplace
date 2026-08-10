@@ -21,8 +21,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: "Build and push images"
-        run: docker compose -f docker-compose.yml build --push
+      - name: "Build images"
+        run: docker compose -f docker-compose.yml build
+
+      - name: "Push images to Docker Hub"
+        run: docker compose -f docker-compose.yml push
 
       - name: "SSH to server and deploy"
         uses: appleboy/ssh-action@v1.0.3  

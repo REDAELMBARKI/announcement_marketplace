@@ -21,9 +21,12 @@ if [ ! -f "database/marketDB.sqlite" ]; then
     touch database/marketDB.sqlite
 fi
 
-# Run migrations
+# Run migrations and seeders
 echo "Running database migrations..."
 php artisan migrate --force
+
+echo "Seeding database with initial data..."
+php artisan db:seed --force
 
 # Clear cached config, routes, and application cache
 echo "Clearing application cache..."
