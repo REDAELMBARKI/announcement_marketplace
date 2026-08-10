@@ -11,7 +11,7 @@ use App\Models\ProductItem;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
@@ -19,14 +19,14 @@ class AdminDashboardSeeder extends Seeder
 {
     public function run(): void
     {
-        // Disable foreign key checks for MySQL
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Disable foreign key checks (database-agnostic)
+        Schema::disableForeignKeyConstraints();
 
         // Clear existing data (keeping Roles)
         Address::query()->delete();
         ProductItem::query()->delete();
         Media::query()->delete();
-        DB::table('subcategory_product')->delete();
+        \Illuminate\Support\Facades\DB::table('subcategory_product')->delete();
         Product::query()->delete();
         Charity::query()->delete();
         User::where('role_id', '!=', 12)->delete(); // Keep main admin
@@ -129,7 +129,7 @@ class AdminDashboardSeeder extends Seeder
             ]);
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        Schema::enableForeignKeyConstraints();
         $this->command->info('Admin Dashboard test data seeded successfully!');
     }
 }

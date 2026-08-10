@@ -15,11 +15,13 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
 fi
 
-# Make sure the database file exists
-if [ ! -f "database/marketDB.sqlite" ]; then
-    echo "Creating database file..."
-    touch database/marketDB.sqlite
-fi
+# Handle database preparation for MySQL
+echo "Waiting for MySQL database connection ($DB_HOST:$DB_PORT)..."
+until php -r "try { new PDO('mysql:host=' . (getenv('DB_HOST') ?: 'db') . ';port=' . (getenv('DB_PORT') ?: 3306) . ';dbname=' . getenv('DB_DATABASE'), getenv('DB_USERNAME'), getenv('DB_PASSWORD')); exit(0); } catch (Exception \$e) { exit(1); }"; do
+    sleep 2
+    echo "MySQL is unavailable - waiting..."
+done
+echo "MySQL connection established successfully!"
 
 # Run migrations and seeders
 echo "Running database migrations..."

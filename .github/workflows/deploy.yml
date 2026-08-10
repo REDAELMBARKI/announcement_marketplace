@@ -35,6 +35,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml?v=$(date +%s)"
+            export DB_DATABASE="${{ secrets.DB_DATABASE }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
             docker compose -f docker-compose.prod.yml down
             docker rm -f announcement-backend-prod || true
             docker rm -f announcement-frontend-prod || true

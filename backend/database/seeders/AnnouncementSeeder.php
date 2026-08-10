@@ -12,6 +12,7 @@ use App\Models\Address;
 use App\Models\Favorite;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -19,8 +20,8 @@ class AnnouncementSeeder extends Seeder
 {
     public function run(): void
     {
-        // Disable foreign key checks temporarily
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Disable foreign key checks temporarily (database-agnostic)
+        Schema::disableForeignKeyConstraints();
 
         // Clear existing data
         $this->clearExistingData();
@@ -33,7 +34,7 @@ class AnnouncementSeeder extends Seeder
         $this->createFavorites();
 
         // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        Schema::enableForeignKeyConstraints();
 
         $this->command->info('Announcement data seeded successfully!');
     }
