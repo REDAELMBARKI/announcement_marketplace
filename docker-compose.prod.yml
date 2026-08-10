@@ -15,6 +15,7 @@ services:
       - APP_DEBUG=false
       - DB_CONNECTION=sqlite
       - WWWGROUP=1000
+      - APP_URL=http://13.60.219.215
     networks:
       - announcement-network
     restart: unless-stopped
