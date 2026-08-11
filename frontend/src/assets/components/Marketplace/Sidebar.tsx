@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { 
-  Search, 
-  ChevronRight, 
   Check,
   Camera,
-  X,
-  ChevronDown
+  X
 } from 'lucide-react';
 import { 
   MapPoint as MapPin, 
   Bag as ShoppingBag, 
   Gift,
   Shop as Store,
-  Tag,
   User,
   UsersGroupRounded as People
 } from '@solar-icons/react';
@@ -222,9 +218,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div style={{ marginBottom: '20px' }}>
           <SectionLabel>Genre</SectionLabel>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {['girl', 'boy', 'both'].map((g) => {
+            {(initData?.genders || []).map((item: any) => {
+              const g = item.value;
               const active = filters.gender === g;
-              const labels: any = { girl: 'Fille', boy: 'Garçon', both: 'Mixte' };
               const Icon = g === 'both' ? People : User;
               return (
                 <button 
@@ -247,7 +243,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <Icon size={18} weight="BoldDuotone" color={active ? colors.bgSecondary : colors.iconMuted} />
-                  {labels[g]}
+                  {item.label}
                 </button>
               );
             })}

@@ -34,6 +34,19 @@ interface InitData {
   shoeSizes: any[];
   conditions: any[];
   listingTypes: any[];
+  materials?: any[];
+  colors?: any[];
+  genders?: any[];
+  sortOptions?: any[];
+}
+
+interface PaginationState {
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
+  total: number;
+  from: number;
+  to: number;
 }
 
 interface FilterState {
@@ -61,6 +74,15 @@ const Marketplace: React.FC = () => {
   const [initData, setInitData] = useState<InitData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [listingsLoading, setListingsLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    lastPage: 1,
+    perPage: 12,
+    total: 0,
+    from: 0,
+    to: 0,
+  });
+
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     category: "",
@@ -78,7 +100,7 @@ const Marketplace: React.FC = () => {
     view: 'grid'
   });
 
-  // Fetch Initialization Data
+  // Fetch Initialization Data (selects & options data)
   useEffect(() => {
     api.get(route('marketplace.init-data').toString())
       .then(res => {
@@ -90,9 +112,10 @@ const Marketplace: React.FC = () => {
       .catch(err => console.error("Init error:", err));
   }, []);
 
-  // Fetch Listings
-  const fetchListings = useCallback(() => {
+  // Fetch Listings (products read data with pagination)
+  const fetchListings = useCallback((targetPage?: number) => {
     setListingsLoading(true);
+    const pageToFetch = targetPage ?? 1;
     const params: any = {
       search: filters.search,
       category: filters.category,
@@ -102,6 +125,8 @@ const Marketplace: React.FC = () => {
       max_price: filters.max_price,
       free_only: filters.free_only ? "1" : undefined,
       sort: filters.sort,
+      page: pageToFetch,
+      per_page: 12,
     };
     
     // Arrays
@@ -113,9 +138,29 @@ const Marketplace: React.FC = () => {
     api.get(route('marketplace.listings', params).toString())
       .then(res => {
         if (res.data.status === "success") {
-          const productsArray = res.data.data.data || res.data.data;
-          console.log(productsArray)
+          const responseData = res.data.data;
+          const productsArray = responseData?.data || (Array.isArray(responseData) ? responseData : []);
           setProducts(Array.isArray(productsArray) ? productsArray : []);
+
+          if (responseData && responseData.meta) {
+            setPagination({
+              currentPage: responseData.meta.current_page || 1,
+              lastPage: responseData.meta.last_page || 1,
+              perPage: responseData.meta.per_page || 12,
+              total: responseData.meta.total || 0,
+              from: responseData.meta.from || 0,
+              to: responseData.meta.to || 0,
+            });
+          } else {
+            setPagination({
+              currentPage: 1,
+              lastPage: 1,
+              perPage: productsArray.length,
+              total: productsArray.length,
+              from: productsArray.length > 0 ? 1 : 0,
+              to: productsArray.length,
+            });
+          }
         }
         setLoading(false);
         setListingsLoading(false);
@@ -128,12 +173,13 @@ const Marketplace: React.FC = () => {
   }, [filters]);
 
   useEffect(() => {
-    fetchListings();
+    fetchListings(1);
   }, [fetchListings]);
 
   // Handlers
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const handleToggleArrayFilter = (key: string, value: any) => {
@@ -145,6 +191,14 @@ const Marketplace: React.FC = () => {
         : [...current, value];
       return { ...prev, [key]: next };
     });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.lastPage || newPage === pagination.currentPage) return;
+    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    fetchListings(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleReset = () => {
@@ -164,6 +218,7 @@ const Marketplace: React.FC = () => {
       sort: "newest",
       view: filters.view
     });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const getImageUrl = (media: any) => {
@@ -180,15 +235,15 @@ const Marketplace: React.FC = () => {
       minHeight: '100vh', 
       fontFamily: "'Poppins', sans-serif" 
     }}>
-      {/* --- Sidebar --- */}
+      {/* --- Sidebar with Selects from initData --- */}
       <Sidebar 
         initData={initData}
         filters={filters}
         onFilterChange={handleFilterChange}
         onToggleArrayFilter={handleToggleArrayFilter}
         onReset={handleReset}
-        onApply={fetchListings}
-        resultsCount={products.length}
+        onApply={() => fetchListings(1)}
+        resultsCount={pagination.total}
         loading={loading}
       />
 
@@ -205,13 +260,15 @@ const Marketplace: React.FC = () => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          borderBottom: `1px solid ${colors.sidebarBorder || colors.border}`
+          borderBottom: `1px solid ${colors.sidebarBorder || colors.border}`,
+          flexWrap: 'wrap',
+          gap: '15px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '24px', fontWeight: '800', color: colors.textPrimary, margin: 0 }}>Marketplace</h1>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ position: 'relative', width: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', width: '260px' }}>
                 <Search 
                   size={18} 
                   style={{ 
@@ -244,7 +301,7 @@ const Marketplace: React.FC = () => {
                 />
               </div>
 
-              <div style={{ width: '200px' }}>
+              <div style={{ width: '180px' }}>
                 <CustomSelect 
                   multiple={true}
                   searchable={true}
@@ -253,6 +310,15 @@ const Marketplace: React.FC = () => {
                   onChange={(val) => handleFilterChange('cities', val)}
                   placeholder="Toutes les villes"
                   icon={<MapPin size={18} weight="BoldDuotone" color={colors.iconCoral} />}
+                />
+              </div>
+
+              <div style={{ width: '170px' }}>
+                <CustomSelect 
+                  options={initData?.sortOptions || []}
+                  value={filters.sort}
+                  onChange={(val) => handleFilterChange('sort', val)}
+                  placeholder="Trier par"
                 />
               </div>
             </div>
@@ -277,7 +343,7 @@ const Marketplace: React.FC = () => {
         </div>
 
         {/* --- Listings Grid --- */}
-        <div style={{ padding: '30px 40px', flex: 1 }}>
+        <div style={{ padding: '30px 40px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           {listingsLoading ? (
             <div style={{ display: 'grid', gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: '25px' }}>
               {[1,2,3,4,5,6,7,8].map(i => (
@@ -285,15 +351,120 @@ const Marketplace: React.FC = () => {
               ))}
             </div>
           ) : products.length > 0 ? (
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', 
-              gap: '25px' 
-            }}>
-              {products.map(product => (
-                <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} colors={colors} />
-              ))}
-            </div>
+            <>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', 
+                gap: '25px',
+                flex: 1
+              }}>
+                {products.map(product => (
+                  <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} colors={colors} />
+                ))}
+              </div>
+
+              {/* --- Pagination Bar --- */}
+              <div style={{
+                marginTop: '40px',
+                paddingTop: '20px',
+                borderTop: `1px solid ${colors.sidebarBorder || colors.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '15px'
+              }}>
+                <div style={{ fontSize: '14px', color: colors.textSecondary, fontWeight: '500' }}>
+                  Affichage de {pagination.from} à {pagination.to} sur {pagination.total} annonces
+                </div>
+
+                {pagination.lastPage > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={pagination.currentPage === 1}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: colors.bgSecondary,
+                        color: pagination.currentPage === 1 ? colors.textMuted : colors.textPrimary,
+                        cursor: pagination.currentPage === 1 ? 'not-allowed' : 'pointer',
+                        fontWeight: '600',
+                        fontSize: '13px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <ChevronLeft size={16} style={{ marginRight: '4px' }} /> Précédent
+                    </button>
+
+                    {Array.from({ length: pagination.lastPage }, (_, i) => i + 1)
+                      .filter(page => page === 1 || page === pagination.lastPage || Math.abs(page - pagination.currentPage) <= 1)
+                      .reduce((acc: (number | string)[], page, index, array) => {
+                        if (index > 0 && page - (array[index - 1] as number) > 1) {
+                          acc.push('...');
+                        }
+                        acc.push(page);
+                        return acc;
+                      }, [])
+                      .map((item, index) => {
+                        if (typeof item === 'string') {
+                          return (
+                            <span key={`ellipsis-${index}`} style={{ padding: '0 4px', color: colors.textMuted }}>
+                              ...
+                            </span>
+                          );
+                        }
+                        const isSelected = item === pagination.currentPage;
+                        return (
+                          <button
+                            key={item}
+                            onClick={() => handlePageChange(item)}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '10px',
+                              border: isSelected ? 'none' : `1px solid ${colors.border}`,
+                              backgroundColor: isSelected ? colors.coral : colors.bgSecondary,
+                              color: isSelected ? colors.bgSecondary : colors.textPrimary,
+                              cursor: 'pointer',
+                              fontWeight: isSelected ? '700' : '500',
+                              fontSize: '14px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            {item}
+                          </button>
+                        );
+                      })}
+
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={pagination.currentPage === pagination.lastPage}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: colors.bgSecondary,
+                        color: pagination.currentPage === pagination.lastPage ? colors.textMuted : colors.textPrimary,
+                        cursor: pagination.currentPage === pagination.lastPage ? 'not-allowed' : 'pointer',
+                        fontWeight: '600',
+                        fontSize: '13px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Suivant <ChevronRight size={16} style={{ marginLeft: '4px' }} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div style={{ textAlign: 'center', padding: '100px 20px', backgroundColor: colors.bgSecondary, borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
               <ShoppingBag size={64} color={colors.textMuted} style={{ marginBottom: '20px' }} weight="BoldDuotone" />
@@ -312,7 +483,5 @@ const Marketplace: React.FC = () => {
     </div>
   );
 };
-
-
 
 export default Marketplace;

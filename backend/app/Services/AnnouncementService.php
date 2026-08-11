@@ -146,13 +146,15 @@ class AnnouncementService
         return [
             'categories' => $categories,
             'cities' => $cities,
-            'ageRanges' => $attributes->get('ageRanges', []),
-            'clothingSizes' => $attributes->get('clothingSizes', []),
-            'shoeSizes' => $attributes->get('shoeSizes', []),
-            'conditions' => $attributes->get('conditions', []),
-            'listingTypes' => $attributes->get('listingTypes', []),
-            'materials' => $attributes->get('materials', []),
-            'colors' => $attributes->get('colors', []),
+            'ageRanges' => $attributes['ageRanges'] ?? [],
+            'clothingSizes' => $attributes['clothingSizes'] ?? [],
+            'shoeSizes' => $attributes['shoeSizes'] ?? [],
+            'conditions' => $attributes['conditions'] ?? [],
+            'listingTypes' => $attributes['listingTypes'] ?? [],
+            'materials' => $attributes['materials'] ?? [],
+            'colors' => $attributes['colors'] ?? [],
+            'genders' => $attributes['genders'] ?? [],
+            'sortOptions' => $attributes['sortOptions'] ?? [],
         ];
     }
 

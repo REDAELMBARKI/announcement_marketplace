@@ -113,6 +113,16 @@ class FilterAttributeSeeder extends Seeder
                 ['id' => 16, 'label' => 'Argenté', 'value' => 'Argenté', 'hex' => '#C0C0C0'],
                 ['id' => 17, 'label' => 'Multicolore', 'value' => 'Multicolore', 'hex' => 'linear-gradient(45deg, red, blue, green, yellow)'],
             ],
+            'genders' => [
+                ['id' => 1, 'label' => 'Fille', 'value' => 'girl'],
+                ['id' => 2, 'label' => 'Garçon', 'value' => 'boy'],
+                ['id' => 3, 'label' => 'Mixte', 'value' => 'both'],
+            ],
+            'sortOptions' => [
+                ['id' => 1, 'label' => 'Plus récents', 'value' => 'newest'],
+                ['id' => 2, 'label' => 'Prix croissant', 'value' => 'price_asc'],
+                ['id' => 3, 'label' => 'Prix décroissant', 'value' => 'price_desc'],
+            ],
         ];
 
         foreach ($attributes as $group => $data) {

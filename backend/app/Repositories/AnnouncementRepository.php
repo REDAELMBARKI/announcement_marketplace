@@ -96,8 +96,9 @@ class AnnouncementRepository
 
         // City filter
         if (!empty($filters['cities'])) {
-            $query->whereHas('address', function ($q) use ($filters) {
-                $q->whereIn('city_id', (array) $filters['cities']);
+            $cities = is_array($filters['cities']) ? $filters['cities'] : explode(',', $filters['cities']);
+            $query->whereHas('address', function ($q) use ($cities) {
+                $q->whereIn('city_id', $cities);
             });
         }
 
@@ -108,12 +109,14 @@ class AnnouncementRepository
 
         // Listing mode filter (sell/donate)
         if (!empty($filters['mode']) && $filters['mode'] !== 'all') {
-            $query->where('listing_mode', $filters['mode']);
+            $modes = is_array($filters['mode']) ? $filters['mode'] : explode(',', $filters['mode']);
+            $query->whereIn('listing_mode', $modes);
         }
 
         // Age range filter
         if (!empty($filters['age_range'])) {
-            $query->where('age_range', $filters['age_range']);
+            $ageRanges = is_array($filters['age_range']) ? $filters['age_range'] : explode(',', $filters['age_range']);
+            $query->whereIn('age_range', $ageRanges);
         }
 
         // Gender filter
@@ -126,6 +129,16 @@ class AnnouncementRepository
             $query->where('condition', $filters['condition']);
         }
 
+        // Sizes filter
+        if (!empty($filters['sizes'])) {
+            $sizes = is_array($filters['sizes']) ? $filters['sizes'] : explode(',', $filters['sizes']);
+            $query->where(function (Builder $q) use ($sizes) {
+                foreach ($sizes as $size) {
+                    $q->orWhereJsonContains('sizes', $size);
+                }
+            });
+        }
+
         // Price filters
         if (!empty($filters['min_price'])) {
             $query->where('price', '>=', $filters['min_price']);
@@ -133,7 +146,7 @@ class AnnouncementRepository
         if (!empty($filters['max_price'])) {
             $query->where('price', '<=', $filters['max_price']);
         }
-        if (!empty($filters['free_only']) && $filters['free_only'] === true) {
+        if (!empty($filters['free_only']) && ($filters['free_only'] === true || $filters['free_only'] === '1' || $filters['free_only'] === 1)) {
             $query->where('listing_mode', 'donate');
         }
 
