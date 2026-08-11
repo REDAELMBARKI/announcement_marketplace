@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Iansui&family=Indie+Flower&display=swap");
+@import "tailwindcss";
 
 :root {
   font-family: "Iansui", cursive;

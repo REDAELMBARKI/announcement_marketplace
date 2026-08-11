@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Leaf, Heart, Store, ChatCircleText, SignOut, User, List, CaretDown } from "@phosphor-icons/react";
+import { Leaf, Heart, ChatCircleText, SignOut, User, List, CaretDown, X } from "@phosphor-icons/react";
 import { useTheme } from "../../context/ThemeContext";
 import api from "../../services/api";
 import route from "../../utils/route";
@@ -24,6 +24,7 @@ function Header() {
   const displayName = user?.name || user?.user_name || "";
   const displayEmail = user?.email || user?.user_email || "";
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,7 +54,7 @@ function Header() {
   }, []);
 
   useEffect(()=> {
-      console.log('user' , user)
+      setMobileMenuOpen(false);
   },[user])
 
   // Close dropdown when clicking outside
@@ -66,6 +67,22 @@ function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const closeMenuOnResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", closeMenuOnResize);
+    return () => window.removeEventListener("resize", closeMenuOnResize);
+  }, []);
+
+  const handleNavClick = () => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  };
 
   const handleLogout = async () => {
     try {
@@ -103,22 +120,55 @@ function Header() {
 
   return (
     <header className="header" style={{ backgroundColor: colors.bgSecondary }}>
-      <div className="top_navbar" style={{ borderBottom: `1px solid ${colors.border}` }}>
-        <div className="brand">
-          <Link to="/" className="brand_logo" style={{ color: colors.textPrimary }}>
+      <div className="top_navbar !flex !flex-wrap !gap-3 sm:!gap-5 md:!flex-nowrap" style={{ borderBottom: `1px solid ${colors.border}` }}>
+        <div className="brand min-w-0 flex-1 md:flex-none">
+          <Link to="/" className="brand_logo !text-2xl sm:!text-3xl" style={{ color: colors.textPrimary }}>
             Donate&Sell<Leaf size={24} weight="BoldDuotone" style={{ marginLeft: '8px', color: colors.primary }} />
           </Link>
         </div>
 
-        <nav className="main_links" aria-label="Main navigation">
-          <Link to="/" style={{ color: colors.textSecondary }}>Home</Link>
-          <Link to="/announcements" style={{ color: colors.textSecondary }}>Marketplace</Link>
-          <Link to="/our_partners" style={{ color: colors.textSecondary }}>Our Partners</Link>
-          <Link to="/faq" style={{ color: colors.textSecondary }}>FAQ</Link>
-          <Link to="/faq_chatbot" style={{ color: colors.textSecondary }}>FAQ Chatbot</Link>
+        <button
+          type="button"
+          className="mobile_menu_toggle !inline-flex md:!hidden"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="main-navigation"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          style={{
+            color: colors.textPrimary,
+            borderColor: colors.border,
+            backgroundColor: colors.bgTertiary,
+          }}
+        >
+          {mobileMenuOpen ? <X size={22} weight="bold" /> : <List size={22} weight="bold" />}
+        </button>
+
+        <nav
+          id="main-navigation"
+          className={`main_links ${mobileMenuOpen ? "mobile-menu-open" : ""} md:!flex md:!flex-row`}
+          aria-label="Main navigation"
+        >
+          <Link to="/" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Home</Link>
+          <Link to="/announcements" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Marketplace</Link>
+          <Link to="/our_partners" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Our Partners</Link>
+          <Link to="/faq" onClick={handleNavClick} style={{ color: colors.textSecondary }}>FAQ</Link>
+          <Link to="/faq_chatbot" onClick={handleNavClick} style={{ color: colors.textSecondary }}>FAQ Chatbot</Link>
+          {!user && (
+            <>
+              <Link to="/login" className="mobile-auth-link" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Log In</Link>
+              <Link
+                to="/sign_up"
+                className="mobile-auth-link mobile-auth-link--primary"
+                onClick={handleNavClick}
+                style={{ color: "white", backgroundColor: colors.primary }}
+              >
+                Join Us
+              </Link>
+            </>
+          )}
         </nav>
 
-        <div className="nav_actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="nav_actions !ml-auto" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {user ? (
             <>
               <Link 
@@ -140,7 +190,7 @@ function Header() {
               {/* Avatar Dropdown */}
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -223,7 +273,7 @@ function Header() {
 
                     <Link
                       to="/favorites"
-                      onClick={() => setDropdownOpen(false)}
+                      onClick={handleNavClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -243,7 +293,7 @@ function Header() {
 
                     <Link
                       to="/my-listings"
-                      onClick={() => setDropdownOpen(false)}
+                      onClick={handleNavClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -263,7 +313,7 @@ function Header() {
 
                     <Link
                       to="/chat"
-                      onClick={() => setDropdownOpen(false)}
+                      onClick={handleNavClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -283,7 +333,7 @@ function Header() {
 
                     <Link
                       to="/profile"
-                      onClick={() => setDropdownOpen(false)}
+                      onClick={handleNavClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -333,7 +383,8 @@ function Header() {
             <>
               <Link 
                 to="/login" 
-                className="login_btn"
+                className="login_btn desktop-auth-action"
+                onClick={handleNavClick}
                 style={{
                   padding: '10px 20px',
                   color: colors.textPrimary,
@@ -346,6 +397,8 @@ function Header() {
               </Link>
               <Link 
                 to="/sign_up" 
+                className="desktop-auth-action"
+                onClick={handleNavClick}
                 style={{
                   padding: '10px 20px',
                   backgroundColor: colors.primary,

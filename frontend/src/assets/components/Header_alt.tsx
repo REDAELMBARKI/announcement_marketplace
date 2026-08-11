@@ -24,14 +24,14 @@ export default function Header_alt({ size = "large" }) {
 
   return (
     <header className={headerClass}>
-      <div className="navbar">
+      <div className="navbar !px-4 !py-4 sm:!px-6 md:!px-10">
         <div className="logo">
-          <h1 style={{ display: 'flex', alignItems: 'center' }}>
-            <a>Announcements Marketplace</a> <Leaf size={28} weight="BoldDuotone" style={{ marginLeft: '8px' }} />
+          <h1 className="!flex !items-center !gap-2 !text-3xl sm:!text-5xl" style={{ display: 'flex', alignItems: 'center' }}>
+            <a>Announcements Marketplace</a> <Leaf size={28} weight="BoldDuotone" style={{ marginLeft: '0' }} />
           </h1>
-          <div className="header_content">
-            <h2>Sell or donate — connect by phone</h2>
-            <h3>
+          <div className="header_content !max-w-4xl">
+            <h2 className="!text-xl sm:!text-2xl">Sell or donate — connect by phone</h2>
+            <h3 className="!text-sm sm:!text-base">
               Announcements Marketplace helps you list anything you want to sell or give away. Interested people call you
               directly so you can agree pickup, price, or handover in minutes.
             </h3>

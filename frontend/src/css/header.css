@@ -43,20 +43,29 @@ a:visited {
 }
 
 .main_links {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
+}
+
+.main_links.mobile-menu-open {
+  display: flex;
 }
 
 .main_links a {
   color: #374151;
   font-size: 15px;
   font-weight: 500;
+  padding: 8px 0;
 }
 
 .main_links a:hover {
   color: #111827;
+}
+
+.mobile-auth-link {
+  display: none;
 }
 
 .nav_actions {
@@ -164,28 +173,104 @@ h1 {
 
 @media (max-width: 768px) {
   .header {
-    padding: 12px;
+    padding: 10px 12px;
   }
 
   .top_navbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    position: relative;
+    padding-bottom: 10px;
   }
 
   .main_links {
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    right: 0;
+    z-index: 10;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 10px 14px 14px;
+    border: 1px solid #e5e7eb;
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: var(--bgSecondary, #ffffff);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  }
+
+  .main_links a {
     width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 6px;
+    padding: 11px 4px;
+    border-bottom: 1px solid rgba(229, 231, 235, 0.7);
+  }
+
+  .main_links a:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-auth-link {
+    display: block;
+    margin-top: 4px;
+    padding: 11px 12px !important;
+    border-bottom: 0 !important;
+    border-radius: 8px;
+  }
+
+  .mobile-auth-link--primary {
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .mobile_menu_toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border: 1px solid;
+    border-radius: 10px;
+    cursor: pointer;
   }
 
   .nav_actions {
-    justify-content: flex-start;
+    gap: 8px !important;
+  }
+
+  .nav_actions .post_btn,
+  .nav_actions .desktop-auth-action {
+    padding: 9px 11px !important;
+    font-size: 13px !important;
+  }
+
+  .nav_actions .post_btn {
+    display: none;
+  }
+
+  .nav_actions .desktop-auth-action {
+    display: none;
   }
 
   .search_row {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (min-width: 769px) {
+  .main_links {
+    display: flex;
+  }
+
+  .mobile_menu_toggle {
+    display: none;
+  }
+
+  .header .top_navbar {
+    flex-wrap: nowrap;
+  }
+
+  .header-small .navbar {
+    padding-inline: clamp(1rem, 4vw, 3rem);
   }
 }

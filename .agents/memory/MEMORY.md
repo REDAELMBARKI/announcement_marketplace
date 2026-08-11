@@ -1,0 +1,1 @@
+- [Nested frontend packages](nested-frontend-packages.md) — install web dependencies within the frontend package boundary, not from the repository root.
