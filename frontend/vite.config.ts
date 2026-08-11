@@ -5,6 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // Replit previews use a proxied *.replit.dev hostname.
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://localhost:8000",
