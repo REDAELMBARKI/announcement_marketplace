@@ -148,6 +148,10 @@ function Header() {
           className={`main_links ${mobileMenuOpen ? "mobile-menu-open" : ""} md:!flex md:!flex-row`}
           aria-label="Main navigation"
         >
+          <Link to="/" className="mobile-menu-brand" onClick={handleNavClick} style={{ color: colors.textPrimary }}>
+            <span>Announcements Marketplace</span>
+            <Leaf size={20} weight="BoldDuotone" style={{ color: colors.primary }} />
+          </Link>
           <Link to="/" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Home</Link>
           <Link to="/announcements" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Marketplace</Link>
           <Link to="/our_partners" onClick={handleNavClick} style={{ color: colors.textSecondary }}>Our Partners</Link>

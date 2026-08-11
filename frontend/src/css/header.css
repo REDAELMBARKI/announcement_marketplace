@@ -274,3 +274,90 @@ h1 {
     padding-inline: clamp(1rem, 4vw, 3rem);
   }
 }
+
+/* Compact, intentional mobile header: actions sit on the left, while the
+   full brand lives inside the opened navigation instead of consuming width. */
+.mobile-menu-brand {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 9px 14px;
+  }
+
+  .header .top_navbar {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px !important;
+    padding: 0 0 9px;
+  }
+
+  .header .brand {
+    display: none;
+  }
+
+  .header .mobile_menu_toggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .header .nav_actions {
+    grid-column: 1;
+    grid-row: 1;
+    margin-left: 0 !important;
+  }
+
+  .header .nav_actions > div {
+    margin: 0;
+  }
+
+  .header .nav_actions > div > button {
+    padding: 4px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .header .nav_actions > div > button > span {
+    display: none;
+  }
+
+  .header .nav_actions > div > button > svg {
+    display: none;
+  }
+
+  .header .nav_actions > div > button > img,
+  .header .nav_actions > div > button > div {
+    width: 36px !important;
+    height: 36px !important;
+    flex: 0 0 36px;
+  }
+
+  .header .nav_actions > div > div {
+    left: 0;
+    right: auto;
+  }
+
+  .header .main_links {
+    top: calc(100% - 1px);
+    border: 1px solid var(--border, #e5e7eb);
+    border-top: 0;
+  }
+
+  .header .mobile-menu-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 4px 14px;
+    margin-bottom: 3px;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .header .main_links:not(.mobile-menu-open) {
+    display: none !important;
+  }
+}

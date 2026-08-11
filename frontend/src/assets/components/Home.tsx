@@ -109,6 +109,27 @@ interface HomepageData {
   banners: Banner[];
 }
 
+const fallbackHomepageData: HomepageData = {
+  stats: { total_products: 0, total_users: 0, total_donations: 0 },
+  featured_categories: [],
+  popular_products: [],
+  new_arrivals: [],
+  products_by_category: {},
+  recent_reviews: [],
+  nearby_products: [],
+  free_items: [],
+  hero_sliders: [{
+    id: 0,
+    headline: "Good things deserve a second life.",
+    subline: "Donate what you no longer need, discover affordable finds, and keep more value in your community.",
+    cta1_text: "Browse marketplace",
+    cta1_link: "/announcements",
+    cta2_text: "Donate an item",
+    cta2_link: "/add_announcement",
+  }],
+  banners: [],
+};
+
 function Home() {
   const { colors } = useTheme();
   const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
@@ -148,7 +169,11 @@ function Home() {
           console.error('Response data:', err.response.data);
           console.error('Response status:', err.response.status);
         }
-        setError(`Failed to load data: ${err.message}. Check console for details.`);
+        // Keep the home experience useful while the optional Laravel API is
+        // unavailable. Marketplace sections simply render when data arrives.
+        setHomepageData(fallbackHomepageData);
+        setActiveCategoryTab(null);
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -239,24 +264,6 @@ function Home() {
     return <Box size={size} />;
   };
 
-  // Countdown timer
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 3, hours: 0, minutes: 0, seconds: 0 });
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        const totalSeconds = prev.days * 86400 + prev.hours * 3600 + prev.minutes * 60 + prev.seconds - 1;
-        if (totalSeconds <= 0) { clearInterval(timer); return { days: 0, hours: 0, minutes: 0, seconds: 0 }; }
-        return {
-          days: Math.floor(totalSeconds / 86400),
-          hours: Math.floor((totalSeconds % 86400) / 3600),
-          minutes: Math.floor((totalSeconds % 3600) / 60),
-          seconds: totalSeconds % 60
-        };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const popularProducts = useMemo<Product[]>(() => 
     homepageData?.popular_products || [], 
     [homepageData?.popular_products]
@@ -320,29 +327,36 @@ function Home() {
       {/* Sticky Season Banner */}
       <div className="sticky-season-wrap">
         <div className="season-pill-banner" style={{ backgroundColor: colors.bgSecondary }}>
-          <span className="badge">Limited</span>
-          <p>Summer Drive: {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')} remaining</p>
-          <Link to="/donate" style={{ color: colors.coral }}>Join Now <ArrowRight size={14} /></Link>
+          <span className="badge">Community drive</span>
+          <p>Pass on useful things. Support local families.</p>
+          <Link to="/add_announcement" style={{ color: colors.coral }}>Take part <ArrowRight size={14} /></Link>
         </div>
       </div>
 
       {/* Hero Slider */}
       <section className="hero-slider">
         <div className="slides-container">
-          {homepageData?.hero_sliders?.map((slide, index) => (
+          {(homepageData?.hero_sliders?.length ? homepageData.hero_sliders : fallbackHomepageData.hero_sliders).map((slide, index) => (
             <div 
               key={slide.id} 
               className={`slide ${index === activeSlide ? 'active' : ''}`}
             >
-              <img src={getImageUrl(slide.thumbnail) || ''} alt={slide.headline} className="slide-image" />
+              {slide.thumbnail && <img src={getImageUrl(slide.thumbnail) || ''} alt="" className="slide-image" />}
               <div className="slide-scrim"></div>
-              <div className="slide-content">
+              <div className="slide-content editorial-hero-content">
+                <span className="hero-kicker"><Heart size={15} fill="currentColor" /> The local circular marketplace</span>
                 <h1 className="editorial-title">{slide.headline}</h1>
                 <p className="slide-subline">{slide.subline}</p>
                 <div className="slide-actions">
-                  {slide.cta1_text && <Link to={slide.cta1_link} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1_text}</Link>}
-                  {slide.cta2_text && <Link to={slide.cta2_link} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2_text}</Link>}
+                  {slide.cta1_text && <Link to={slide.cta1_link || "/announcements"} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1_text} <ArrowRight size={17} /></Link>}
+                  {slide.cta2_text && <Link to={slide.cta2_link || "/add_announcement"} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2_text}</Link>}
                 </div>
+              </div>
+              <div className="hero-impact-card">
+                <span className="hero-impact-label">Impact starts small</span>
+                <strong>List. Share. Reuse.</strong>
+                <p>Every item kept in circulation is one less item wasted.</p>
+                <div className="hero-impact-rule"><span></span><span></span><span></span></div>
               </div>
             </div>
           ))}
@@ -350,7 +364,7 @@ function Home() {
         
         <div className="slider-nav">
           <div className="slider-dots">
-            {homepageData?.hero_sliders?.map((_, i) => (
+            {(homepageData?.hero_sliders?.length ? homepageData.hero_sliders : fallbackHomepageData.hero_sliders).map((_, i) => (
               <button 
                 key={i} 
                 className={`dot ${i === activeSlide ? 'active' : ''}`} 
@@ -365,25 +379,56 @@ function Home() {
         </div>
       </section>
 
+      <section className="purpose-section tt-container">
+        <div className="purpose-heading">
+          <span className="eyebrow">A better way to pass things on</span>
+          <h2 className="editorial-title">From your home to a home that needs it.</h2>
+          <p>Sell useful items, donate generously, and make local connections without the clutter.</p>
+        </div>
+        <div className="purpose-grid">
+          <article className="purpose-card purpose-card--mint">
+            <div className="purpose-icon"><Gift size={25} /></div>
+            <span className="purpose-number">01</span>
+            <h3>Give with purpose</h3>
+            <p>Turn things you no longer use into practical support for people and charities nearby.</p>
+            <Link to="/add_announcement">Start donating <ArrowRight size={16} /></Link>
+          </article>
+          <article className="purpose-card purpose-card--peach">
+            <div className="purpose-icon"><Store size={25} /></div>
+            <span className="purpose-number">02</span>
+            <h3>Find more for less</h3>
+            <p>Discover pre-loved clothes, furniture, toys, and everyday essentials from your community.</p>
+            <Link to="/announcements">Explore listings <ArrowRight size={16} /></Link>
+          </article>
+          <article className="purpose-card purpose-card--blue">
+            <div className="purpose-icon"><MapPin size={25} /></div>
+            <span className="purpose-number">03</span>
+            <h3>Keep it close</h3>
+            <p>Make simple, local exchanges that save time, reduce waste, and build trust.</p>
+            <Link to="/our_partners">Meet our partners <ArrowRight size={16} /></Link>
+          </article>
+        </div>
+      </section>
+
       {/* Stats Band */}
       <div className="stats-band" style={{ backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}` }}>
         <div className="stats-container">
-          <div className="stat-item">
-            <Box size={24} iconContext={{ color: colors.coral }} />
+              <div className="stat-item">
+            <Box size={24} color={colors.coral} />
             <div>
               <strong>{homepageData?.stats?.total_products?.toLocaleString() || 0}</strong>
               <span>Items Listed</span>
             </div>
           </div>
           <div className="stat-item">
-            <UsersGroupRounded size={24} iconContext={{ color: colors.coral }} />
+            <UsersGroupRounded size={24} color={colors.coral} />
             <div>
               <strong>{homepageData?.stats?.total_users?.toLocaleString() || 0}</strong>
               <span>Active Parents</span>
             </div>
           </div>
           <div className="stat-item">
-            <Heart size={24} iconContext={{ color: colors.coral }} />
+            <Heart size={24} color={colors.coral} />
             <div>
               <strong>{homepageData?.stats?.total_donations?.toLocaleString() || 0}</strong>
               <span>Donations</span>
@@ -674,8 +719,8 @@ function Home() {
         <div className="tt-container">
           <div className="newsletter-box" style={{ backgroundColor: colors.primary, color: colors.bgPrimary }}>
             <div className="newsletter-content">
-              <h2 className="editorial-title" style={{ color: colors.bgPrimary }}>Join the TinyTrove Newsletter</h2>
-              <p>Get weekly curated treasures and impact reports delivered to your inbox.</p>
+              <h2 className="editorial-title" style={{ color: colors.bgPrimary }}>Stay close to what matters</h2>
+              <p>Get thoughtful updates, local finds, and stories of impact in your inbox.</p>
               <form className="newsletter-form">
                 <div className="input-with-icon">
                   <Mail size={18} />
@@ -696,33 +741,33 @@ function Home() {
         <div className="tt-container">
           <div className="footer-grid">
             <div className="footer-brand">
-              <h3 className="editorial-title">TinyTrove</h3>
-              <p>The marketplace for pre-loved kids' gear. Build a sustainable future for the next generation.</p>
+               <h3 className="editorial-title">Announcements Marketplace</h3>
+               <p>A local place to sell, donate, and discover useful things while supporting a more circular community.</p>
             </div>
             <div className="footer-links">
               <h4>Explore</h4>
-              <Link to="/marketplace">Marketplace</Link>
-              <Link to="/donate">Donations</Link>
-              <Link to="/categories">Categories</Link>
+               <Link to="/announcements">Marketplace</Link>
+               <Link to="/add_announcement">Donations</Link>
+               <Link to="/announcements">Categories</Link>
             </div>
             <div className="footer-links">
               <h4>Support</h4>
               <Link to="/faq">Help Center</Link>
-              <Link to="/how-it-works">How it Works</Link>
-              <Link to="/safety">Safety</Link>
+               <Link to="/faq">How it Works</Link>
+               <Link to="/faq">Safety</Link>
             </div>
             <div className="footer-links">
               <h4>Connect</h4>
-              <Link to="/about">About Us</Link>
-              <Link to="/partners">Charity Partners</Link>
-              <Link to="/contact">Contact</Link>
+               <Link to="/our_partners">About Us</Link>
+               <Link to="/our_partners">Charity Partners</Link>
+               <Link to="/faq">Contact</Link>
             </div>
           </div>
           <div className="footer-bottom" style={{ borderTop: `1px solid ${colors.border}` }}>
-            <p>&copy; 2026 TinyTrove UK. All rights reserved.</p>
+             <p>&copy; 2026 Announcements Marketplace. All rights reserved.</p>
             <div className="footer-legal">
-              <Link to="/terms">Terms</Link>
-              <Link to="/privacy">Privacy</Link>
+               <Link to="/terms_conditions">Terms</Link>
+               <Link to="/privacy_policy">Privacy</Link>
             </div>
           </div>
         </div>
