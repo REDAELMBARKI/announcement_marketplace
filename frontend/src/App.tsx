@@ -9,13 +9,16 @@ import { BrowserRouter as Router } from "react-router-dom";
 
 import Layout from "./Layout";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LoadingProvider } from "./context/LoadingContext";
 // Main application component that sets up routing and layout
 export default function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <Layout />
-      </Router>
+      <LoadingProvider>
+        <Router>
+          <Layout />
+        </Router>
+      </LoadingProvider>
     </ThemeProvider>
   );
 }

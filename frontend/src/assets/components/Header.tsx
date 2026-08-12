@@ -49,11 +49,44 @@ function Header({ transparentOnHero = false }: HeaderProps) {
 
   useEffect(() => {
     const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-      if (storedUser && token) {
-        setUser(JSON.parse(storedUser));
-      } else {
+      try {
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+
+        if (!storedUser || !token) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('role_name');
+          localStorage.removeItem('claims');
+          localStorage.removeItem('admin');
+          setUser(null);
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed && parsed.id) {
+            setUser(parsed);
+          } else {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('role_name');
+            localStorage.removeItem('claims');
+            localStorage.removeItem('admin');
+            setUser(null);
+          }
+        } catch {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('role_name');
+          localStorage.removeItem('claims');
+          localStorage.removeItem('admin');
+          setUser(null);
+        }
+      } catch {
         setUser(null);
       }
     };

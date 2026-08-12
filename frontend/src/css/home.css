@@ -441,6 +441,18 @@ section {
   .scroll-btn.right { right: 10px; }
 }
 
+/* Hide section card navigation controls on tablets AND mobile */
+@media (max-width: 992px) {
+  .row-nav {
+    display: none !important;
+  }
+
+  .scroll-btn.left,
+  .scroll-btn.right {
+    display: none !important;
+  }
+}
+
 /* View More Card */
 .view-more-card {
   flex: 0 0 180px;

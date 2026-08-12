@@ -1,0 +1,416 @@
+/* ===========================================================
+   LoadingScreen – reusable full-page + inline spinner styles
+   Pure CSS @keyframes, no animation library required.
+   =========================================================== */
+
+/* ---------- Fade-in / fade-out helpers ---------- */
+.ls-fade {
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ls-fade.ls-out {
+  opacity: 0;
+  transform: scale(1.01);
+}
+.ls-fade.ls-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ---------- Full-page takeover ---------- */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: var(--bgPrimary, #FAF6F1);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.loading-bg-blob {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.loading-blob-a {
+  background: radial-gradient(circle, #F2B8C4 0%, rgba(242, 184, 196, 0) 70%);
+  top: -10%;
+  left: -10%;
+  animation: blobA 4.2s ease-in-out infinite alternate;
+}
+
+.loading-blob-b {
+  background: radial-gradient(circle, #B8D3E4 0%, rgba(184, 211, 228, 0) 70%);
+  bottom: -14%;
+  right: -12%;
+  animation: blobB 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes blobA {
+  0%   { transform: translate(-6%, -10%) scale(0.7); opacity: 0.1; }
+  50%  { transform: translate(0%, 4%) scale(1); opacity: 0.55; }
+  100% { transform: translate(-4%, -8%) scale(0.92); opacity: 0.45; }
+}
+
+@keyframes blobB {
+  0%   { transform: translate(8%, 12%) scale(0.75); opacity: 0.1; }
+  50%  { transform: translate(0%, -4%) scale(1); opacity: 0.5; }
+  100% { transform: translate(4%, 8%) scale(0.95); opacity: 0.4; }
+}
+
+.loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px;
+  max-width: 520px;
+  width: 100%;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: innerRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+}
+
+@keyframes innerRise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Orbit stage ---------- */
+.loading-orbit-stage {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: grid;
+  place-items: center;
+  color: var(--primary, #C45E7A);
+}
+
+.loading-orbit-ring {
+  position: absolute;
+  inset: 0;
+  animation: orbitSpin 9s linear infinite;
+}
+
+@keyframes orbitSpin {
+  to { transform: rotate(360deg); }
+}
+
+.orbit-path {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(196, 94, 122, 0.3);
+}
+
+.orbit-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  transform-origin: 0 0;
+}
+
+.orbit-card-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(46, 32, 24, 0.16),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  position: relative;
+  animation: cardBob 3.4s ease-in-out infinite;
+}
+
+.orbit-card--b .orbit-card-inner { animation-delay: -1.1s; }
+.orbit-card--c .orbit-card-inner { animation-delay: -2.2s; }
+
+@keyframes cardBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+.orbit-card--a { transform: rotate(0deg) translate(108px, -28px) rotate(8deg); }
+.orbit-card--donate {
+  background: linear-gradient(135deg, #F4DED3 0%, #EFC4B0 100%);
+}
+.orbit-card--donate::after {
+  content: "♡";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  color: #C45E7A;
+  animation: heartPulse 1.8s ease-in-out infinite;
+}
+
+.orbit-card--b { transform: rotate(120deg) translate(108px, -28px) rotate(-10deg); }
+.orbit-card--home {
+  background: linear-gradient(135deg, #DCE9DE 0%, #BFD8C3 100%);
+}
+.orbit-card--home::after {
+  content: "⌂";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: #3f6b46;
+}
+
+.orbit-card--c { transform: rotate(240deg) translate(108px, -28px) rotate(6deg); }
+.orbit-card--community {
+  background: linear-gradient(135deg, #D9E4EC 0%, #B9CFDF 100%);
+}
+.orbit-card--community::after {
+  content: "◎";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  color: #3b5f7c;
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.18); opacity: 0.85; }
+}
+
+/* ---------- Center brand mark ---------- */
+.loading-center-brand {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(196, 94, 122, 0.18),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: grid;
+  place-items: center;
+  color: var(--primary, #C45E7A);
+  animation: brandPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes brandPulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.9; }
+  50%      { transform: scale(1.02); opacity: 1; }
+}
+
+/* Logo SVG path "draw" then subtle breathing */
+.loading-logo-path {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: drawPath 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards,
+             pathGlow 3s ease-in-out 1.4s infinite;
+}
+
+@keyframes drawPath {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pathGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(196, 94, 122, 0)); }
+  50%      { filter: drop-shadow(0 0 6px rgba(196, 94, 122, 0.4)); }
+}
+
+.loading-logo-dot {
+  opacity: 0;
+  transform: scale(0.3);
+  animation: dotPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+             dotFloat 3s ease-in-out 1.5s infinite;
+}
+.loading-logo-dot.dot-a { animation-delay: 0.65s, 1.5s; }
+.loading-logo-dot.dot-b { animation-delay: 0.8s, 1.65s; }
+.loading-logo-dot.dot-c { animation-delay: 0.95s, 1.8s; }
+
+@keyframes dotPop {
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes dotFloat {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.15) translateY(-1px); }
+}
+
+/* ---------- Brand wordmark ---------- */
+.loading-wordmark {
+  font-family: var(--font-official, 'Inter', system-ui, sans-serif);
+  font-size: clamp(1.6rem, 2.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--textPrimary, #2E2018);
+  margin: 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: wordmarkRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+}
+
+@keyframes wordmarkRise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Tagline shimmer letter by letter ---------- */
+.loading-tagline {
+  font-family: var(--font-official, 'Inter', system-ui, sans-serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--textSecondary, #7A6558);
+  margin: 0;
+  text-align: center;
+  min-height: 1.4em;
+  opacity: 0;
+  animation: taglineFadeIn 0.4s ease 0.75s forwards;
+}
+
+@keyframes taglineFadeIn {
+  to { opacity: 1; }
+}
+
+.tagline-char {
+  display: inline-block;
+  opacity: 0.25;
+  animation: charShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes charShimmer {
+  0%   { opacity: 0.25; transform: translateY(0); }
+  45%  { opacity: 1;    transform: translateY(-1px); }
+  100% { opacity: 0.25; transform: translateY(0); }
+}
+
+/* ---------- Progress shimmer ---------- */
+.loading-progress-wrap {
+  width: min(280px, 72%);
+  margin-top: 6px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: progressRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.95s forwards;
+}
+@keyframes progressRise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.loading-progress-track {
+  position: relative;
+  height: 4px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(46, 32, 24, 0.08);
+  overflow: hidden;
+}
+
+.loading-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--primary, #C45E7A) 40%,
+    #8FB8D5 100%);
+  filter: drop-shadow(0 0 8px rgba(196, 94, 122, 0.35));
+  animation: progressSlide 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes progressSlide {
+  0%   { transform: translateX(-100%); }
+  45%  { transform: translateX(-8%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ---------- Minimal inline spinner variant ---------- */
+.loading-spinner-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  color: var(--primary, #C45E7A);
+}
+
+.loading-spinner-ring {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+
+.loading-spinner-dash {
+  stroke-dasharray: 110 200;
+  stroke-dashoffset: 0;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  animation:
+    spinDash 1.6s ease-in-out infinite,
+    spinRing 1.6s linear infinite;
+}
+
+@keyframes spinRing {
+  to   { transform: rotate(630deg); }
+}
+@keyframes spinDash {
+  0%   { stroke-dasharray: 1 200; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 140 200; stroke-dashoffset: -30; }
+  100% { stroke-dasharray: 1 200; stroke-dashoffset: -150; }
+}
+
+.loading-spinner-label {
+  font-family: var(--font-official, 'Inter', system-ui, sans-serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--textSecondary, #7A6558);
+}
+
+/* ---------- A11y ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- Mobile polish ---------- */
+@media (max-width: 640px) {
+  .loading-orbit-stage {
+    width: 200px;
+    height: 200px;
+  }
+  .orbit-card {
+    width: 44px;
+    height: 44px;
+  }
+  .orbit-card-inner {
+    border-radius: 12px;
+  }
+  .orbit-card--a { transform: rotate(0deg) translate(90px, -22px) rotate(8deg); }
+  .orbit-card--b { transform: rotate(120deg) translate(90px, -22px) rotate(-10deg); }
+  .orbit-card--c { transform: rotate(240deg) translate(90px, -22px) rotate(6deg); }
+
+  .loading-center-brand {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+  }
+  .loading-center-brand svg {
+    width: 42px;
+    height: 42px;
+  }
+  .loading-inner {
+    gap: 22px;
+  }
+}
