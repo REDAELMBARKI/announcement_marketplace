@@ -1,5 +1,8 @@
 import "../../css/faq.css";
 import React, { Suspense } from "react";
+
+const APP_NAME = import.meta.env.VITE_APP_NAME || "Let's be us";
+
 function FAQ() {
   const FAQChatBot = React.lazy(() => import("./FAQChatBot"));
 
@@ -13,20 +16,20 @@ function FAQ() {
         </Suspense>
 
         <div className="cont">
-          <h4>What is Announcements Marketplace?</h4>
+          <h4>What is {APP_NAME}?</h4>
           <p>
-            Announcements Marketplace is a platform where users can buy, sell, or donate items. 
-            Whether you're looking to find great deals, sell unwanted items, or give away things 
+            {APP_NAME} is a platform where users can buy, sell, or donate items.
+            Whether you're looking to find great deals, sell unwanted items, or give away things
             to those in need, our marketplace connects you with local buyers and sellers.
           </p>
         </div>
 
         <div className="cont">
-          <h4>What makes Announcements Marketplace Different? </h4>
+          <h4>What makes {APP_NAME} Different? </h4>
 
           <ul>
             <li>
-              •Focus on sustainability: unlike standard charities , Announcements Marketplace
+              •Focus on sustainability: unlike standard charities , {APP_NAME}
               prioritises environmentally conscious donation practices.
             </li>
             <li>

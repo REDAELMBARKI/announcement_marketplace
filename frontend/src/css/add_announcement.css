@@ -1,11 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-
 .announcement-page {
   min-height: 100vh;
   background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
   color: var(--textPrimary);
   padding: 28px;
-  font-family: "Inter", "Segoe UI", sans-serif;
+  font-family: var(--font-official);
 }
 
 .announcement-shell {
@@ -543,7 +541,7 @@
 /* Modern visual overrides */
 .announcement-page {
   background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
-  font-family: "Inter", "Segoe UI", sans-serif;
+  font-family: var(--font-official);
   padding: 28px;
 }
 

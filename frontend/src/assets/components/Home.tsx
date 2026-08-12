@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { 
-  Eye, 
   ChevronLeft, 
   ChevronRight, 
   ArrowRight,
-  TrendingUp,
-  Zap,
   Star,
   ShieldCheck,
   Mail,
   Palette,
+  Recycle,
+  Leaf,
+  Users,
 } from "lucide-react";
 import {
   Shop as Store,
@@ -37,11 +37,6 @@ interface User {
   id: number;
   name: string;
   avatar?: string;
-}
-
-interface Address {
-  city: string;
-  district?: string;
 }
 
 interface Category {
@@ -130,6 +125,12 @@ const fallbackHomepageData: HomepageData = {
   banners: [],
 };
 
+const APP_NAME = import.meta.env.VITE_APP_NAME || "Let's be us";
+const APP_TAGLINE = import.meta.env.VITE_APP_TAGLINE || "The marketplace to pass on your best things";
+const APP_HERO_PILL = import.meta.env.VITE_APP_HERO_PILL || "Ranked #1 local circular marketplace";
+const APP_COPYRIGHT = import.meta.env.VITE_APP_COPYRIGHT || APP_NAME;
+const APP_FOOTER_BLURB = import.meta.env.VITE_APP_FOOTER_BLURB || "A local place to sell, donate, and discover useful things while supporting a more circular community.";
+
 function Home() {
   const { colors } = useTheme();
   const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
@@ -204,6 +205,14 @@ function Home() {
     return () => clearInterval(timer);
   }, [activeSlide, homepageData?.hero_sliders]);
 
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   const scrollTrending = (direction: 'left' | 'right') => {
     const container = trendingScrollRef.current;
     if (!container) return;
@@ -247,7 +256,7 @@ function Home() {
   };
 
   const getCategoryColor = (categoryId: number) => {
-    const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', colors.error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
+    const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', (colors as any).error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
     return catColors[categoryId % catColors.length] || colors.primary;
   };
 
@@ -324,57 +333,92 @@ function Home() {
       '--shadow': colors.shadow || 'rgba(0,0,0,0.05)'
     } as React.CSSProperties}>
       
-      {/* Sticky Season Banner */}
-      <div className="sticky-season-wrap">
-        <div className="season-pill-banner" style={{ backgroundColor: colors.bgSecondary }}>
-          <span className="badge">Community drive</span>
-          <p>Pass on useful things. Support local families.</p>
-          <Link to="/add_announcement" style={{ color: colors.coral }}>Take part <ArrowRight size={14} /></Link>
+      {/* Magnific-Style Hero Section */}
+      <section className="hero-magnific">
+        <div className="hero-magnific-bg">
+          <img
+            src="/close-up-woman-front-clothing-pile.jpg"
+            alt="Hero background"
+            className="hero-magnific-image"
+          />
+          <div className="hero-magnific-scrim"></div>
         </div>
-      </div>
 
-      {/* Hero Slider */}
-      <section className="hero-slider">
-        <div className="slides-container">
-          {(homepageData?.hero_sliders?.length ? homepageData.hero_sliders : fallbackHomepageData.hero_sliders).map((slide, index) => (
-            <div 
-              key={slide.id} 
-              className={`slide ${index === activeSlide ? 'active' : ''}`}
-            >
-              {slide.thumbnail && <img src={getImageUrl(slide.thumbnail) || ''} alt="" className="slide-image" />}
-              <div className="slide-scrim"></div>
-              <div className="slide-content editorial-hero-content">
-                <span className="hero-kicker"><Heart size={15} fill="currentColor" /> The local circular marketplace</span>
-                <h1 className="editorial-title">{slide.headline}</h1>
-                <p className="slide-subline">{slide.subline}</p>
-                <div className="slide-actions">
-                  {slide.cta1_text && <Link to={slide.cta1_link || "/announcements"} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff' }}>{slide.cta1_text} <ArrowRight size={17} /></Link>}
-                  {slide.cta2_text && <Link to={slide.cta2_link || "/add_announcement"} className="btn-outline" style={{ borderColor: '#fff', color: '#fff' }}>{slide.cta2_text}</Link>}
-                </div>
-              </div>
-              <div className="hero-impact-card">
-                <span className="hero-impact-label">Impact starts small</span>
-                <strong>List. Share. Reuse.</strong>
-                <p>Every item kept in circulation is one less item wasted.</p>
-                <div className="hero-impact-rule"><span></span><span></span><span></span></div>
-              </div>
+        <div className="hero-magnific-container">
+          {/* Left content */}
+          <div className="hero-magnific-left">
+            <div className="hero-magnific-pill">
+              <span>{APP_HERO_PILL}</span>
+              <Link to="/our_partners" className="hero-magnific-pill-link">
+                Meet our partners
+                <ArrowRight size={16} />
+              </Link>
             </div>
-          ))}
-        </div>
-        
-        <div className="slider-nav">
-          <div className="slider-dots">
-            {(homepageData?.hero_sliders?.length ? homepageData.hero_sliders : fallbackHomepageData.hero_sliders).map((_, i) => (
-              <button 
-                key={i} 
-                className={`dot ${i === activeSlide ? 'active' : ''}`} 
-                onClick={() => { setActiveSlide(i); setSlideProgress(0); }}
-                style={{ backgroundColor: i === activeSlide ? colors.coral : 'rgba(255,255,255,0.5)' }}
-              />
-            ))}
+
+            <h1 className="hero-magnific-headline">
+              {APP_TAGLINE}
+            </h1>
+
+            <p className="hero-magnific-subline">
+              Every listing, donation and exchange supports your community.
+              Intelligent filters, verified sellers, and charity partners built in —
+              for meaningful second lives at any scale.
+            </p>
+
+            <div className="hero-magnific-actions">
+              <Link
+                to="/announcements"
+                className="hero-magnific-btn hero-magnific-btn-primary"
+                style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
+              >
+                Browse marketplace
+              </Link>
+              <Link
+                to="/add_announcement"
+                className="hero-magnific-btn hero-magnific-btn-outline"
+              >
+                <span className="hero-magnific-play-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <polygon points="3,1 14,8 3,15" />
+                  </svg>
+                </span>
+                Start donating
+              </Link>
+            </div>
           </div>
-          <div className="slider-progress-bg">
-            <div className="slider-progress-bar" style={{ width: `${slideProgress}%`, backgroundColor: colors.coral }}></div>
+
+          {/* Right feature list */}
+          <div className="hero-magnific-right">
+            <ul className="hero-magnific-features">
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Donate clothes &amp; toys</span>
+              </li>
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Sell pre-loved furniture</span>
+              </li>
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Support local families</span>
+              </li>
+              <li className="hero-magnific-feature hero-magnific-feature-active">
+                <span className="hero-magnific-feature-arrow">
+                  <svg width="28" height="28" viewBox="0 0 28 28">
+                    <polygon points="6,4 24,14 6,24" fill="#ff4d8d" />
+                  </svg>
+                </span>
+                <span className="hero-magnific-feature-name hero-magnific-feature-highlight">
+                  Keep value in your community
+                </span>
+              </li>
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Fund verified charities</span>
+              </li>
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Track your impact</span>
+              </li>
+              <li className="hero-magnific-feature">
+                <span className="hero-magnific-feature-name faded">Ship or local pickup</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -382,25 +426,25 @@ function Home() {
       <section className="purpose-section tt-container">
         <div className="purpose-heading">
           <span className="eyebrow">A better way to pass things on</span>
-          <h2 className="editorial-title">From your home to a home that needs it.</h2>
+          <h2 className="editorial-title gradient-reveal">From your home to a home that needs it.</h2>
           <p>Sell useful items, donate generously, and make local connections without the clutter.</p>
         </div>
         <div className="purpose-grid">
-          <article className="purpose-card purpose-card--mint">
+          <article className="purpose-card purpose-card--mint gloweffect-light" onMouseMove={handleCardMouseMove}>
             <div className="purpose-icon"><Gift size={25} /></div>
             <span className="purpose-number">01</span>
             <h3>Give with purpose</h3>
             <p>Turn things you no longer use into practical support for people and charities nearby.</p>
             <Link to="/add_announcement">Start donating <ArrowRight size={16} /></Link>
           </article>
-          <article className="purpose-card purpose-card--peach">
+          <article className="purpose-card purpose-card--peach gloweffect-light" onMouseMove={handleCardMouseMove}>
             <div className="purpose-icon"><Store size={25} /></div>
             <span className="purpose-number">02</span>
             <h3>Find more for less</h3>
             <p>Discover pre-loved clothes, furniture, toys, and everyday essentials from your community.</p>
             <Link to="/announcements">Explore listings <ArrowRight size={16} /></Link>
           </article>
-          <article className="purpose-card purpose-card--blue">
+          <article className="purpose-card purpose-card--blue gloweffect-light" onMouseMove={handleCardMouseMove}>
             <div className="purpose-icon"><MapPin size={25} /></div>
             <span className="purpose-number">03</span>
             <h3>Keep it close</h3>
@@ -437,10 +481,52 @@ function Home() {
         </div>
       </div>
 
-      {/* Shop by Category Tabs */}
+      {/* Impact section with bg-attachment: fixed DIRECTLY on the section — full-width
+           on main page bg #F5EFE8, no wrapper capsules, content flows naturally */}
+      <section className="impact-parallax">
+        <div className="impact-parallax-inner">
+          <div className="impact-grid">
+            <div className="impact-copy">
+              <span className="eyebrow">Real community impact</span>
+              <h2 className="gradient-reveal">Every item passed on is a small win for everyone.</h2>
+              <p>
+                Together we've kept gently used things in circulation, supported local families,
+                and raised meaningful funds for verified charities — one donation at a time.
+              </p>
+              <Link to="/add_announcement" className="impact-cta">
+                Donate something today <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="impact-metrics">
+              <div className="metric-card metric-1 gloweffect-light" onMouseMove={handleCardMouseMove}>
+                <div className="metric-icon"><Heart size={22} fill="currentColor" /></div>
+                <span className="metric-value">{(homepageData?.stats?.total_donations || 0) + 1280}</span>
+                <span className="metric-label">Items donated &amp; re-loved</span>
+              </div>
+              <div className="metric-card metric-2 gloweffect-light" onMouseMove={handleCardMouseMove}>
+                <div className="metric-icon"><Recycle size={22} /></div>
+                <span className="metric-value">2.4t</span>
+                <span className="metric-label">CO₂e diverted from landfill</span>
+              </div>
+              <div className="metric-card metric-3 gloweffect-light" onMouseMove={handleCardMouseMove}>
+                <div className="metric-icon"><Users size={22} /></div>
+                <span className="metric-value">{(homepageData?.stats?.total_users || 0) + 340}</span>
+                <span className="metric-label">Families supported locally</span>
+              </div>
+              <div className="metric-card metric-4 gloweffect-light" onMouseMove={handleCardMouseMove}>
+                <div className="metric-icon"><Leaf size={22} /></div>
+                <span className="metric-value">82%</span>
+                <span className="metric-label">Of proceeds to charity partners</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Shop by Category Tabs — no encapsulation, sits on the same page bg */}
       <section className="shop-by-tabs-section tt-container">
         <div className="section-header-editorial">
-          <h2 className="editorial-title">Shop by Category</h2>
+          <h2 className="editorial-title gradient-reveal">Shop by Category</h2>
           <p>Find exactly what they need, sorted by category.</p>
         </div>
 
@@ -468,9 +554,13 @@ function Home() {
             >
               <div className="scroll-container no-scrollbar">
                 <button className="scroll-btn left" onClick={() => scrollCategory(cat.id, 'left')}><ChevronLeft size={20} /></button>
-                <div className="category-scroll-row" ref={el => categoryRefs.current[cat.id] = el}>
+                <div className="category-scroll-row" ref={el => { categoryRefs.current[cat.id] = el; }}>
                   {productsByCategory[cat.id]?.map((product) => (
-                    <div key={product.id} className="home-card-wrapper">
+                    <div 
+                      key={product.id} 
+                      className="home-card-wrapper gloweffect-light" 
+                      onMouseMove={handleCardMouseMove}
+                    >
                       <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                     </div>
                   ))}
@@ -491,12 +581,17 @@ function Home() {
       {/* Collections Grid */}
       <section className="collections-grid-section tt-container">
         <div className="section-header-editorial">
-          <h2 className="editorial-title">Browse Collections</h2>
+          <h2 className="editorial-title gradient-reveal">Browse Collections</h2>
           <p>Explore our curated selections for every stage.</p>
         </div>
         <div className="collections-grid-redesign">
           {homepageData?.featured_categories?.slice(0, 8).map((cat) => (
-            <Link key={cat.id} to={`/category/${cat.slug}`} className="collection-tile">
+            <Link 
+              key={cat.id} 
+              to={`/category/${cat.slug}`} 
+              className="collection-tile"
+              onMouseMove={handleCardMouseMove}
+            >
               <div className="tile-bg-wrap">
                 {cat.thumbnail?.url ? (
                   <img src={cat.thumbnail.url} alt={cat.name} className="tile-image" />
@@ -519,7 +614,7 @@ function Home() {
       <section className="trending-row-section tt-container">
         <div className="section-header-editorial with-nav">
           <div>
-            <h2 className="editorial-title">Trending Now</h2>
+            <h2 className="editorial-title gradient-reveal">Trending Now</h2>
             <p>The most loved items in our community this week.</p>
           </div>
           <div className="row-nav">
@@ -530,7 +625,11 @@ function Home() {
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={trendingScrollRef}>
             {popularProducts.map((product) => (
-              <div key={product.id} className="home-card-wrapper">
+              <div 
+                key={product.id} 
+                className="home-card-wrapper gloweffect-light" 
+                onMouseMove={handleCardMouseMove}
+              >
                 <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
               </div>
             ))}
@@ -538,69 +637,11 @@ function Home() {
         </div>
       </section>
 
-      {/* Dynamic Banners Section */}
-      {homepageData?.banners?.map((banner) => (
-        <section key={banner.id} className={`banner-section ${banner.type}-banner`} style={{ backgroundColor: colors.bgTertiary, padding: '60px 0' }}>
-          <div className="tt-container">
-            {banner.type === 'split' ? (
-              <div className="editorial-split">
-                <div className="split-image">
-                  {banner.thumbnail && <img src={getImageUrl(banner.thumbnail) || ''} alt={banner.title} />}
-                  {banner.badge_text && <div className="floating-badge" style={{ backgroundColor: colors.coral }}>{banner.badge_text}</div>}
-                </div>
-                <div className="split-content">
-                  <h2 className="editorial-title">{banner.title}</h2>
-                  {banner.subtitle && <p className="banner-subtitle">{banner.subtitle}</p>}
-                  {banner.steps && (
-                    <div className="steps-list">
-                      {banner.steps.map((step, idx) => (
-                        <div key={idx} className="step-item">
-                          <span className="step-num">{step.num}</span>
-                          <div>
-                            <h4>{step.title}</h4>
-                            <p>{step.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {banner.cta_text && (
-                    <Link to={banner.cta_link || '#'} className="btn-text">
-                      {banner.cta_text} <ArrowRight size={16} />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="simple-banner-content" style={{ textAlign: 'center' }}>
-                <div className="simple-banner-inner" style={{ 
-                  backgroundImage: banner.thumbnail ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${getImageUrl(banner.thumbnail)})` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  padding: '80px 40px',
-                  borderRadius: '24px',
-                  color: '#fff'
-                }}>
-                  {banner.badge_text && <span className="banner-badge" style={{ backgroundColor: colors.coral, padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px', display: 'inline-block' }}>{banner.badge_text}</span>}
-                  <h2 className="editorial-title" style={{ color: '#fff', marginBottom: '16px' }}>{banner.title}</h2>
-                  {banner.subtitle && <p style={{ fontSize: '18px', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>{banner.subtitle}</p>}
-                  {banner.cta_text && (
-                    <Link to={banner.cta_link || '#'} className="btn-primary" style={{ backgroundColor: colors.coral, color: '#fff', padding: '12px 32px', borderRadius: '12px', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
-                      {banner.cta_text}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      ))}
-
       {/* New Arrivals */}
       <section className="trending-row-section tt-container">
         <div className="section-header-editorial with-nav">
           <div>
-            <h2 className="editorial-title">New Arrivals</h2>
+            <h2 className="editorial-title gradient-reveal">New Arrivals</h2>
             <p>Fresh finds uploaded by parents just now.</p>
           </div>
           <div className="row-nav">
@@ -611,7 +652,11 @@ function Home() {
         <div className="scroll-container no-scrollbar">
           <div className="trending-scroll-row" ref={marketScrollRef}>
             {newArrivals.map((product) => (
-              <div key={product.id} className="home-card-wrapper">
+              <div 
+                key={product.id} 
+                className="home-card-wrapper gloweffect-light" 
+                onMouseMove={handleCardMouseMove}
+              >
                 <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
               </div>
             ))}
@@ -624,7 +669,7 @@ function Home() {
         <section className="trending-row-section tt-container">
           <div className="section-header-editorial with-nav">
             <div>
-              <h2 className="editorial-title">Nearby Treasures</h2>
+              <h2 className="editorial-title gradient-reveal">Nearby Treasures</h2>
               <p>Find great deals from parents in your city.</p>
             </div>
             <div className="row-nav">
@@ -635,7 +680,11 @@ function Home() {
           <div className="scroll-container no-scrollbar">
             <div className="trending-scroll-row" ref={nearbyScrollRef}>
               {nearbyProducts.map((product) => (
-                <div key={product.id} className="home-card-wrapper">
+                <div 
+                  key={product.id} 
+                  className="home-card-wrapper gloweffect-light" 
+                  onMouseMove={handleCardMouseMove}
+                >
                   <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
@@ -649,7 +698,7 @@ function Home() {
         <section className="trending-row-section tt-container">
           <div className="section-header-editorial with-nav">
             <div>
-              <h2 className="editorial-title">Free for All</h2>
+              <h2 className="editorial-title gradient-reveal">Free for All</h2>
               <p>Generous donations looking for a new home.</p>
             </div>
             <div className="row-nav">
@@ -660,7 +709,11 @@ function Home() {
           <div className="scroll-container no-scrollbar">
             <div className="trending-scroll-row" ref={freeScrollRef}>
               {freeItems.map((product) => (
-                <div key={product.id} className="home-card-wrapper">
+                <div 
+                  key={product.id} 
+                  className="home-card-wrapper gloweffect-light" 
+                  onMouseMove={handleCardMouseMove}
+                >
                   <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
@@ -692,15 +745,151 @@ function Home() {
         </div>
       </section>
 
+      {/* Second parallax moment – bg-fixed directly on the section, full width,
+           no wrapper capsules, sits on page flow */}
+      <section className="second-parallax">
+        <div className="second-parallax-card gloweffect-light" onMouseMove={handleCardMouseMove}>
+          <span className="eyebrow">How it all works</span>
+          <h3 className="gradient-reveal">
+            Snap a photo → Share locally → Someone's day gets better.
+          </h3>
+          <p>
+            It really is that simple. Upload your gently used items in under a minute,
+            and we'll match them with a local parent or verified charity partner nearby.
+          </p>
+        </div>
+      </section>
+
+      {/* ============ BENTO GRID – inserted BELOW "How TinyTrove Works" (second-parallax) ============ */}
+      <section className="bento-section">
+        <div className="bento-hero-row">
+          <div>
+            <h2>
+              Every wardrobe, home and community.<br />On one marketplace.
+            </h2>
+            <p>From a single donation to a complete circular lifestyle, at your own pace.</p>
+          </div>
+          <Link to="/add_announcement" className="bento-cta-btn">
+            Start creating <ArrowRight size={18} />
+          </Link>
+        </div>
+
+        <div className="bento-grid">
+
+          {/* CELL A – top-left text block */}
+          <article className="bento-cell bento-a" onMouseMove={handleCardMouseMove}>
+            <span className="bento-eyebrow">Give &amp; Sell</span>
+            <h3 className="bento-title">Every category, ready to go.</h3>
+            <p className="bento-sub">
+              Clothes, toys, furniture, books, baby gear — every day essentials.
+              No setup. Open what you need, list what you don't.
+            </p>
+          </article>
+
+          {/* CELL B – top-right merged 2-col dark canvas block */}
+          <article className="bento-cell bento-b" onMouseMove={handleCardMouseMove}>
+            <span className="bento-eyebrow" style={{ color: '#FF8FA8' }}>Your community canvas</span>
+            <h3 className="bento-title">
+              Your entire donation journey<br />on one connected board.
+            </h3>
+            <p className="bento-sub" style={{ maxWidth: 480 }}>
+              All your listings. All your favourite causes. One board. Branch ideas, compare versions,
+              work with your group — all in the same community.
+            </p>
+            <div className="bento-canvas">
+              <div className="canvas-flow">
+                <svg className="canvas-bezier" viewBox="0 0 800 400" preserveAspectRatio="none" fill="none">
+                  <path d="M 340 80 C 500 80, 560 120, 620 200 C 660 250, 580 260, 520 300 C 480 328, 360 310, 240 280 C 140 256, 60 300, 40 360"
+                        stroke="url(#g1)" strokeWidth="6" strokeLinecap="round" />
+                  <path d="M 620 200 C 640 210, 660 220, 680 240"
+                        stroke="url(#g2)" strokeWidth="6" strokeLinecap="round" />
+                  <defs>
+                    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="0">
+                      <stop offset="0%" stopColor="#7C8CFF" />
+                      <stop offset="60%" stopColor="#FF6FB1" />
+                      <stop offset="100%" stopColor="#59BFA4" />
+                    </linearGradient>
+                    <linearGradient id="g2" x1="0" x2="1" y1="0" y2="0">
+                      <stop offset="0%" stopColor="#7C8CFF" />
+                      <stop offset="100%" stopColor="#59BFA4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                <div className="canvas-photo cp-a">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=neatly%20folded%20children%20clothes%20on%20wooden%20table%20pastel%20jerseys%20onesies%20soft%20natural%20light%20cozy%20premium&image_size=square" alt="" />
+                </div>
+                <div className="canvas-photo cp-b">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=young%20child%20playing%20with%20colorful%20wooden%20toys%20soft%20morning%20light%20cozy%20nursery%20warm%20tones&image_size=square" alt="" />
+                </div>
+                <div className="canvas-photo cp-c">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=happy%20family%20unboxing%20second%20hand%20kids%20furniture%20bookshelf%20assembly%20sunny%20living%20room%20warm%20tones&image_size=square" alt="" />
+                </div>
+
+                <span className="canvas-node na">+</span>
+                <span className="canvas-node nb">+</span>
+                <span className="canvas-node nc">+</span>
+
+                <span className="canvas-label la">Paplio</span>
+                <span className="canvas-label lb">Marina</span>
+                <span className="canvas-label lc">GreenStitch</span>
+              </div>
+            </div>
+          </article>
+
+          {/* CELL C – bottom-left tabs + thumbs */}
+          <article className="bento-cell bento-c" onMouseMove={handleCardMouseMove}>
+            <span className="bento-eyebrow">Fresh picks</span>
+            <div className="bento-tabs">
+              <button className="bento-tab active" type="button">ALL</button>
+              <button className="bento-tab" type="button">CLOTHES</button>
+              <button className="bento-tab" type="button">TOYS</button>
+              <button className="bento-tab" type="button">HOME</button>
+            </div>
+            <div className="bento-thumbs">
+              <div className="bento-thumb">
+                <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=vibrant%20marbled%20textile%20art%20paint%20pour%20abstract%20pink%20blue%20swirls%20close%20up%20detail&image_size=square_hd" alt="" />
+                <span className="bento-thumb-fav">♥</span>
+              </div>
+              <div className="bento-thumb">
+                <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=stylish%20kids%20fashion%20portrait%20colorful%20hoodie%20studio%20lighting%20warm&image_size=square_hd" alt="" />
+                <span className="bento-thumb-fav">♡</span>
+              </div>
+            </div>
+          </article>
+
+          {/* CELL D – bottom-mid team block */}
+          <article className="bento-cell bento-d" onMouseMove={handleCardMouseMove}>
+            <span className="bento-eyebrow" style={{ color: '#FFB89A' }}>Your charity hub</span>
+            <h3 className="bento-title">One place.<br />Whole community.</h3>
+            <p className="bento-sub" style={{ opacity: .8 }}>
+              Organize donations, track impact and raise funds with Projects.
+              Your team works together, your impact stays together.
+            </p>
+          </article>
+
+          {/* CELL E – bottom-right workflow block */}
+          <article className="bento-cell bento-e" onMouseMove={handleCardMouseMove}>
+            <span className="bento-eyebrow" style={{ color: '#8FD0E8' }}>Smart workflows</span>
+            <h3 className="bento-title">Impact in<br />one click.</h3>
+            <p className="bento-sub" style={{ opacity: .8 }}>
+              Save any recurring give-back as a one-tap App.
+              The next donor runs it in one click.
+            </p>
+          </article>
+
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section className="testimonials-redesign tt-container">
         <div className="section-header-editorial centered">
-          <h2 className="editorial-title">Trust Reviews</h2>
+          <h2 className="editorial-title gradient-reveal">Trust Reviews</h2>
           <p>Join thousands of families making a difference.</p>
         </div>
         <div className="testimonials-grid-redesign">
           {homepageData?.recent_reviews?.slice(0, 3).map((review) => (
-            <div key={review.id} className="testimonial-editorial-card" style={{ backgroundColor: colors.bgSecondary }}>
+            <div key={review.id} className="testimonial-editorial-card testimonial-glass-card gloweffect-light" onMouseMove={handleCardMouseMove}>
               <div className="rating-stars">
                 {[...Array(review.rating || 5)].map((_, i) => <Star key={i} size={14} fill={colors.coral} color={colors.coral} />)}
               </div>
@@ -741,8 +930,8 @@ function Home() {
         <div className="tt-container">
           <div className="footer-grid">
             <div className="footer-brand">
-               <h3 className="editorial-title">Announcements Marketplace</h3>
-               <p>A local place to sell, donate, and discover useful things while supporting a more circular community.</p>
+               <h3 className="editorial-title">{APP_NAME}</h3>
+               <p>{APP_FOOTER_BLURB}</p>
             </div>
             <div className="footer-links">
               <h4>Explore</h4>
@@ -764,7 +953,7 @@ function Home() {
             </div>
           </div>
           <div className="footer-bottom" style={{ borderTop: `1px solid ${colors.border}` }}>
-             <p>&copy; 2026 Announcements Marketplace. All rights reserved.</p>
+             <p>&copy; 2026 {APP_COPYRIGHT}. All rights reserved.</p>
             <div className="footer-legal">
                <Link to="/terms_conditions">Terms</Link>
                <Link to="/privacy_policy">Privacy</Link>

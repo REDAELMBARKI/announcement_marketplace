@@ -5,7 +5,10 @@ import DonateImg2 from "./images/Donate2.png";
 import DonateImg3 from "./images/Donate3.png";
 import DonateImg4 from "./images/Donate4.png";
 import "./css/home.css";
-// This is the home page component for the Announcements Marketplace website
+
+const APP_NAME = import.meta.env.VITE_APP_NAME || "Let's be us";
+
+// This is the home page component for the website
 export function Home() {
   const comment = [
     "I had so many clothes I never wore — this made it easy to donate them!",
@@ -206,7 +209,7 @@ export function Home() {
             <p>Check out our FAQs:</p>
             <ul>
               <li>
-                <Link to="/FAQ">What makes Announcements Marketplace different?</Link>
+                <Link to="/FAQ">What makes {APP_NAME} different?</Link>
               </li>
               <li>
                 <Link to="/FAQ">What can I donate?</Link>

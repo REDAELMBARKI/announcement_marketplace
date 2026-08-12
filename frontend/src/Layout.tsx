@@ -167,11 +167,13 @@ export default function Layout() {
     console.log("Current path:", path);
   }, [path]);
 
+  const isHomePage = path === "/" || path === "";
+
   return (
     <>
       {/* Header */}
       {!hideHeaderFooter &&
-        (useAltHeader ? <Header_alt size="small" /> : <Header />)}
+        (useAltHeader ? <Header_alt size="small" /> : <Header transparentOnHero={isHomePage} />)}
 
       {/* Suspense wrapper for lazy-loaded routes */}
       <Suspense fallback={<div>Loading...</div>}>

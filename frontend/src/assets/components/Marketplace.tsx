@@ -232,8 +232,8 @@ const Marketplace: React.FC = () => {
     <div className="marketplace-page" style={{ 
       display: 'flex', 
       backgroundColor: colors.bgPrimary, 
-      minHeight: '100vh', 
-      fontFamily: "'Poppins', sans-serif" 
+      minHeight: '100vh',
+      fontFamily: 'var(--font-official)'
     }}>
       {/* --- Sidebar with Selects from initData --- */}
       <Sidebar 

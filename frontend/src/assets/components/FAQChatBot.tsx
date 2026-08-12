@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import "../../css/faq.css";
 
+const APP_NAME = import.meta.env.VITE_APP_NAME || "Let's be us";
+
 export default function FAQChatBot() {
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hello I'm Chati! Ask me anything about Announcements Marketplace",
+      text: `Hello I'm Chati! Ask me anything about ${APP_NAME}`,
     },
   ]);
 
