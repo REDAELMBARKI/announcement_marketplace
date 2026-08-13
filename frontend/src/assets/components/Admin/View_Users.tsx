@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
 import api from "../../../services/api";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export function View_Users() {
   const [users, setUsers] = useState([]);
@@ -171,7 +172,9 @@ export function View_Users() {
       <div className="table-container">
         <div className="profile-form button">
           {loading ? (
-            <p>Loading users...</p>
+            <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+              <LoadingScreen isLoading={true} variant="spinner" label="Loading users..." />
+            </div>
           ) : (
             <table className="table">
               <thead>

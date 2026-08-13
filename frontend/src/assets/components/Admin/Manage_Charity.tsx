@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import api from "../../../services/api";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export function Manage_Charity() {
   const [charities, setCharities] = useState([]);
@@ -128,7 +129,9 @@ export function Manage_Charity() {
       <div className="table-container">
         <div className="profile-form button">
           {loading ? (
-            <p>Loading charities...</p>
+            <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+              <LoadingScreen isLoading={true} variant="spinner" label="Loading charities..." />
+            </div>
           ) : (
             <table className="table">
               <thead>

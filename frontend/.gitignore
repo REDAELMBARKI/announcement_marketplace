@@ -14,6 +14,7 @@ dist-ssr
 .env
 # Caches & test output (can get large)
 .vite
+.vite-cache
 coverage
 .eslintcache
 *.tsbuildinfo

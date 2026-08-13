@@ -4,6 +4,7 @@ import api from "../../../services/api";
 import route from "../../../utils/route";
 import "../../../css/user.css";
 import MyImpactView from "../../../views/MyImpactView";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 type ProductRow = Record<string, unknown>;
 
@@ -93,7 +94,7 @@ export default function User_Dashboard() {
   };
 
   if (!user) {
-    return <p>Loading dashboard...</p>;
+    return <LoadingScreen isLoading={true} variant="wave" label="Loading dashboard..." />;
   }
 
   return (
@@ -147,7 +148,7 @@ export default function User_Dashboard() {
               arrange pickup or delivery.
             </p>
             {loadingFoundations ? (
-              <p>Loading partner foundations…</p>
+              <LoadingScreen isLoading={true} variant="wave" label="Loading partner foundations…" />
             ) : (
               <p>
                 {foundations.length} verified foundations you can support when you donate.

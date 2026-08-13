@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../../../services/api";
 import route from "../../../utils/route";
 import "../../../css/records.css";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 type Thumbnail = {
   url?: string | null;
@@ -146,7 +147,11 @@ export default function My_Donations() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8}>Loading donations...</td>
+                <td colSpan={8} style={{padding:'60px 0'}}>
+                  <div style={{display:'grid', placeItems:'center'}}>
+                    <LoadingScreen isLoading={true} variant="spinner" label="Loading donations..." />
+                  </div>
+                </td>
               </tr>
             ) : filtered.length > 0 ? (
               filtered.map((d) => {

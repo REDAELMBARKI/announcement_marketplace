@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle, ChevronRight, Clock } from 'lucide-react';
 import { Box as Package } from '@solar-icons/react';
 import { useTheme } from "../../context/ThemeContext";
+import LoadingScreen from "../../components/Loading/LoadingScreen";
 
 interface Conversation {
   id: number;
@@ -87,10 +88,12 @@ const ConversationsList: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px', color: colors.textSecondary }}>
-        <MessageCircle size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
-        <p>Loading conversations...</p>
-      </div>
+      <LoadingScreen
+        isLoading={true}
+        variant="wave"
+        label={import.meta.env.VITE_APP_NAME || "Let's be us"}
+        hint="Loading your conversations..."
+      />
     );
   }
 

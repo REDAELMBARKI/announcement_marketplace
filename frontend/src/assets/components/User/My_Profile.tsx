@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import route from "../../../utils/route";
 import "../../../css/records.css";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export default function My_Profile() {
   const navigate = useNavigate();
@@ -144,7 +145,14 @@ export default function My_Profile() {
     setTimeout(() => setStatus(null), 5000);
   };
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) return (
+    <LoadingScreen
+      isLoading={true}
+      variant="wave"
+      label={import.meta.env.VITE_APP_NAME || "Let's be us"}
+      hint="Loading your profile..."
+    />
+  );
 
   return (
     <main className="dashboard-main">

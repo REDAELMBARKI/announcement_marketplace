@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Send, ChevronRight, Check, CheckCheck, MessageCircle, Clock, Search } from 'lucide-react';
 import { Box as Package, Shop as Store } from '@solar-icons/react';
 import { useTheme } from "../../context/ThemeContext";
+import LoadingScreen from "../../components/Loading/LoadingScreen";
 
 interface Message {
   id: number;
@@ -245,7 +246,9 @@ const ChatPage: React.FC = () => {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
           {conversationsLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: colors.textMuted }}>Loading...</div>
+            <div style={{ display: 'grid', placeItems: 'center', padding: '40px' }}>
+              <LoadingScreen isLoading={true} variant="spinner" label="Loading conversations..." />
+            </div>
           ) : conversations.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: colors.textMuted }}>
               <MessageCircle size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
@@ -360,7 +363,7 @@ const ChatPage: React.FC = () => {
           </div>
         ) : messagesLoading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ color: colors.textMuted }}>Loading messages...</p>
+            <LoadingScreen isLoading={true} variant="spinner" label="Loading messages..." />
           </div>
         ) : (
           <>

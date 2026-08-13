@@ -15,6 +15,7 @@ import {
 import "../../../css/records.css";
 import { Product, ApiResponse } from "./announcement/types";
 import { useTheme } from "../../../context/ThemeContext";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 const My_Announcements: React.FC = () => {
   const { colors } = useTheme();
@@ -139,7 +140,7 @@ const My_Announcements: React.FC = () => {
 
       <div className="table-container" style={{ backgroundColor: colors.bgSecondary, borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: colors.textSecondary }}>Loading your announcements...</div>
+          <LoadingScreen isLoading={true} variant="spinner" label="Loading your announcements..." />
         ) : filteredProducts.length > 0 ? (
           <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

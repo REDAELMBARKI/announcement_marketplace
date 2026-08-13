@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Chart } from "chart.js/auto";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 import "../../../css/charity.css";
 
 function getChartTextColor() {
@@ -181,7 +182,7 @@ export function Charity_Dashboard() {
           </p>
 
           {loading ? (
-            <p>Loading dashboard...</p>
+            <LoadingScreen isLoading={true} variant="wave" label="Let's be us" hint="Loading dashboard..." />
           ) : (
             <>
               <div className="stats-container">

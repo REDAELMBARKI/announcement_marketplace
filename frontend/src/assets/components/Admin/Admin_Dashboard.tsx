@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import "../../../css/admin.css";
 import api from "../../../services/api";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 type TrendPoint = { label: string; count: number };
 type StatsResponse = {
@@ -270,7 +271,9 @@ export function Admin_Dashboard() {
             <h3>Donation Trends</h3>
             <div className="chart-box">
               {loading ? (
-                <p>Loading chart...</p>
+                <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                  <LoadingScreen isLoading={true} variant="spinner" label="Loading chart..." />
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats?.donation_trends ?? []}>
@@ -323,7 +326,9 @@ export function Admin_Dashboard() {
             <div className="donut-layout">
               <div className="donut-box">
                 {loading ? (
-                  <p>Loading chart...</p>
+                  <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                    <LoadingScreen isLoading={true} variant="spinner" label="Loading chart..." />
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -366,7 +371,9 @@ export function Admin_Dashboard() {
             <div className="donut-layout">
               <div className="donut-box">
                 {loading ? (
-                  <p>Loading chart...</p>
+                  <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                    <LoadingScreen isLoading={true} variant="spinner" label="Loading chart..." />
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -406,9 +413,9 @@ export function Admin_Dashboard() {
             <h3>Announcement Funnel</h3>
             <div className="funnel-wrap">
               {loading
-                ? Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={idx} className="funnel-skeleton">Loading...</div>
-                  ))
+                ? <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                    <LoadingScreen isLoading={true} variant="spinner" label="Loading data..." />
+                  </div>
                 : funnelStages.map((stage) => (
                     <div key={stage.label}>
                       <div className="funnel-row-head">
@@ -436,7 +443,9 @@ export function Admin_Dashboard() {
             <h3>Top Categorie</h3>
             <div className="chart-box">
               {loading ? (
-                <p>Loading chart...</p>
+                <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                  <LoadingScreen isLoading={true} variant="spinner" label="Loading chart..." />
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={categories} layout="vertical" margin={{ left: 24 }}>
@@ -484,9 +493,9 @@ export function Admin_Dashboard() {
           <h3>Pending Moderation Queue</h3>
           <div className="pending-list">
             {loading ? (
-              Array.from({ length: 5 }).map((_, idx) => (
-                <div key={idx} className="pending-item">Loading...</div>
-              ))
+              <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+                <LoadingScreen isLoading={true} variant="spinner" label="Loading moderation queue..." />
+              </div>
             ) : (pendingModeration?.items?.length ?? 0) === 0 ? (
               <p>No announcements pending moderation.</p>
             ) : (

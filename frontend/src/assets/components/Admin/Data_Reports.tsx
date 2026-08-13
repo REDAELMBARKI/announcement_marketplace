@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "../../../css/data_reports.css";
 import Papa from "papaparse";
 import api from "../../../services/api";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export function Data_Reports() {
   const [reportsData, setReportsData] = useState({
@@ -171,7 +172,9 @@ export function Data_Reports() {
       </div>
 
       {loading ? (
-        <p>Loading data...</p>
+        <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+          <LoadingScreen isLoading={true} variant="spinner" label="Loading data..." />
+        </div>
       ) : (
         <div className="table-container">
           <table className="table">

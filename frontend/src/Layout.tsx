@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import React, { useEffect, Suspense, lazy } from "react";
 import axios from "axios";
+import LoadingScreen from "./components/Loading/LoadingScreen";
 
 // Headers & Footer
 import Header from "./assets/components/Header.tsx";
@@ -176,7 +177,7 @@ export default function Layout() {
         (useAltHeader ? <Header_alt size="small" /> : <Header transparentOnHero={isHomePage} />)}
 
       {/* Suspense wrapper for lazy-loaded routes */}
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingScreen isLoading={true} variant="wave" label={import.meta.env.VITE_APP_NAME || "Let's be us"} hint={import.meta.env.VITE_APP_TAGLINE || "Pass on your best things"} />}>
         <Routes>
           {/* Main pages */}
           <Route path="/" element={<Home />} />

@@ -32,6 +32,7 @@ import { Product } from "./User/announcement/types";
 import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
+import LoadingScreen from "../../components/Loading/LoadingScreen";
 
 interface User {
   id: number;
@@ -299,12 +300,12 @@ function Home() {
 
   if (loading) {
     return (
-      <main className="home loading-state" style={{ backgroundColor: colors.bgPrimary }}>
-        <div className="loading-content">
-          <div className="pulse-logo">TT</div>
-          <p style={{ color: colors.textSecondary }}>Preparing treasures...</p>
-        </div>
-      </main>
+      <LoadingScreen
+        isLoading={true}
+        variant="wave"
+        label={import.meta.env.VITE_APP_NAME || "Let's be us"}
+        hint={import.meta.env.VITE_APP_TAGLINE || "Pass on your best things"}
+      />
     );
   }
 

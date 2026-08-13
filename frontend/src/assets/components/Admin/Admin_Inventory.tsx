@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
 import api from "../../../services/api";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export function Admin_Inventory() {
   const [inventory, setInventory] = useState([]);
@@ -158,7 +159,9 @@ export function Admin_Inventory() {
       {/* TABLE */}
       <div className="table-container">
         {loading ? (
-          <p>Loading inventory...</p>
+          <div style={{ display: 'grid', placeItems: 'center', padding: '40px 0' }}>
+            <LoadingScreen isLoading={true} variant="spinner" label="Loading inventory..." />
+          </div>
         ) : (
           <table className="table">
             <thead>

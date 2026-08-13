@@ -11,7 +11,7 @@ function FAQ() {
       <div className="faq">
         <h3>Frequently Asked Questions</h3>
 
-        <Suspense fallback={<div>Loading Chat...</div>}>
+        <Suspense fallback={<LoadingScreen isLoading={true} variant="spinner" label="Loading chat..." />}>
           <FAQChatBot />
         </Suspense>
 

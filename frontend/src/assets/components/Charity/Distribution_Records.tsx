@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 import "../../../css/records.css";
 
 export default function Charity_Distribution_Records() {
@@ -82,7 +83,9 @@ export default function Charity_Distribution_Records() {
 
       <div className="table-container">
         {loading ? (
-          <p>Loading inventory...</p>
+          <div style={{ display: 'grid', placeItems: 'center', padding: '60px 0' }}>
+            <LoadingScreen isLoading={true} variant="spinner" label="Loading inventory..." />
+          </div>
         ) : items.length === 0 ? (
           <p>No items found.</p>
         ) : (

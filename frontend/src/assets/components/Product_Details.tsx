@@ -17,6 +17,7 @@ import {
 import { Product, ApiResponse } from "./User/announcement/types";
 import { useTheme } from "../../context/ThemeContext";
 import OfferModal from "./OfferModal";
+import LoadingScreen from "../../components/Loading/LoadingScreen";
 // Use global api service or dynamic baseURL
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
@@ -158,7 +159,14 @@ const Product_Details: React.FC = () => {
     fetchProduct();
   }, [announcementSlug]);
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}>Loading product details...</div>;
+  if (loading) return (
+    <LoadingScreen
+      isLoading={true}
+      variant="wave"
+      label={import.meta.env.VITE_APP_NAME || "Let's be us"}
+      hint="Loading product details..."
+    />
+  );
   if (!product) return <div style={{ textAlign: 'center', padding: '100px' }}>Product not found.</div>;
 
   const gallery = product.gallery || [];

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 import "../../../css/records.css";
 import "../../../css/modal.css";
 
@@ -179,7 +180,11 @@ export default function Approve_Donations() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="10">Loading donations...</td>
+                  <td colSpan="10" style={{ padding: '60px 0' }}>
+                    <div style={{ display: 'grid', placeItems: 'center' }}>
+                      <LoadingScreen isLoading={true} variant="spinner" label="Loading donations..." />
+                    </div>
+                  </td>
                 </tr>
               ) : filteredDonations.length === 0 ? (
                 <tr>

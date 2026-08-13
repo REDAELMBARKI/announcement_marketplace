@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 import "../../../css/records.css";
 import "../../../css/modal.css";
 
@@ -98,7 +99,9 @@ export function View_Inventory() {
 
       <div className="table-container">
         {loading ? (
-          <p>Loading inventory...</p>
+          <div style={{ display: 'grid', placeItems: 'center', padding: '60px 0' }}>
+            <LoadingScreen isLoading={true} variant="spinner" label="Loading inventory..." />
+          </div>
         ) : (
           <table className="table">
             <thead>

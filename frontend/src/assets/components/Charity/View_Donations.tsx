@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../../css/records.css";
 import "../../../css/modal.css";
+import LoadingScreen from "../../../components/Loading/LoadingScreen";
 
 export function Charity_Donations() {
   const [donations, setDonations] = useState([]);
@@ -164,7 +165,11 @@ export function Charity_Donations() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8">Loading...</td>
+                <td colSpan="8" style={{ padding: '60px 0' }}>
+                  <div style={{ display: 'grid', placeItems: 'center' }}>
+                    <LoadingScreen isLoading={true} variant="spinner" label="Loading donations..." />
+                  </div>
+                </td>
               </tr>
             ) : filteredDonations.length > 0 ? (
               filteredDonations.map((d) => {
