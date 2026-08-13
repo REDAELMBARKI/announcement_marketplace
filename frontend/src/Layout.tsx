@@ -135,7 +135,6 @@ export default function Layout() {
      };
    }, []);
 
-  console.log("Current path:", location);
   // Paths without a header/footer
   const noHeaderFooterPaths = ["/login", "/sign_up"];
 
@@ -163,10 +162,6 @@ export default function Layout() {
 
   const hideHeaderFooter = noHeaderFooterPaths.includes(path);
   const useAltHeader = altHeaderPaths.includes(path);
-
-  useEffect(() => {
-    console.log("Current path:", path);
-  }, [path]);
 
   const isHomePage = path === "/" || path === "";
 

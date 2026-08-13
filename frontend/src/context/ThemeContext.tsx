@@ -13,7 +13,10 @@ export type ThemeColors = {
   borderDark: string;
   primary: string;
   primaryHover: string;
+  primaryContrast: string;
   success: string;
+  successHover: string;
+  successContrast: string;
   successLight: string;
   warning: string;
   danger: string;
@@ -35,6 +38,7 @@ export type ThemeColors = {
   accentLightGreen: string;
   coral: string;
   coralHover: string;
+  coralContrast: string;
   coralLight: string;
   darkNavy: string;
   sidebarBorder: string;
@@ -51,8 +55,13 @@ export type ThemeColors = {
   heroText: string;
   heroBorder: string;
   buttonPrimary: string;
+  buttonPrimaryHover: string;
+  buttonPrimaryContrast: string;
   buttonSecondary: string;
+  buttonSecondaryHover: string;
+  buttonSecondaryContrast: string;
   buttonBorder: string;
+  focusRing: string;
   filterActive: string;
   filterActiveText: string;
   seasonBg: string;
@@ -77,12 +86,20 @@ export type ThemeColors = {
   mapGradient1: string;
   mapGradient2: string;
   mapBorder: string;
-  // New colors
   surface: string;
   onSurface: string;
   onPrimary: string;
   onSecondary: string;
   shadow: string;
+  shadowSoft: string;
+  // Card hover pastel palette (per project conventions)
+  cardPastelPeach: string;
+  cardPastelMint: string;
+  cardPastelBlue: string;
+  cardPastelCream: string;
+  // Content image fallback
+  imageFallback1: string;
+  imageFallback2: string;
 };
 
 export type Theme = {
@@ -101,14 +118,23 @@ const lightTheme: Theme = {
     textLight: "#2E2018",
     border: "#D5C9BE",
     borderDark: "#C4B5A8",
+
+    // Primary = brand warm coral (the main color everywhere)
     primary: "#C45E7A",
     primaryHover: "#A84B65",
+    primaryContrast: "#FFFFFF",
+
+    // Success = verified charity / donate / free mode badge
     success: "#3F6B50",
-    successLight: "#5C8C6B",
+    successHover: "#2F5340",
+    successContrast: "#FFFFFF",
+    successLight: "#8BB89A",
+
     warning: "#D8986B",
     danger: "#C94040",
     infoBg: "#F4DAE2",
     infoText: "#7A2E44",
+
     iconPrimary: "#2E2018",
     iconSecondary: "#7A6558",
     iconMuted: "#BEB0A5",
@@ -125,10 +151,15 @@ const lightTheme: Theme = {
     accentGreen: "#3F6B50",
     accentMint: "#5C8C6B",
     accentLightGreen: "#8BB89A",
-    coral: "#5580A8",
-    coralHover: "#A84B65",
+
+    // CORRECTED: coral is now the actual warm pink/coral family,
+    // NOT the random blue (#5580A8) that was breaking every button/badge.
+    coral: "#E06B88",
+    coralHover: "#C94F6F",
+    coralContrast: "#FFFFFF",
     coralLight: "#F4DAE2",
-    darkNavy: "#3D2B24",
+
+    darkNavy: "#2B1F1A",
     sidebarBorder: "#D5C9BE",
     filterLabel: "#7A6558",
     filterBg: "#FDFAF7",
@@ -144,18 +175,28 @@ const lightTheme: Theme = {
     eyebrow: "#7A6558",
     heroText: "#2E2018",
     heroBorder: "rgba(196, 94, 122, 0.18)",
-    buttonPrimary: "#2E2018",
+
+    buttonPrimary: "#1E1410",            // Deep charcoal primary button (hero)
+    buttonPrimaryHover: "#3A2A23",
+    buttonPrimaryContrast: "#FFFFFF",
     buttonSecondary: "#FFFFFF",
+    buttonSecondaryHover: "#F5EFE8",
+    buttonSecondaryContrast: "#2E2018",
     buttonBorder: "#C45E7A",
+    focusRing: "rgba(224, 107, 136, 0.45)", // Visible focus (coral family)
+
     filterActive: "#C45E7A",
     filterActiveText: "#FFFFFF",
+
     seasonBg: "#F5E4D3",
     seasonText: "#8A5230",
     seasonBorder: "#D8986B",
     seasonIcon: "#D8986B",
     seasonButton: "#8A5230",
+
     progressBg: "#EDE5DB",
     progressFill: "#3F6B50",
+
     verifiedBg: "#E8F3EC",
     verifiedText: "#2A4F38",
 
@@ -163,6 +204,7 @@ const lightTheme: Theme = {
     blueBg: "#C8DAEA",
     pinkBg: "#F4DAE2",
     creamBg: "#F5E4D3",
+
     badgeBg: "#FFFFFF",
     badgeText: "#2E2018",
 
@@ -179,7 +221,18 @@ const lightTheme: Theme = {
     onSurface: "#2E2018",
     onPrimary: "#FFFFFF",
     onSecondary: "#2E2018",
-    shadow: "rgba(46, 32, 24, 0.1)",
+    shadow: "rgba(46, 32, 24, 0.08)",
+    shadowSoft: "rgba(46, 32, 24, 0.04)",
+
+    // Project convention: interactive card pastel palette (#F4DED3, #DCE9DE, #D9E4EC, #F5E4D3)
+    cardPastelPeach: "#F4DED3",
+    cardPastelMint: "#DCE9DE",
+    cardPastelBlue: "#D9E4EC",
+    cardPastelCream: "#F5E4D3",
+
+    // Content area image placeholder gradient
+    imageFallback1: "#F4DAE2",
+    imageFallback2: "#EDE5DB",
   },
 };
 const ThemeContext = createContext<Theme>(lightTheme);

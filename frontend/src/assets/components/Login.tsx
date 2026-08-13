@@ -19,7 +19,6 @@ export default function Login() {
       const res = await api.post(route('login').toString(), { email, password });
 
       const data = res.data;
-      console.log("Login response:", res.status, data);
       
 
 
@@ -28,10 +27,6 @@ export default function Login() {
         const token = data?.data?.token || data?.token || null;
         const user = data?.data?.user || data?.user;
 
-
-        // For Debug- log user object to verify role
-        console.log("Logged in user object:", user);
-        console.log("Token:", token);
 
         if (token) {
           localStorage.setItem("token", token);
@@ -54,7 +49,6 @@ export default function Login() {
         } else if (roleName === "donor") {
           navigate("/user_dashboard");
         } else {
-          console.log("Unknown role:", roleName);
           setError("Login failed: Unknown role assigned to account");
         }
       } else {

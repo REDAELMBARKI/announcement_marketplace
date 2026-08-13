@@ -54,7 +54,6 @@ const My_Announcements: React.FC = () => {
       .then((res) => {
         if (res.data.status === "success") {
           const productsArray = res.data.products?.data || res.data.products;
-          console.log(productsArray);
     
           setProducts(Array.isArray(productsArray) ? productsArray : []);
         }

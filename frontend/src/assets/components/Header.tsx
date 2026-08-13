@@ -5,6 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import api from "../../services/api";
 import route from "../../utils/route";
 import "../../css/header.css";
+import AppButton from "./Common/AppButton";
 
 interface UserData {
   id: number;
@@ -135,7 +136,9 @@ function Header({ transparentOnHero = false }: HeaderProps) {
         await api.post(route('logout').toString());
       }
     } catch (err) {
-      console.error("Logout error:", err);
+      if (import.meta.env.DEV) {
+        console.error("Logout error:", err);
+      }
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -224,8 +227,11 @@ function Header({ transparentOnHero = false }: HeaderProps) {
             />
           </div>
 
-          <button
+          <AppButton
             type="button"
+            variant="icon"
+            size="icon"
+            square
             className="mobile_menu_toggle magnific-mobile-toggle md:!hidden"
             aria-expanded={mobileMenuOpen}
             aria-controls="main-navigation"
@@ -238,7 +244,7 @@ function Header({ transparentOnHero = false }: HeaderProps) {
             }}
           >
             {mobileMenuOpen ? <X size={22} weight="bold" /> : <List size={22} weight="bold" />}
-          </button>
+          </AppButton>
 
           <nav
             id="main-navigation"
@@ -290,8 +296,12 @@ function Header({ transparentOnHero = false }: HeaderProps) {
                       border: `1px solid ${searchBorder}`,
                       borderRadius: '999px',
                       cursor: 'pointer',
+                      color: textColorLight,
                       transition: 'all 0.2s',
+                      outline: 'none',
                     }}
+                    onFocus={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 3px ${colors.focusRing}40`; }}
+                    onBlur={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
                   >
                     {user.avatar || user.avatar_url ? (
                       <img
@@ -321,7 +331,6 @@ function Header({ transparentOnHero = false }: HeaderProps) {
                       </div>
                     )}
                     <span style={{
-                      color: textColorLight,
                       fontSize: '14px',
                       fontWeight: '600',
                       maxWidth: '100px',
@@ -392,19 +401,21 @@ function Header({ transparentOnHero = false }: HeaderProps) {
                         <User size={20} color={colors.primary} /> Profile
                       </Link>
                       <div style={{ borderTop: `1px solid ${colors.border}` }}>
-                        <button
+                        <AppButton
+                          variant="ghost"
+                          size="md"
+                          fullWidth
+                          leftIcon={<SignOut size={20} />}
                           onClick={handleLogout}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
-                            width: '100%', border: 'none', backgroundColor: 'transparent',
-                            color: colors.error || '#dc2626', fontSize: '14px', cursor: 'pointer',
-                            transition: 'background-color 0.2s', textAlign: 'left',
+                            justifyContent: 'flex-start',
+                            color: colors.error || '#dc2626',
+                            textAlign: 'left',
+                            borderRadius: 0,
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bgTertiary)}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
-                          <SignOut size={20} /> Log Out
-                        </button>
+                          Log Out
+                        </AppButton>
                       </div>
                     </div>
                   )}

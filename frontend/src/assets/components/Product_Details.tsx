@@ -58,8 +58,6 @@ const Product_Details: React.FC = () => {
   // Modal states
   const [showOfferModal, setShowOfferModal] = useState(false);
 
-  console.log("Product_Details mounted, announcementSlug:", announcementSlug);
-
   const handleChatWithSeller = async () => {
     if (!product) return;
     
@@ -120,19 +118,14 @@ const Product_Details: React.FC = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      console.log("fetchProduct called, announcementSlug:", announcementSlug);
       if (!announcementSlug) {
-        console.log("No announcementSlug, returning");
         return;
       }
       
       try {
-        console.log("Making API call to:", `/api/announcements/${announcementSlug}`);
         const res = await axios.get(`/api/announcements/${announcementSlug}`, { timeout: 10000 });
-        console.log("API response received:", res.data);
         if (res.data.status === "success" && (res.data.product?.data || res.data.product)) {
           const productData = res.data.product?.data || res.data.product;
-          console.log("Setting product data:", productData);
           setProduct(productData);
           if (productData.thumbnail) {
             setActiveImage(getImageUrl(productData.thumbnail));
@@ -151,7 +144,6 @@ const Product_Details: React.FC = () => {
       } catch (err) {
         console.error("Fetch product error:", err);
       } finally {
-        console.log("Setting loading to false");
         setLoading(false);
       }
     };

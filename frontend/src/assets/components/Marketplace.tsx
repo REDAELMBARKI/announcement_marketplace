@@ -20,6 +20,7 @@ import {
 import { Button } from "@mui/material";
 import "../../css/home.css"; 
 import { useTheme } from "../../context/ThemeContext";
+import LoadingScreen from "../../components/Loading/LoadingScreen";
 import Sidebar from "./Marketplace/Sidebar";
 import { Product } from "./User/announcement/types";
 import MarketplaceCard from "./MarketplaceCard";
@@ -73,6 +74,7 @@ const Marketplace: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [initData, setInitData] = useState<InitData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initLoading, setInitLoading] = useState<boolean>(true);
   const [listingsLoading, setListingsLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
@@ -102,14 +104,15 @@ const Marketplace: React.FC = () => {
 
   // Fetch Initialization Data (selects & options data)
   useEffect(() => {
+    setInitLoading(true);
     api.get(route('marketplace.init-data').toString())
       .then(res => {
-        console.log("Marketplace Init Data:", res.data);
         if (res.data.status === "success") {
           setInitData(res.data);
         }
       })
-      .catch(err => console.error("Init error:", err));
+      .catch(err => console.error("Init error:", err))
+      .finally(() => setInitLoading(false));
   }, []);
 
   // Fetch Listings (products read data with pagination)
@@ -344,11 +347,13 @@ const Marketplace: React.FC = () => {
 
         {/* --- Listings Grid --- */}
         <div style={{ padding: '30px 40px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {listingsLoading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: '25px' }}>
-              {[1,2,3,4,5,6,7,8].map(i => (
-                <div key={i} style={{ height: '380px', backgroundColor: colors.bgSecondary, borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
-              ))}
+          {loading || listingsLoading || initLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 40px', flex: 1, minHeight: '420px' }}>
+              <LoadingScreen
+                isLoading={true}
+                variant="spinner"
+                label={initLoading ? "Chargement du marché…" : listingsLoading ? "Chargement des annonces…" : "Chargement…"}
+              />
             </div>
           ) : products.length > 0 ? (
             <>

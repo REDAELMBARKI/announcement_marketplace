@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { 
   ChevronLeft, 
@@ -11,6 +11,8 @@ import {
   Recycle,
   Leaf,
   Users,
+  Sparkles,
+  Package,
 } from "lucide-react";
 import {
   Shop as Store,
@@ -33,6 +35,7 @@ import homeApi from "../../services/homeApi";
 import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
 import LoadingScreen from "../../components/Loading/LoadingScreen";
+import AppButton from "./Common/AppButton";
 
 interface User {
   id: number;
@@ -132,6 +135,14 @@ const APP_HERO_PILL = import.meta.env.VITE_APP_HERO_PILL || "Ranked #1 local cir
 const APP_COPYRIGHT = import.meta.env.VITE_APP_COPYRIGHT || APP_NAME;
 const APP_FOOTER_BLURB = import.meta.env.VITE_APP_FOOTER_BLURB || "A local place to sell, donate, and discover useful things while supporting a more circular community.";
 
+interface ScrollState {
+  canScrollLeft: boolean;
+  canScrollRight: boolean;
+  percent: number;
+}
+
+const initialScrollState: ScrollState = { canScrollLeft: false, canScrollRight: false, percent: 0 };
+
 function Home() {
   const { colors } = useTheme();
   const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
@@ -146,6 +157,17 @@ function Home() {
   const freeScrollRef = useRef<HTMLDivElement>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
+  // Scroll row visibility states
+  const [trendingScroll, setTrendingScroll] = useState<ScrollState>(initialScrollState);
+  const [marketScroll, setMarketScroll] = useState<ScrollState>(initialScrollState);
+  const [nearbyScroll, setNearbyScroll] = useState<ScrollState>(initialScrollState);
+  const [freeScroll, setFreeScroll] = useState<ScrollState>(initialScrollState);
+  const [categoryScroll, setCategoryScroll] = useState<Record<number, ScrollState>>({});
+
+  // rAF frame ref for mouse-glow throttling
+  const mouseGlowFrameRef = useRef<number>(0);
+  const mouseGlowPendingRef = useRef<{ el: HTMLElement; x: number; y: number } | null>(null);
+
   // Hero Slider State
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [slideProgress, setSlideProgress] = useState<number>(0);
@@ -159,20 +181,16 @@ function Home() {
       try {
         setLoading(true);
         const data = await homeApi.getHomepageData({});
-        console.log("home fa" , data);
         setHomepageData(data as HomepageData);
         if (data?.featured_categories?.length > 0) {
           setActiveCategoryTab(data.featured_categories[0].id);
         }
         setError(null);
       } catch (err: any) {
-        console.error('Detailed fetch error:', err);
-        if (err.response) {
-          console.error('Response data:', err.response.data);
-          console.error('Response status:', err.response.status);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('[Home] fetch failed:', err?.response?.data || err?.message || err);
         }
-        // Keep the home experience useful while the optional Laravel API is
-        // unavailable. Marketplace sections simply render when data arrives.
         setHomepageData(fallbackHomepageData);
         setActiveCategoryTab(null);
         setError(null);
@@ -206,25 +224,84 @@ function Home() {
     return () => clearInterval(timer);
   }, [activeSlide, homepageData?.hero_sliders]);
 
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+  // ----- rAF-throttled mouse glow (P3-14) -----
+  const flushMouseGlow = useCallback(() => {
+    mouseGlowFrameRef.current = 0;
+    const pending = mouseGlowPendingRef.current;
+    if (!pending) return;
+    mouseGlowPendingRef.current = null;
+    pending.el.style.setProperty('--mouse-x', `${pending.x}px`);
+    pending.el.style.setProperty('--mouse-y', `${pending.y}px`);
+  }, []);
+
+  const handleCardMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement | HTMLElement>) => {
+    const el = e.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
-  };
+    mouseGlowPendingRef.current = { el, x, y };
+    if (mouseGlowFrameRef.current) return;
+    mouseGlowFrameRef.current = window.requestAnimationFrame(flushMouseGlow);
+  }, [flushMouseGlow]);
+
+  useEffect(() => () => {
+    if (mouseGlowFrameRef.current) cancelAnimationFrame(mouseGlowFrameRef.current);
+  }, []);
+
+  // ----- Scroll state updater factory (P2-8) -----
+  const updateScrollState = useCallback(
+    (container: HTMLDivElement | null, setter: React.Dispatch<React.SetStateAction<ScrollState>>) => {
+      if (!container) return;
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const maxScroll = scrollWidth - clientWidth;
+      const percent = maxScroll <= 0 ? 0 : Math.min(100, Math.round((scrollLeft / maxScroll) * 100));
+      setter({
+        canScrollLeft: scrollLeft > 1,
+        canScrollRight: scrollLeft < maxScroll - 1,
+        percent,
+      });
+    },
+    [],
+  );
+
+  const updateCategoryScrollState = useCallback((catId: number) => {
+    const container = categoryRefs.current[catId];
+    if (!container) return;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    const maxScroll = scrollWidth - clientWidth;
+    const percent = maxScroll <= 0 ? 0 : Math.min(100, Math.round((scrollLeft / maxScroll) * 100));
+    setCategoryScroll(prev => ({
+      ...prev,
+      [catId]: {
+        canScrollLeft: scrollLeft > 1,
+        canScrollRight: scrollLeft < maxScroll - 1,
+        percent,
+      },
+    }));
+  }, []);
+
+  // Dynamic scroll amount = 90% of the visible row width, so we snap ~a page at a time
+  const getDynamicScrollAmount = useCallback((container: HTMLDivElement | null): number => {
+    if (!container) return 400;
+    const cardEl = container.querySelector('.home-card-wrapper, .view-more-card') as HTMLElement | null;
+    const gap = 24;
+    const cardWidth = cardEl ? cardEl.getBoundingClientRect().width + gap : 280;
+    const clientWidth = container.clientWidth;
+    const cardsPerView = Math.max(1, Math.floor((clientWidth + gap) / cardWidth));
+    return Math.max(200, Math.round(cardsPerView * cardWidth - gap));
+  }, []);
 
   const scrollTrending = (direction: 'left' | 'right') => {
     const container = trendingScrollRef.current;
     if (!container) return;
-    const scrollAmount = 400;
+    const scrollAmount = getDynamicScrollAmount(container);
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
   const scrollCategory = (categoryId: number, direction: 'left' | 'right') => {
     const container = categoryRefs.current[categoryId];
     if (!container) return;
-    const scrollAmount = 400;
+    const scrollAmount = getDynamicScrollAmount(container);
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
@@ -238,23 +315,63 @@ function Home() {
   const scrollMarket = (direction: 'left' | 'right') => {
     const container = marketScrollRef.current;
     if (!container) return;
-    const scrollAmount = 400;
+    const scrollAmount = getDynamicScrollAmount(container);
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
   const scrollNearby = (direction: 'left' | 'right') => {
     const container = nearbyScrollRef.current;
     if (!container) return;
-    const scrollAmount = 400;
+    const scrollAmount = getDynamicScrollAmount(container);
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
   const scrollFree = (direction: 'left' | 'right') => {
     const container = freeScrollRef.current;
     if (!container) return;
-    const scrollAmount = 400;
+    const scrollAmount = getDynamicScrollAmount(container);
     container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
+
+  // ----- Attach scroll listeners + initial state read (P2-8) -----
+  useEffect(() => {
+    const entries: Array<[React.RefObject<HTMLDivElement>, React.Dispatch<React.SetStateAction<ScrollState>>]> = [
+      [trendingScrollRef, setTrendingScroll],
+      [marketScrollRef, setMarketScroll],
+      [nearbyScrollRef, setNearbyScroll],
+      [freeScrollRef, setFreeScroll],
+    ];
+    const listeners: Array<() => void> = [];
+    entries.forEach(([ref, setter]) => {
+      const el = ref.current;
+      if (!el) return;
+      updateScrollState(el, setter);
+      const handler = () => updateScrollState(el, setter);
+      el.addEventListener('scroll', handler, { passive: true });
+      listeners.push(() => el.removeEventListener('scroll', handler));
+    });
+    // Category rows
+    Object.keys(categoryRefs.current).forEach(k => {
+      const catId = Number(k);
+      const el = categoryRefs.current[catId];
+      if (!el) return;
+      updateCategoryScrollState(catId);
+      const handler = () => updateCategoryScrollState(catId);
+      el.addEventListener('scroll', handler, { passive: true });
+      listeners.push(() => el.removeEventListener('scroll', handler));
+    });
+    const ro = new ResizeObserver(() => {
+      entries.forEach(([ref, setter]) => updateScrollState(ref.current, setter));
+      Object.keys(categoryRefs.current).forEach(k => updateCategoryScrollState(Number(k)));
+    });
+    entries.forEach(([ref]) => ref.current && ro.observe(ref.current));
+    Object.values(categoryRefs.current).forEach(el => el && ro.observe(el));
+    return () => {
+      listeners.forEach(fn => fn());
+      ro.disconnect();
+    };
+  // Re-run after homepage data renders rows
+  }, [homepageData, updateScrollState, updateCategoryScrollState]);
 
   const getCategoryColor = (categoryId: number) => {
     const catColors = [colors.primary, colors.coral, colors.success || '#10b981', colors.warning || '#f59e0b', (colors as any).error || '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899'];
@@ -298,6 +415,25 @@ function Home() {
     return homepageData?.products_by_category || {};
   }, [homepageData?.products_by_category]);
 
+  const heroSlides = useMemo<HeroSlide[]>(() => homepageData?.hero_sliders || fallbackHomepageData.hero_sliders, [homepageData]);
+  const activeHero = heroSlides[activeSlide % heroSlides.length] || heroSlides[0];
+
+  const renderHeroProgress = () => (
+    <div className="hero-progress-track">
+      {heroSlides.map((slide, idx) => (
+        <div key={slide.id} className="hero-progress-segment" aria-hidden="true">
+          <div
+            className="hero-progress-fill"
+            style={{
+              width: idx === activeSlide ? `${slideProgress}%` : idx < activeSlide ? '100%' : '0%',
+              backgroundColor: colors.coral,
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
   if (loading) {
     return (
       <LoadingScreen
@@ -315,7 +451,7 @@ function Home() {
         <div className="error-box">
           <h3>Oops!</h3>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} style={{ backgroundColor: colors.coral }}>Try Again</button>
+          <AppButton variant="coral" onClick={() => window.location.reload()}>Try Again</AppButton>
         </div>
       </main>
     );
@@ -334,19 +470,20 @@ function Home() {
       '--shadow': colors.shadow || 'rgba(0,0,0,0.05)'
     } as React.CSSProperties}>
       
-      {/* Magnific-Style Hero Section */}
+      {/* Hero – now wired to hero_sliders rotation (P2-9) */}
       <section className="hero-magnific">
         <div className="hero-magnific-bg">
           <img
-            src="/close-up-woman-front-clothing-pile.jpg"
+            src={activeHero.thumbnail?.url || "/close-up-woman-front-clothing-pile.jpg"}
             alt="Hero background"
             className="hero-magnific-image"
+            key={activeHero.id}
           />
           <div className="hero-magnific-scrim"></div>
         </div>
 
         <div className="hero-magnific-container">
-          {/* Left content */}
+          {/* Left content – populated by current hero_slider entry */}
           <div className="hero-magnific-left">
             <div className="hero-magnific-pill">
               <span>{APP_HERO_PILL}</span>
@@ -356,36 +493,50 @@ function Home() {
               </Link>
             </div>
 
-            <h1 className="hero-magnific-headline">
-              {APP_TAGLINE}
+            <h1 className="hero-magnific-headline" key={`h-${activeHero.id}`}>
+              {activeHero.headline || APP_TAGLINE}
             </h1>
 
-            <p className="hero-magnific-subline">
-              Every listing, donation and exchange supports your community.
-              Intelligent filters, verified sellers, and charity partners built in —
-              for meaningful second lives at any scale.
+            <p className="hero-magnific-subline" key={`s-${activeHero.id}`}>
+              {activeHero.subline || "Every listing, donation and exchange supports your community. Intelligent filters, verified sellers, and charity partners built in — for meaningful second lives at any scale."}
             </p>
 
             <div className="hero-magnific-actions">
-              <Link
-                to="/announcements"
-                className="hero-magnific-btn hero-magnific-btn-primary"
-                style={{ backgroundColor: '#0f172a', color: '#ffffff' }}
-              >
-                Browse marketplace
+              <Link to={activeHero.cta1_link || "/announcements"} style={{ textDecoration: 'none' }}>
+                <AppButton variant="primary" size="lg">
+                  {activeHero.cta1_text || "Browse marketplace"}
+                </AppButton>
               </Link>
-              <Link
-                to="/add_announcement"
-                className="hero-magnific-btn hero-magnific-btn-outline"
-              >
-                <span className="hero-magnific-play-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <Link to={activeHero.cta2_link || "/add_announcement"} style={{ textDecoration: 'none' }}>
+                <AppButton variant="outline" size="lg" leftIcon={
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                     <polygon points="3,1 14,8 3,15" />
                   </svg>
-                </span>
-                Start donating
+                }>
+                  {activeHero.cta2_text || "Start donating"}
+                </AppButton>
               </Link>
             </div>
+
+            {/* Slider controls + percent progress */}
+            {heroSlides.length > 1 && (
+              <div className="hero-slider-controls">
+                <div className="hero-slide-dots">
+                  {heroSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      className={`hero-slide-dot ${idx === activeSlide ? 'active' : ''}`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                      onClick={() => { setActiveSlide(idx); setSlideProgress(0); }}
+                      style={{
+                        backgroundColor: idx === activeSlide ? colors.coral : 'rgba(255,255,255,0.35)',
+                      }}
+                    />
+                  ))}
+                </div>
+                {renderHeroProgress()}
+              </div>
+            )}
           </div>
 
           {/* Right feature list */}
@@ -402,8 +553,8 @@ function Home() {
               </li>
               <li className="hero-magnific-feature hero-magnific-feature-active">
                 <span className="hero-magnific-feature-arrow">
-                  <svg width="28" height="28" viewBox="0 0 28 28">
-                    <polygon points="6,4 24,14 6,24" fill="#ff4d8d" />
+                  <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+                    <polygon points="6,4 24,14 6,24" fill={colors.coral} />
                   </svg>
                 </span>
                 <span className="hero-magnific-feature-name hero-magnific-feature-highlight">
@@ -436,21 +587,27 @@ function Home() {
             <span className="purpose-number">01</span>
             <h3>Give with purpose</h3>
             <p>Turn things you no longer use into practical support for people and charities nearby.</p>
-            <Link to="/add_announcement">Start donating <ArrowRight size={16} /></Link>
+            <Link to="/add_announcement" style={{ textDecoration: 'none' }}>
+              <AppButton variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />}>Start donating</AppButton>
+            </Link>
           </article>
           <article className="purpose-card purpose-card--peach gloweffect-light" onMouseMove={handleCardMouseMove}>
             <div className="purpose-icon"><Store size={25} /></div>
             <span className="purpose-number">02</span>
             <h3>Find more for less</h3>
             <p>Discover pre-loved clothes, furniture, toys, and everyday essentials from your community.</p>
-            <Link to="/announcements">Explore listings <ArrowRight size={16} /></Link>
+            <Link to="/announcements" style={{ textDecoration: 'none' }}>
+              <AppButton variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />}>Explore listings</AppButton>
+            </Link>
           </article>
           <article className="purpose-card purpose-card--blue gloweffect-light" onMouseMove={handleCardMouseMove}>
             <div className="purpose-icon"><MapPin size={25} /></div>
             <span className="purpose-number">03</span>
             <h3>Keep it close</h3>
             <p>Make simple, local exchanges that save time, reduce waste, and build trust.</p>
-            <Link to="/our_partners">Meet our partners <ArrowRight size={16} /></Link>
+            <Link to="/our_partners" style={{ textDecoration: 'none' }}>
+              <AppButton variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />}>Meet our partners</AppButton>
+            </Link>
           </article>
         </div>
       </section>
@@ -482,8 +639,7 @@ function Home() {
         </div>
       </div>
 
-      {/* Impact section with bg-attachment: fixed DIRECTLY on the section — full-width
-           on main page bg #F5EFE8, no wrapper capsules, content flows naturally */}
+      {/* Impact parallax */}
       <section className="impact-parallax">
         <div className="impact-parallax-inner">
           <div className="impact-grid">
@@ -494,8 +650,10 @@ function Home() {
                 Together we've kept gently used things in circulation, supported local families,
                 and raised meaningful funds for verified charities — one donation at a time.
               </p>
-              <Link to="/add_announcement" className="impact-cta">
-                Donate something today <ArrowRight size={16} />
+              <Link to="/add_announcement" style={{ textDecoration: 'none' }}>
+                <AppButton variant="coral" size="md" rightIcon={<ArrowRight size={16} />}>
+                  Donate something today
+                </AppButton>
               </Link>
             </div>
             <div className="impact-metrics">
@@ -524,7 +682,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Shop by Category Tabs — no encapsulation, sits on the same page bg */}
+      {/* Shop by Category Tabs */}
       <section className="shop-by-tabs-section tt-container">
         <div className="section-header-editorial">
           <h2 className="editorial-title gradient-reveal">Shop by Category</h2>
@@ -534,48 +692,84 @@ function Home() {
         <div className="tabs-wrapper">
           <div className="pill-tabs no-scrollbar">
             {homepageData?.featured_categories?.map((cat) => (
-              <button 
+              <AppButton
                 key={cat.id}
-                className={`pill-tab ${activeCategoryTab === cat.id ? 'active' : ''}`}
+                variant={activeCategoryTab === cat.id ? 'pillActive' : 'pill'}
+                size="sm"
                 onClick={() => setActiveCategoryTab(cat.id)}
                 style={{ '--active-color': colors.coral } as React.CSSProperties}
+                leftIcon={<span className="tab-emoji">{getCategoryIcon(cat.name)}</span>}
               >
-                <span className="tab-emoji">{getCategoryIcon(cat.name)}</span>
                 {cat.name}
-              </button>
+              </AppButton>
             ))}
           </div>
         </div>
 
         <div className="tab-content-area">
-          {homepageData?.featured_categories?.map((cat) => (
-            <div 
-              key={cat.id} 
-              className={`tab-pane ${activeCategoryTab === cat.id ? 'active' : ''}`}
-            >
-              <div className="scroll-container no-scrollbar">
-                <button className="scroll-btn left" onClick={() => scrollCategory(cat.id, 'left')}><ChevronLeft size={20} /></button>
-                <div className="category-scroll-row" ref={el => { categoryRefs.current[cat.id] = el; }}>
-                  {productsByCategory[cat.id]?.map((product) => (
-                    <div 
-                      key={product.id} 
-                      className="home-card-wrapper gloweffect-light" 
-                      onMouseMove={handleCardMouseMove}
-                    >
-                      <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
-                    </div>
-                  ))}
-                  <Link to={`/category/${cat.slug}`} className="view-more-card">
-                    <div className="view-more-inner">
-                      <div className="icon-circle"><ArrowRight /></div>
-                      <span>View all {cat.name}</span>
-                    </div>
-                  </Link>
+          {homepageData?.featured_categories?.map((cat) => {
+            const items = productsByCategory[cat.id] || [];
+            const isEmpty = items.length === 0;
+            const cs = categoryScroll[cat.id] || initialScrollState;
+            return (
+              <div 
+                key={cat.id} 
+                className={`tab-pane ${activeCategoryTab === cat.id ? 'active' : ''}`}
+              >
+                <div className="scroll-container no-scrollbar">
+                  <AppButton
+                    variant="chevron"
+                    size="icon"
+                    square
+                    className={`scroll-btn left ${!cs.canScrollLeft ? 'is-disabled' : ''}`}
+                    onClick={() => scrollCategory(cat.id, 'left')}
+                    disabled={!cs.canScrollLeft}
+                    aria-label="Scroll left"
+                  >
+                    <ChevronLeft size={20} />
+                  </AppButton>
+                  <div 
+                    className={`category-scroll-row scroll-snap-row no-scrollbar ${isEmpty ? 'has-empty' : ''}`} 
+                    ref={el => { categoryRefs.current[cat.id] = el; }}
+                  >
+                    {isEmpty ? (
+                      <EmptyRowState icon={<Package size={28} />} title={`Nothing yet in ${cat.name}`} hint="Check back soon or explore other categories." />
+                    ) : (
+                      items.map((product) => (
+                        <div 
+                          key={product.id} 
+                          className="home-card-wrapper gloweffect-light scroll-snap-item" 
+                          onMouseMove={handleCardMouseMove}
+                        >
+                          <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                        </div>
+                      ))
+                    )}
+                    {!isEmpty && (
+                      <Link to={`/category/${cat.slug}`} className="view-more-card scroll-snap-item">
+                        <div className="view-more-inner">
+                          <div className="icon-circle"><ArrowRight /></div>
+                          <span>View all {cat.name}</span>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                  <AppButton
+                    variant="chevron"
+                    size="icon"
+                    square
+                    className={`scroll-btn right ${!cs.canScrollRight ? 'is-disabled' : ''}`}
+                    onClick={() => scrollCategory(cat.id, 'right')}
+                    disabled={!cs.canScrollRight}
+                    aria-label="Scroll right"
+                  >
+                    <ChevronRight size={20} />
+                  </AppButton>
+                  <ScrollPercentBar percent={cs.percent} />
                 </div>
-                <button className="scroll-btn right" onClick={() => scrollCategory(cat.id, 'right')}><ChevronRight size={20} /></button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -611,7 +805,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Trending Now */}
+      {/* Trending Now – with chevron enable/disable + percent + scroll-snap */}
       <section className="trending-row-section tt-container">
         <div className="section-header-editorial with-nav">
           <div>
@@ -619,22 +813,47 @@ function Home() {
             <p>The most loved items in our community this week.</p>
           </div>
           <div className="row-nav">
-            <button onClick={() => scrollTrending('left')}><ChevronLeft /></button>
-            <button onClick={() => scrollTrending('right')}><ChevronRight /></button>
+            <AppButton
+              variant="chevron"
+              size="icon"
+              square
+              disabled={!trendingScroll.canScrollLeft}
+              className={!trendingScroll.canScrollLeft ? 'is-disabled' : ''}
+              onClick={() => scrollTrending('left')}
+              aria-label="Scroll trending left"
+            >
+              <ChevronLeft />
+            </AppButton>
+            <AppButton
+              variant="chevron"
+              size="icon"
+              square
+              disabled={!trendingScroll.canScrollRight}
+              className={!trendingScroll.canScrollRight ? 'is-disabled' : ''}
+              onClick={() => scrollTrending('right')}
+              aria-label="Scroll trending right"
+            >
+              <ChevronRight />
+            </AppButton>
           </div>
         </div>
         <div className="scroll-container no-scrollbar">
-          <div className="trending-scroll-row" ref={trendingScrollRef}>
-            {popularProducts.map((product) => (
-              <div 
-                key={product.id} 
-                className="home-card-wrapper gloweffect-light" 
-                onMouseMove={handleCardMouseMove}
-              >
-                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
-              </div>
-            ))}
+          <div className={`trending-scroll-row scroll-snap-row no-scrollbar ${popularProducts.length === 0 ? 'has-empty' : ''}`} ref={trendingScrollRef}>
+            {popularProducts.length === 0 ? (
+              <EmptyRowState icon={<Sparkles size={28} />} title="Trending picks are warming up" hint="Come back soon for community favorites." />
+            ) : (
+              popularProducts.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="home-card-wrapper gloweffect-light scroll-snap-item" 
+                  onMouseMove={handleCardMouseMove}
+                >
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                </div>
+              ))
+            )}
           </div>
+          <ScrollPercentBar percent={trendingScroll.percent} />
         </div>
       </section>
 
@@ -646,22 +865,47 @@ function Home() {
             <p>Fresh finds uploaded by parents just now.</p>
           </div>
           <div className="row-nav">
-            <button onClick={() => scrollMarket('left')}><ChevronLeft /></button>
-            <button onClick={() => scrollMarket('right')}><ChevronRight /></button>
+            <AppButton
+              variant="chevron"
+              size="icon"
+              square
+              disabled={!marketScroll.canScrollLeft}
+              className={!marketScroll.canScrollLeft ? 'is-disabled' : ''}
+              onClick={() => scrollMarket('left')}
+              aria-label="Scroll new arrivals left"
+            >
+              <ChevronLeft />
+            </AppButton>
+            <AppButton
+              variant="chevron"
+              size="icon"
+              square
+              disabled={!marketScroll.canScrollRight}
+              className={!marketScroll.canScrollRight ? 'is-disabled' : ''}
+              onClick={() => scrollMarket('right')}
+              aria-label="Scroll new arrivals right"
+            >
+              <ChevronRight />
+            </AppButton>
           </div>
         </div>
         <div className="scroll-container no-scrollbar">
-          <div className="trending-scroll-row" ref={marketScrollRef}>
-            {newArrivals.map((product) => (
-              <div 
-                key={product.id} 
-                className="home-card-wrapper gloweffect-light" 
-                onMouseMove={handleCardMouseMove}
-              >
-                <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
-              </div>
-            ))}
+          <div className={`trending-scroll-row scroll-snap-row no-scrollbar ${newArrivals.length === 0 ? 'has-empty' : ''}`} ref={marketScrollRef}>
+            {newArrivals.length === 0 ? (
+              <EmptyRowState icon={<Package size={28} />} title="No new arrivals yet" hint="Fresh finds will land here throughout the day." />
+            ) : (
+              newArrivals.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="home-card-wrapper gloweffect-light scroll-snap-item" 
+                  onMouseMove={handleCardMouseMove}
+                >
+                  <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
+                </div>
+              ))
+            )}
           </div>
+          <ScrollPercentBar percent={marketScroll.percent} />
         </div>
       </section>
 
@@ -674,22 +918,43 @@ function Home() {
               <p>Find great deals from parents in your city.</p>
             </div>
             <div className="row-nav">
-              <button onClick={() => scrollNearby('left')}><ChevronLeft /></button>
-              <button onClick={() => scrollNearby('right')}><ChevronRight /></button>
+              <AppButton
+                variant="chevron"
+                size="icon"
+                square
+                disabled={!nearbyScroll.canScrollLeft}
+                className={!nearbyScroll.canScrollLeft ? 'is-disabled' : ''}
+                onClick={() => scrollNearby('left')}
+                aria-label="Scroll nearby left"
+              >
+                <ChevronLeft />
+              </AppButton>
+              <AppButton
+                variant="chevron"
+                size="icon"
+                square
+                disabled={!nearbyScroll.canScrollRight}
+                className={!nearbyScroll.canScrollRight ? 'is-disabled' : ''}
+                onClick={() => scrollNearby('right')}
+                aria-label="Scroll nearby right"
+              >
+                <ChevronRight />
+              </AppButton>
             </div>
           </div>
           <div className="scroll-container no-scrollbar">
-            <div className="trending-scroll-row" ref={nearbyScrollRef}>
+            <div className="trending-scroll-row scroll-snap-row no-scrollbar" ref={nearbyScrollRef}>
               {nearbyProducts.map((product) => (
                 <div 
                   key={product.id} 
-                  className="home-card-wrapper gloweffect-light" 
+                  className="home-card-wrapper gloweffect-light scroll-snap-item" 
                   onMouseMove={handleCardMouseMove}
                 >
                   <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
             </div>
+            <ScrollPercentBar percent={nearbyScroll.percent} />
           </div>
         </section>
       )}
@@ -703,22 +968,43 @@ function Home() {
               <p>Generous donations looking for a new home.</p>
             </div>
             <div className="row-nav">
-              <button onClick={() => scrollFree('left')}><ChevronLeft /></button>
-              <button onClick={() => scrollFree('right')}><ChevronRight /></button>
+              <AppButton
+                variant="chevron"
+                size="icon"
+                square
+                disabled={!freeScroll.canScrollLeft}
+                className={!freeScroll.canScrollLeft ? 'is-disabled' : ''}
+                onClick={() => scrollFree('left')}
+                aria-label="Scroll free items left"
+              >
+                <ChevronLeft />
+              </AppButton>
+              <AppButton
+                variant="chevron"
+                size="icon"
+                square
+                disabled={!freeScroll.canScrollRight}
+                className={!freeScroll.canScrollRight ? 'is-disabled' : ''}
+                onClick={() => scrollFree('right')}
+                aria-label="Scroll free items right"
+              >
+                <ChevronRight />
+              </AppButton>
             </div>
           </div>
           <div className="scroll-container no-scrollbar">
-            <div className="trending-scroll-row" ref={freeScrollRef}>
+            <div className="trending-scroll-row scroll-snap-row no-scrollbar" ref={freeScrollRef}>
               {freeItems.map((product) => (
                 <div 
                   key={product.id} 
-                  className="home-card-wrapper gloweffect-light" 
+                  className="home-card-wrapper gloweffect-light scroll-snap-item" 
                   onMouseMove={handleCardMouseMove}
                 >
                   <MarketplaceCard product={product} view="grid" getImageUrl={getImageUrl} colors={colors} />
                 </div>
               ))}
             </div>
+            <ScrollPercentBar percent={freeScroll.percent} />
           </div>
         </section>
       )}
@@ -746,8 +1032,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Second parallax moment – bg-fixed directly on the section, full width,
-           no wrapper capsules, sits on page flow */}
+      {/* Second parallax */}
       <section className="second-parallax">
         <div className="second-parallax-card gloweffect-light" onMouseMove={handleCardMouseMove}>
           <span className="eyebrow">How it all works</span>
@@ -761,7 +1046,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ============ BENTO GRID – inserted BELOW "How TinyTrove Works" (second-parallax) ============ */}
+      {/* BENTO GRID */}
       <section className="bento-section">
         <div className="bento-hero-row">
           <div>
@@ -770,14 +1055,15 @@ function Home() {
             </h2>
             <p>From a single donation to a complete circular lifestyle, at your own pace.</p>
           </div>
-          <Link to="/add_announcement" className="bento-cta-btn">
-            Start creating <ArrowRight size={18} />
+          <Link to="/add_announcement" style={{ textDecoration: 'none' }}>
+            <AppButton variant="coral" size="lg" rightIcon={<ArrowRight size={18} />}>
+              Start creating
+            </AppButton>
           </Link>
         </div>
 
         <div className="bento-grid">
 
-          {/* CELL A – top-left text block */}
           <article className="bento-cell bento-a" onMouseMove={handleCardMouseMove}>
             <span className="bento-eyebrow">Give &amp; Sell</span>
             <h3 className="bento-title">Every category, ready to go.</h3>
@@ -787,7 +1073,6 @@ function Home() {
             </p>
           </article>
 
-          {/* CELL B – top-right merged 2-col dark canvas block */}
           <article className="bento-cell bento-b" onMouseMove={handleCardMouseMove}>
             <span className="bento-eyebrow" style={{ color: '#FF8FA8' }}>Your community canvas</span>
             <h3 className="bento-title">
@@ -798,54 +1083,27 @@ function Home() {
               work with your group — all in the same community.
             </p>
             <div className="bento-canvas">
-              <div className="canvas-flow">
-                <svg className="canvas-bezier" viewBox="0 0 800 400" preserveAspectRatio="none" fill="none">
-                  <path d="M 340 80 C 500 80, 560 120, 620 200 C 660 250, 580 260, 520 300 C 480 328, 360 310, 240 280 C 140 256, 60 300, 40 360"
-                        stroke="url(#g1)" strokeWidth="6" strokeLinecap="round" />
-                  <path d="M 620 200 C 640 210, 660 220, 680 240"
-                        stroke="url(#g2)" strokeWidth="6" strokeLinecap="round" />
-                  <defs>
-                    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="0">
-                      <stop offset="0%" stopColor="#7C8CFF" />
-                      <stop offset="60%" stopColor="#FF6FB1" />
-                      <stop offset="100%" stopColor="#59BFA4" />
-                    </linearGradient>
-                    <linearGradient id="g2" x1="0" x2="1" y1="0" y2="0">
-                      <stop offset="0%" stopColor="#7C8CFF" />
-                      <stop offset="100%" stopColor="#59BFA4" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                <div className="canvas-photo cp-a">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=neatly%20folded%20children%20clothes%20on%20wooden%20table%20pastel%20jerseys%20onesies%20soft%20natural%20light%20cozy%20premium&image_size=square" alt="" />
+              <div className="canvas-triptych">
+                <div className="canvas-trip-img">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=neatly%20folded%20children%20clothes%20on%20wooden%20table%20pastel%20jerseys%20onesies%20soft%20natural%20light%20cozy%20premium&image_size=square_hd" alt="Children clothes" />
                 </div>
-                <div className="canvas-photo cp-b">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=young%20child%20playing%20with%20colorful%20wooden%20toys%20soft%20morning%20light%20cozy%20nursery%20warm%20tones&image_size=square" alt="" />
+                <div className="canvas-trip-img">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=young%20child%20playing%20with%20colorful%20wooden%20toys%20soft%20morning%20light%20cozy%20nursery%20warm%20tones&image_size=square_hd" alt="Child playing" />
                 </div>
-                <div className="canvas-photo cp-c">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=happy%20family%20unboxing%20second%20hand%20kids%20furniture%20bookshelf%20assembly%20sunny%20living%20room%20warm%20tones&image_size=square" alt="" />
+                <div className="canvas-trip-img">
+                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=happy%20family%20unboxing%20second%20hand%20kids%20furniture%20bookshelf%20assembly%20sunny%20living%20room%20warm%20tones&image_size=square_hd" alt="Family unboxing" />
                 </div>
-
-                <span className="canvas-node na">+</span>
-                <span className="canvas-node nb">+</span>
-                <span className="canvas-node nc">+</span>
-
-                <span className="canvas-label la">Paplio</span>
-                <span className="canvas-label lb">Marina</span>
-                <span className="canvas-label lc">GreenStitch</span>
               </div>
             </div>
           </article>
 
-          {/* CELL C – bottom-left tabs + thumbs */}
           <article className="bento-cell bento-c" onMouseMove={handleCardMouseMove}>
             <span className="bento-eyebrow">Fresh picks</span>
             <div className="bento-tabs">
-              <button className="bento-tab active" type="button">ALL</button>
-              <button className="bento-tab" type="button">CLOTHES</button>
-              <button className="bento-tab" type="button">TOYS</button>
-              <button className="bento-tab" type="button">HOME</button>
+              <AppButton variant="pillActive" size="xs" className="bento-tab" type="button">ALL</AppButton>
+              <AppButton variant="pill" size="xs" className="bento-tab" type="button">CLOTHES</AppButton>
+              <AppButton variant="pill" size="xs" className="bento-tab" type="button">TOYS</AppButton>
+              <AppButton variant="pill" size="xs" className="bento-tab" type="button">HOME</AppButton>
             </div>
             <div className="bento-thumbs">
               <div className="bento-thumb">
@@ -859,7 +1117,6 @@ function Home() {
             </div>
           </article>
 
-          {/* CELL D – bottom-mid team block */}
           <article className="bento-cell bento-d" onMouseMove={handleCardMouseMove}>
             <span className="bento-eyebrow" style={{ color: '#FFB89A' }}>Your charity hub</span>
             <h3 className="bento-title">One place.<br />Whole community.</h3>
@@ -869,7 +1126,6 @@ function Home() {
             </p>
           </article>
 
-          {/* CELL E – bottom-right workflow block */}
           <article className="bento-cell bento-e" onMouseMove={handleCardMouseMove}>
             <span className="bento-eyebrow" style={{ color: '#8FD0E8' }}>Smart workflows</span>
             <h3 className="bento-title">Impact in<br />one click.</h3>
@@ -889,18 +1145,22 @@ function Home() {
           <p>Join thousands of families making a difference.</p>
         </div>
         <div className="testimonials-grid-redesign">
-          {homepageData?.recent_reviews?.slice(0, 3).map((review) => (
-            <div key={review.id} className="testimonial-editorial-card testimonial-glass-card gloweffect-light" onMouseMove={handleCardMouseMove}>
-              <div className="rating-stars">
-                {[...Array(review.rating || 5)].map((_, i) => <Star key={i} size={14} fill={colors.coral} color={colors.coral} />)}
+          {(homepageData?.recent_reviews?.length ?? 0) === 0 ? (
+            <EmptyRowState wide icon={<Star size={28} />} title="Reviews coming soon" hint="Be the first to share your experience." />
+          ) : (
+            homepageData?.recent_reviews?.slice(0, 3).map((review) => (
+              <div key={review.id} className="testimonial-editorial-card testimonial-glass-card gloweffect-light" onMouseMove={handleCardMouseMove}>
+                <div className="rating-stars">
+                  {[...Array(review.rating || 5)].map((_, i) => <Star key={i} size={14} fill={colors.coral} color={colors.coral} />)}
+                </div>
+                <p>"{review.comment || 'Great experience with this community. Found perfect outfits for my toddler!'}"</p>
+                <div className="reviewer">
+                  <img src={review.reviewer?.avatar || `https://ui-avatars.com/api/?name=${review.reviewer?.name || 'U'}`} alt={review.reviewer?.name} />
+                  <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
+                </div>
               </div>
-              <p>"{review.comment || 'Great experience with this community. Found perfect outfits for my toddler!'}"</p>
-              <div className="reviewer">
-                <img src={review.reviewer?.avatar || `https://ui-avatars.com/api/?name=${review.reviewer?.name || 'U'}`} alt={review.reviewer?.name} />
-                <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
@@ -911,12 +1171,14 @@ function Home() {
             <div className="newsletter-content">
               <h2 className="editorial-title" style={{ color: colors.bgPrimary }}>Stay close to what matters</h2>
               <p>Get thoughtful updates, local finds, and stories of impact in your inbox.</p>
-              <form className="newsletter-form">
+              <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
                 <div className="input-with-icon">
                   <Mail size={18} />
                   <input type="email" placeholder="Your email address" />
                 </div>
-                <button type="submit" style={{ backgroundColor: colors.coral, color: colors.bgPrimary }}>Subscribe</button>
+                <AppButton type="submit" variant="coral" size="md">
+                  Subscribe
+                </AppButton>
               </form>
             </div>
             <div className="newsletter-decor">
@@ -926,7 +1188,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Redesigned Footer */}
+      {/* Footer */}
       <footer className="footer-redesign" style={{ backgroundColor: colors.bgSecondary, borderTop: `1px solid ${colors.border}` }}>
         <div className="tt-container">
           <div className="footer-grid">
@@ -964,6 +1226,54 @@ function Home() {
       </footer>
 
     </main>
+  );
+}
+
+/* ---------- small sub-components used above ---------- */
+
+function ScrollPercentBar({ percent }: { percent: number }) {
+  const { colors } = useTheme();
+  return (
+    <div className="scroll-percent-track" aria-hidden="true">
+      <div
+        className="scroll-percent-fill"
+        style={{
+          width: `${percent}%`,
+          backgroundColor: colors.coral,
+        }}
+      />
+    </div>
+  );
+}
+
+function EmptyRowState({
+  icon,
+  title,
+  hint,
+  wide = false,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  hint?: string;
+  wide?: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    <div
+      className={`empty-row-state ${wide ? 'wide' : ''}`}
+      style={{
+        color: colors.textSecondary,
+        borderColor: colors.border,
+        backgroundColor: colors.bgSecondary,
+      }}
+      aria-live="polite"
+    >
+      <div className="empty-row-icon" style={{ color: colors.coral, backgroundColor: colors.coralLight }}>
+        {icon}
+      </div>
+      <div className="empty-row-title" style={{ color: colors.textPrimary }}>{title}</div>
+      {hint && <div className="empty-row-hint">{hint}</div>}
+    </div>
   );
 }
 
