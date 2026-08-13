@@ -2,6 +2,18 @@
 DOMAIN="letsbeus.duckdns.org"
 EMAIL="elmreda05@gmail.com"  # For renewal notifications
 
+# Set to 1 for testing (uses staging - fake certificates)
+# Set to 0 for production (real certificates)
+STAGING=1
+
+if [ "$STAGING" = "1" ]; then
+  echo "### TESTING MODE: Using Let's Encrypt STAGING (fake certificate) ###"
+  STAGING_FLAG="--staging"
+else
+  echo "### PRODUCTION MODE: Using Let's Encrypt PRODUCTION (real certificate) ###"
+  STAGING_FLAG=""
+fi
+
 echo "### Initializing Let's Encrypt certificate for $DOMAIN ###"
 
 # Create directories if they don't exist
@@ -39,9 +51,9 @@ echo
 
 # Request Let's Encrypt certificate
 echo "### Requesting Let's Encrypt certificate for $DOMAIN ..."
-# Add --staging flag to test first to avoid hitting rate limits
 docker-compose -f docker-compose.prod.yml run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
+    $STAGING_FLAG \
     --email $EMAIL \
     --agree-tos \
     --no-eff-email \

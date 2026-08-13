@@ -51,8 +51,24 @@ jobs:
             if [ ! -d "certbot/conf/live/letsbeus.duckdns.org" ]; then
               echo "Setting up SSL certificates..."
               chmod +x init-letsencrypt.sh
-              sed -i 's/your-email@example.com/${{ secrets.SSL_EMAIL }}/g' init-letsencrypt.sh
-              ./init-letsencrypt.sh
+              
+              # First run: Test with staging
+              if [ ! -f "certbot/.ssl-tested" ]; then
+                echo "First time setup - testing with staging certificate..."
+                sed -i 's/STAGING=1/STAGING=1/g' init-letsencrypt.sh
+                ./init-letsencrypt.sh
+                
+                if [ $? -eq 0 ]; then
+                  echo "Staging test successful! Cleaning up and getting real certificate..."
+                  rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
+                  sed -i 's/STAGING=1/STAGING=0/g' init-letsencrypt.sh
+                  ./init-letsencrypt.sh
+                  touch certbot/.ssl-tested
+                else
+                  echo "Staging test failed! Check logs. Aborting production certificate request."
+                  exit 1
+                fi
+              fi
             else
               echo "SSL certificates already exist, skipping setup"
             fi
