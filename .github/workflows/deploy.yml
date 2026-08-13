@@ -35,6 +35,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml?v=$(date +%s)"
+            curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/init-letsencrypt.sh?v=$(date +%s)"
             export DB_DATABASE="${{ secrets.DB_DATABASE }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
@@ -45,3 +46,13 @@ jobs:
             docker rm -f announcement-backend-prod || true
             docker rm -f announcement-frontend-prod || true
             docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
+            
+            # Run SSL setup if certificates don't exist
+            if [ ! -d "certbot/conf/live/letsbeus.duckdns.org" ]; then
+              echo "Setting up SSL certificates..."
+              chmod +x init-letsencrypt.sh
+              sed -i 's/your-email@example.com/${{ secrets.SSL_EMAIL }}/g' init-letsencrypt.sh
+              ./init-letsencrypt.sh
+            else
+              echo "SSL certificates already exist, skipping setup"
+            fi
