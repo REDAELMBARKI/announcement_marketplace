@@ -27,17 +27,24 @@ jobs:
       - name: "Push images to Docker Hub"
         run: docker compose -f docker-compose.yml push
 
+      - name: "List repo files (verify deploy files exist on runner before scp)"
+        run: |
+          set -euo pipefail
+          echo "--- pwd ---" && pwd
+          echo "--- ls -la ---" && ls -la
+          echo "--- ls -la certbot-dynu/ ---" && ls -la certbot-dynu/ || true
+          echo "--- ls docker-compose.prod.yml init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh ---"
+          ls -l docker-compose.prod.yml init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh
+
       - name: "Upload deploy files to server"
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: |
-            docker-compose.prod.yml
-            init-letsencrypt.sh
-            certbot-dynu/authenticator.sh
-            certbot-dynu/cleanup.sh
+          debug: true
+          rm: false
+          source: "docker-compose.prod.yml,init-letsencrypt.sh,certbot-dynu/authenticator.sh,certbot-dynu/cleanup.sh"
           target: "~"
           strip_components: 0
           overwrite: true
