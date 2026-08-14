@@ -27,24 +27,42 @@ jobs:
       - name: "Push images to Docker Hub"
         run: docker compose -f docker-compose.yml push
 
+      - name: "Upload deploy files to server"
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: |
+            docker-compose.prod.yml
+            init-letsencrypt.sh
+            certbot-dynu/authenticator.sh
+            certbot-dynu/cleanup.sh
+          target: "~"
+          strip_components: 0
+          overwrite: true
+
       - name: "SSH to server and deploy"
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m
           script: |
             set -euo pipefail
 
-            curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml?v=$(date +%s)"
-            curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/init-letsencrypt.sh?v=$(date +%s)"
+            # Deploy files were already SCP'd to ~ by the prior step.
+            # SCP copies certbot-dynu/*.sh into ./certbot-dynu/ relative to $HOME.
             sudo mkdir -p certbot-dynu certbot/conf certbot/www
-            # Ensure these dirs are writable by our user (prior runs may have left them root-owned)
             sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
             sudo chmod -R u+rwX certbot certbot-dynu
 
-            curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/authenticator.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/authenticator.sh?v=$(date +%s)"
-            curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/cleanup.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/cleanup.sh?v=$(date +%s)"
+            # The scp-action placed files from the repo root into $HOME directly:
+            #   docker-compose.prod.yml -> ./docker-compose.prod.yml
+            #   init-letsencrypt.sh     -> ./init-letsencrypt.sh
+            #   certbot-dynu/authenticator.sh -> ./certbot-dynu/authenticator.sh
+            #   certbot-dynu/cleanup.sh       -> ./certbot-dynu/cleanup.sh
             chmod +x init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh
 
             export DB_DATABASE="${{ secrets.DB_DATABASE }}"
@@ -57,7 +75,6 @@ jobs:
             docker system prune -af || true
             docker builder prune -af || true
             docker rm -f announcement-backend-prod announcement-frontend-prod announcement-certbot announcement-db-prod 2>/dev/null || true
-            # After prune, certbot/conf might be re-owned by root if docker recreated it
             sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
             sudo chmod -R u+rwX certbot certbot-dynu
             docker compose -f docker-compose.prod.yml pull
