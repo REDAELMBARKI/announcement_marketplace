@@ -219,6 +219,7 @@ jobs:
             else
               echo "FATAL: nginx config REJECTED above. Refusing to start (would enter restart loop). Fix the error printed by nginx -t, then re-deploy."
               echo "Troubleshooting:"
+              echo "  - \"pid directive is not allowed here\" -> your frontend image STILL has nginx.conf copied to /etc/nginx/conf.d/default.conf instead of /etc/nginx/nginx.conf. A NEW frontend image MUST be built+pushed after the Dockerfile fix (this push does that automatically)."
               echo "  - If error is 'cannot load certificate' check secrets CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM"
               echo "  - If error is 'ssl_client_certificate' the Cloudflare AOP CA file is corrupt"
               echo "  - If you have not set CF secrets yet, that's OK — the self-signed fallback was written above and should work; if not, double-check its permissions."
