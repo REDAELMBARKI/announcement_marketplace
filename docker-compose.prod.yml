@@ -54,18 +54,19 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     volumes:
       - ./cloudflare-origin:/etc/cloudflare-origin:ro
     networks:
       - announcement-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 15s
+      test: ["CMD-SHELL", "pgrep -x nginx >/dev/null && test -f /tmp/nginx.pid || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 8s
 
 networks:
   announcement-network:

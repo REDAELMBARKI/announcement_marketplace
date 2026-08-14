@@ -83,12 +83,17 @@ jobs:
             CERT_WROTE=0
             if [ -n "$CF_CERT" ] && [ -n "$CF_KEY" ]; then
               echo "Using Cloudflare origin cert from GitHub Secrets"
-              printf '%s\n' "$CF_CERT" > cert.pem
-              printf '%s\n' "$CF_KEY"  > privkey.pem
+              printf '%s' "$CF_CERT" > cert.pem
+              printf '%s' "$CF_KEY"  > privkey.pem
+              # Ensure trailing newline (some PEM parsers choke on missing trailing \n):
+              [ -n "$(tail -c 1 cert.pem    2>/dev/null)" ] && echo >> cert.pem
+              [ -n "$(tail -c 1 privkey.pem 2>/dev/null)" ] && echo >> privkey.pem
+              # Strip any stray Windows CR (CRLF -> LF) that break PEM parsing:
+              sed -i 's/\r$//' cert.pem privkey.pem
               CERT_WROTE=1
             else
               echo "CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM not set → generating self-signed dummy cert so nginx can boot."
-              echo "  -> Generate real cert in Cloudflare (SSL/TLS → Origin Server → Create Certificate) and set the 2 secrets; then re-deploy."
+              echo "  -> Generate real cert in Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) and set the 2 secrets; then re-deploy."
               openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
                 -keyout privkey.pem -out cert.pem \
                 -subj "/CN=letsbeus.online/O=Self-Signed-Origin-Dummy/C=US" >/dev/null 2>&1
@@ -138,45 +143,82 @@ jobs:
             chmod 600 cert.pem privkey.pem
             chmod 644 cloudflare-origin-pull-ca.pem
             ls -la .
+
+            echo "--- Validating PEM files on disk before starting anything ---"
+            openssl x509 -in cert.pem -noout -subject -issuer -dates || { echo "FATAL: cert.pem is NOT a valid PEM. Dumping first/last 3 lines:"; head -3 cert.pem; echo "..."; tail -3 cert.pem; exit 1; }
+            openssl rsa  -in privkey.pem -noout -check 2>&1 | head -2 || { echo "FATAL: privkey.pem is NOT a valid RSA private key."; exit 1; }
+            echo "  Matching cert <-> key modulus (prevents Cloudflare 526 when wrong cert/key pair installed):"
+            CERT_MOD=$(openssl x509 -in cert.pem -noout -modulus 2>/dev/null | openssl md5)
+            KEY_MOD=$(openssl rsa  -in privkey.pem -noout -modulus 2>/dev/null | openssl md5)
+            echo "    cert mod md5: $CERT_MOD"
+            echo "    key  mod md5: $KEY_MOD"
+            if [ "$CERT_MOD" != "$KEY_MOD" ]; then
+              echo "FATAL: certificate and private key DO NOT MATCH. Cloudflare will throw 526 Invalid SSL Certificate if we proceed."
+              echo "  -> Re-create the origin cert in Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) and ensure BOTH CF_ORIGIN_CERT_PEM and CF_ORIGIN_PRIVKEY_PEM come from the SAME create-certificate dialog."
+              exit 1
+            fi
+            openssl x509 -in cloudflare-origin-pull-ca.pem -noout -subject -issuer -fingerprint || { echo "FATAL: cloudflare-origin-pull-ca.pem failed PEM validation."; exit 1; }
+            echo "PEM validation OK (cert+key match + CA bundle valid)."
+
             cd ..
 
             docker compose -f docker-compose.prod.yml down || true
-            docker system prune -af || true
-            docker builder prune -af || true
             docker rm -f announcement-backend-prod announcement-frontend-prod announcement-db-prod 2>/dev/null || true
+            docker container prune -f || true
+            docker builder prune -af || true
+
+            echo "--- Pre-flight: validating nginx config against the real image + certs (FAST FAIL, no restart loop) ---"
+            NGINX_CHECK_IMAGE="redaelmbarki/announcement-app-frontend:latest"
             docker compose -f docker-compose.prod.yml pull
+            if docker run --rm \
+              -v "$(pwd)/cloudflare-origin:/etc/cloudflare-origin:ro" \
+              --entrypoint nginx \
+              "$NGINX_CHECK_IMAGE" -t 2>&1; then
+              echo "nginx -t: CONFIG VALID — safe to start containers."
+            else
+              echo "FATAL: nginx config REJECTED above. Refusing to start (would enter restart loop). Fix the error printed by nginx -t, then re-deploy."
+              echo "Troubleshooting:"
+              echo "  - If error is 'cannot load certificate' check secrets CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM"
+              echo "  - If error is 'ssl_client_certificate' the Cloudflare AOP CA file is corrupt"
+              echo "  - If you have not set CF secrets yet, that's OK — the self-signed fallback was written above and should work; if not, double-check its permissions."
+              exit 1
+            fi
 
             echo "Starting full stack (db -> backend -> frontend)..."
-            docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            echo "Waiting for frontend container to pass healthcheck (max 90s)..."
+            echo "Waiting for frontend container to pass healthcheck (max 60s)..."
             FRONTEND_OK=0
-            for i in $(seq 1 18); do
+            LOGS_DUMPED=0
+            for i in $(seq 1 12); do
               STATE=$(docker inspect --format='{{.State.Health.Status}}' announcement-frontend-prod 2>/dev/null || echo "unknown")
-              echo "  attempt $i/18: frontend health=$STATE"
+              RESTARTS=$(docker inspect --format='{{.RestartCount}}' announcement-frontend-prod 2>/dev/null || echo "?")
+              RUNSTATE=$(docker inspect --format='{{.State.Status}}' announcement-frontend-prod 2>/dev/null || echo "unknown")
+              echo "  attempt $i/12: run=$RUNSTATE health=$STATE restarts=$RESTARTS"
+
               if [ "$STATE" = "healthy" ]; then
                 FRONTEND_OK=1
                 break
               fi
-              if [ "$STATE" = "unhealthy" ] || [ "$STATE" = "exited" ]; then
-                echo "  -> frontend entered state=$STATE, dumping logs for diagnosis:"
-                docker logs --tail 80 announcement-frontend-prod || true
-                echo "  -> backend logs (tail 40):"
-                docker logs --tail 40 announcement-backend-prod || true
-                break
+
+              if [ "$LOGS_DUMPED" = "0" ] && { [ "$STATE" = "unhealthy" ] || [ "$RUNSTATE" = "exited" ] || [ "$RESTARTS" != "0" ] || [ "$i" -ge 3 ]; }; then
+                echo "  -> EARLY LOG DUMP (frontend nginx stdout/stderr tail 80):"
+                docker logs --tail 80 announcement-frontend-prod 2>&1 || true
+                LOGS_DUMPED=1
               fi
+
               sleep 5
             done
 
             if [ "$FRONTEND_OK" != "1" ]; then
-              echo "ERROR: frontend did not become healthy. Dumping all container state:"
+              echo "ERROR: frontend did not become healthy. Dumping all container state + full logs:"
               docker ps -a || true
-              echo "--- frontend logs (tail 100) ---"
-              docker logs --tail 100 announcement-frontend-prod || true
-              echo "--- backend logs (tail 60) ---"
-              docker logs --tail 60 announcement-backend-prod || true
+              echo "--- frontend FULL logs ---"
+              docker logs announcement-frontend-prod 2>&1 || true
+              echo "--- backend logs (tail 80) ---"
+              docker logs --tail 80 announcement-backend-prod 2>&1 || true
               echo "--- db logs (tail 40) ---"
-              docker logs --tail 40 announcement-db-prod || true
+              docker logs --tail 40 announcement-db-prod 2>&1 || true
               exit 1
             fi
 
@@ -186,9 +228,10 @@ jobs:
 
             if [ "$CERT_WROTE" = "1" ]; then
               echo "Deploy finished successfully — Cloudflare origin cert installed."
+              echo "  -> In Cloudflare dashboard, set SSL/TLS -> Overview -> Encryption Mode = 'Full (strict)' for end-to-end security."
             else
               echo "Deploy finished successfully — running with SELF-SIGNED DUMMY origin cert."
-              echo "  ACTION: In Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) paste cert+key into GitHub Secrets CF_ORIGIN_CERT_PEM + CF_ORIGIN_PRIVKEY_PEM, then re-deploy to install real origin cert."
-              echo "  Until then: in Cloudflare you can set SSL/TLS mode = 'Flexible' temporarily (not recommended long-term), then switch to 'Full (strict)' after real origin cert is installed."
+              echo "  TEMPORARY: In Cloudflare dashboard -> SSL/TLS -> Overview, set mode = 'Full' (NOT strict, because the dummy is self-signed)."
+              echo "  ACTION (once): Cloudflare -> SSL/TLS -> Origin Server -> Create Certificate. Paste cert into GH secret CF_ORIGIN_CERT_PEM, key into CF_ORIGIN_PRIVKEY_PEM. Re-deploy. Then switch CF SSL mode to 'Full (strict)'."
             fi
             echo "Domain: https://letsbeus.online"
