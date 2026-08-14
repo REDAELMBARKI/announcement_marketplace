@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    name: "Build and deploy to AWS"
+    name: "Build and deploy"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout code"
@@ -27,28 +27,17 @@ jobs:
       - name: "Push images to Docker Hub"
         run: docker compose -f docker-compose.yml push
 
-      - name: "Verify required deploy files exist on runner"
-        run: |
-          set -euo pipefail
-          echo "--- pwd ---" && pwd
-          echo "--- ls -la ---" && ls -la
-          echo "--- required files ---"
-          ls -l docker-compose.prod.yml
-
       - name: "Upload docker-compose.prod.yml to server"
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          debug: true
-          rm: false
           source: "docker-compose.prod.yml"
           target: "~"
-          strip_components: 0
           overwrite: true
 
-      - name: "SSH to server and deploy"
+      - name: "Deploy on server"
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -57,224 +46,16 @@ jobs:
           command_timeout: 20m
           script: |
             set -euo pipefail
-
-            # ── Origin cert / key from GitHub Secrets ────────────────────────
-            # Set these 2 secrets in the repo:
-            #   CF_ORIGIN_CERT_PEM       (-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----)
-            #   CF_ORIGIN_PRIVKEY_PEM    (-----BEGIN PRIVATE KEY-----…-----END PRIVATE KEY-----)
-            # If either is empty we fall back to a self-signed dummy cert so
-            # nginx can still boot — Cloudflare Full / Full (strict) will then
-            # fail until you set the real origin cert (browsers never see it).
-            CF_CERT="${{ secrets.CF_ORIGIN_CERT_PEM }}"
-            CF_KEY="${{ secrets.CF_ORIGIN_PRIVKEY_PEM }}"
-
+            cd ~
             export DB_DATABASE="${{ secrets.DB_DATABASE }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
 
-            # ── Prepare cloudflare-origin dir on the host ────────────────────
-            sudo mkdir -p cloudflare-origin
-            sudo chown -R "$(id -u):$(id -g)" cloudflare-origin
-            chmod 700 cloudflare-origin
-
-            # ── Write cert + key or fall back to self-signed dummy ──────────
-            cd cloudflare-origin || exit 1
-            CERT_WROTE=0
-            if [ -n "$CF_CERT" ] && [ -n "$CF_KEY" ]; then
-              echo "Using Cloudflare origin cert from GitHub Secrets"
-              printf '%s' "$CF_CERT" > cert.pem
-              printf '%s' "$CF_KEY"  > privkey.pem
-              # Ensure trailing newline (some PEM parsers choke on missing trailing \n):
-              [ -n "$(tail -c 1 cert.pem    2>/dev/null)" ] && echo >> cert.pem
-              [ -n "$(tail -c 1 privkey.pem 2>/dev/null)" ] && echo >> privkey.pem
-              # Strip any stray Windows CR (CRLF -> LF) that break PEM parsing:
-              sed -i 's/\r$//' cert.pem privkey.pem
-              CERT_WROTE=1
-            else
-              echo "CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM not set → generating self-signed dummy cert so nginx can boot."
-              echo "  -> Generate real cert in Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) and set the 2 secrets; then re-deploy."
-              openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
-                -keyout privkey.pem -out cert.pem \
-                -subj "/CN=letsbeus.online/O=Self-Signed-Origin-Dummy/C=US" >/dev/null 2>&1
-            fi
-
-            # Write Cloudflare's public Origin Pull CA (required by ssl_client_certificate in nginx.conf).
-            # This is public, non-sensitive data — source:
-            # https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/set-up/zone-level/#upload-the-certificate-to-your-origin
-            cat > cloudflare-origin-pull-ca.pem <<'CF_CA_EOF'
-            -----BEGIN CERTIFICATE-----
-            MIIGCjCCA/KgAwIBAgIIV5G6lVbCLmEwDQYJKoZIhvcNAQENBQAwgZAxCzAJBgNV
-            BAYTAlVTMRkwFwYDVQQKExBDbG91ZEZsYXJlLCBJbmMuMRQwEgYDVQQLEwtPcmln
-            aW4gUHVsbDEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UECBMKQ2FsaWZv
-            cm5pYTEjMCEGA1UEAxMab3JpZ2luLXB1bGwuY2xvdWRmbGFyZS5uZXQwHhcNMTkx
-            MDEwMTg0NTAwWhcNMjkxMTAxMTcwMDAwWjCBkDELMAkGA1UEBhMCVVMxGTAXBgNV
-            BAoTEENsb3VkRmxhcmUsIEluYy4xFDASBgNVBAsTC09yaWdpbiBQdWxsMRYwFAYD
-            VQQHEw1TYW4gRnJhbmNpc2NvMRMwEQYDVQQIEwpDYWxpZm9ybmlhMSMwIQYDVQQD
-            ExpvcmlnaW4tcHVsbC5jbG91ZGZsYXJlLm5ldDCCAiIwDQYJKoZIhvcNAQEBBQAD
-            ggIPADCCAgoCggIBAN2y2zojYfl0bKfhp0AJBFeV+jQqbCw3sHmvEPwLmqDLqynI
-            42tZXR5y914ZB9ZrwbL/K5O46exd/LujJnV2b3dzcx5rtiQzso0xzljqbnbQT20e
-            ihx/WrF4OkZKydZzsdaJsWAPuplDH5P7J82q3re88jQdgE5hqjqFZ3clCG7lxoBw
-            hLaazm3NJJlUfzdk97ouRvnFGAuXd5cQVx8jYOOeU60sWqmMe4QHdOvpqB91bJoY
-            QSKVFjUgHeTpN8tNpKJfb9LIn3pun3bC9NKNHtRKMNX3Kl/sAPq7q/AlndvA2Kw3
-            Dkum2mHQUGdzVHqcOgea9BGjLK2h7SuX93zTWL02u799dr6Xkrad/WShHchfjjRn
-            aL35niJUDr02YJtPgxWObsrfOU63B8juLUphW/4BOjjJyAG5l9j1//aUGEi/sEe5
-            lqVv0P78QrxoxR+MMXiJwQab5FB8TG/ac6mRHgF9CmkX90uaRh+OC07XjTdfSKGR
-            PpM9hB2ZhLol/nf8qmoLdoD5HvODZuKu2+muKeVHXgw2/A6wM7OwrinxZiyBk5Hh
-            CvaADH7PZpU6z/zv5NU5HSvXiKtCzFuDu4/Zfi34RfHXeCUfHAb4KfNRXJwMsxUa
-            +4ZpSAX2G6RnGU5meuXpU5/V+DQJp/e69XyyY6RXDoMywaEFlIlXBqjRRA2pAgMB
-            AAGjZjBkMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/AgECMB0GA1Ud
-            DgQWBBRDWUsraYuA4REzalfNVzjann3F6zAfBgNVHSMEGDAWgBRDWUsraYuA4REz
-            alfNVzjann3F6zANBgkqhkiG9w0BAQ0FAAOCAgEAkQ+T9nqcSlAuW/90DeYmQOW1
-            QhqOor5psBEGvxbNGV2hdLJY8h6QUq48BCevcMChg/L1CkznBNI40i3/6heDn3IS
-            zVEwXKf34pPFCACWVMZxbQjkNRTiH8iRur9EsaNQ5oXCPJkhwg2+IFyoPAAYURoX
-            VcI9SCDUa45clmYHJ/XYwV1icGVI8/9b2JUqklnOTa5tugwIUi5sTfipNcJXHhgz
-            6BKYDl0/UP0lLKbsUETXeTGDiDpxZYIgbcFrRDDkHC6BSvdWVEiH5b9mH2BON60z
-            0O0j8EEKTwi9jnafVtZQXP/D8yoVowdFDjXcKkOPF/1gIh9qrFR6GdoPVgB3SkLc
-            5ulBqZaCHm563jsvWb/kXJnlFxW+1bsO9BDD6DweBcGdNurgmH625wBXksSdD7y/
-            fakk8DagjbjKShYlPEFOAqEcliwjF45eabL0t27MJV61O/jHzHL3dknXeE4BDa2j
-            bA+JbyJeUMtU7KMsxvx82RmhqBEJJDBCJ3scVptvhDMRrtqDBW5JShxoAOcpFQGm
-            iYWicn46nPDjgTU0bX1ZPpTpryXbvciVL5RkVBuyX2ntcOLDPlZWgxZCBp96x07F
-            AnOzKgZk4RzZPNAxCXERVxajn/FLcOhglVAKo5H0ac+AitlQ0ip55D2/mf8o72tM
-            fVQ6VpyjEXdiIXWUq/o=
-            -----END CERTIFICATE-----
-            CF_CA_EOF
-
-            chmod 600 cert.pem privkey.pem
-            chmod 644 cloudflare-origin-pull-ca.pem
-            ls -la .
-
-            echo "--- Validating PEM files on disk before starting anything ---"
-            openssl x509 -in cert.pem -noout -subject -issuer -dates || { echo "FATAL: cert.pem is NOT a valid PEM. Dumping first/last 3 lines:"; head -3 cert.pem; echo "..."; tail -3 cert.pem; exit 1; }
-            openssl rsa  -in privkey.pem -noout -check 2>&1 | head -2 || { echo "FATAL: privkey.pem is NOT a valid RSA private key."; exit 1; }
-            echo "  Matching cert <-> key modulus (prevents Cloudflare 526 when wrong cert/key pair installed):"
-            CERT_MOD=$(openssl x509 -in cert.pem -noout -modulus 2>/dev/null | openssl md5)
-            KEY_MOD=$(openssl rsa  -in privkey.pem -noout -modulus 2>/dev/null | openssl md5)
-            echo "    cert mod md5: $CERT_MOD"
-            echo "    key  mod md5: $KEY_MOD"
-            if [ "$CERT_MOD" != "$KEY_MOD" ]; then
-              echo "FATAL: certificate and private key DO NOT MATCH. Cloudflare will throw 526 Invalid SSL Certificate if we proceed."
-              echo "  -> Re-create the origin cert in Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) and ensure BOTH CF_ORIGIN_CERT_PEM and CF_ORIGIN_PRIVKEY_PEM come from the SAME create-certificate dialog."
-              exit 1
-            fi
-            openssl x509 -in cloudflare-origin-pull-ca.pem -noout -subject -issuer -fingerprint || { echo "FATAL: cloudflare-origin-pull-ca.pem failed PEM validation."; exit 1; }
-            echo "PEM validation OK (cert+key match + CA bundle valid)."
-
-            cd ..
-
-            echo "--- Disk-space pre-check (BEFORE any cleanup/pull) ---"
-            df -hT / /var/lib/docker /var/lib/containerd 2>/dev/null || df -hT /
-            DISK_PCT=$(df --output=pcent / | awk 'NR==2 {gsub("%",""); print $1}')
-            echo "  /  usage: ${DISK_PCT}%"
-
-            # ── Shutdown running stack FIRST so images/volumes become detachable ──
-            echo "--- Stopping running stack + deleting any orphaned containers ---"
-            docker compose -f docker-compose.prod.yml down || true
-            docker rm -f announcement-backend-prod announcement-frontend-prod announcement-db-prod 2>/dev/null || true
-
-            # ── AGGRESSIVE CLEANUP (the real space-regainer) ──────────────────
-            # Order matters: containers (unlock images) → images (the big one) → buildx/buildkit cache → anonymous volumes → dangling networks
-            # This is the ONLY place we run `system prune -af` — and it's BEFORE any pull, so it cannot destroy the just-pulled-tagged images.
-            echo "--- Aggressive Docker cleanup to free disk space ---"
-            docker system prune -af --volumes 2>&1 | tail -3 || true
-            docker builder prune -af     2>&1 | tail -2 || true
-            echo "  pruning dangling images (anything not in docker-compose.prod.yml)..."
-            docker image prune -af       2>&1 | tail -2 || true
-            echo "  pruning stale volumes..."
-            docker volume  prune -f      2>&1 | tail -2 || true
-
-            # Also: containerd snapshotter sometimes leaks "extract-*" failed snapshots
-            # when the VPS disk died mid-write mid-deploy yesterday. Clean these up:
-            if command -v ctr >/dev/null 2>&1; then
-              echo "  purging failed containerd snapshots..."
-              ctr -n moby snapshots ls 2>/dev/null | awk '/extract-/ {print $1}' | xargs -r -n 1 ctr -n moby snapshots rm 2>/dev/null || true
-            fi
-
-            # Clean up old docker/containerd/journald logs (can be many GB on long-running VPS):
-            echo "  trimming system logs + journald vacuum..."
-            sudo journalctl --vacuum-time=3d 2>/dev/null | tail -1 || true
-            sudo truncate -s 0 /var/lib/docker/containers/*/*-json.log 2>/dev/null || true
-
-            echo "--- Disk-space post-cleanup check ---"
-            df -hT / /var/lib/docker /var/lib/containerd 2>/dev/null || df -hT /
-            DISK_PCT=$(df --output=pcent / | awk 'NR==2 {gsub("%",""); print $1}')
-            echo "  /  usage after cleanup: ${DISK_PCT}%"
-            if [ "${DISK_PCT:-100}" -gt 90 ]; then
-              echo "FATAL: even after aggressive cleanup disk is still ${DISK_PCT}% full — image extraction will fail with 'no space left on device'."
-              echo "  -> SSH into VPS and manually free more space (old logs, apt cache: sudo apt clean; sudo rm -rf /var/cache/apt/*), upgrade disk size, or re-run deploy after manually running: docker system prune -af --volumes"
-              exit 1
-            fi
-            echo "  Disk looks good — proceeding with pull."
-
-            echo "--- Pulling latest images ---"
             docker compose -f docker-compose.prod.yml pull
-
-            echo "--- Pre-flight: validating nginx config against the real image + certs (FAST FAIL, no restart loop) ---"
-            NGINX_CHECK_IMAGE="redaelmbarki/announcement-app-frontend:latest"
-            if docker run --rm \
-              -v "$(pwd)/cloudflare-origin:/etc/cloudflare-origin:ro" \
-              --entrypoint nginx \
-              "$NGINX_CHECK_IMAGE" -t 2>&1; then
-              echo "nginx -t: CONFIG VALID — safe to start containers."
-            else
-              echo "FATAL: nginx config REJECTED above. Refusing to start (would enter restart loop). Fix the error printed by nginx -t, then re-deploy."
-              echo "Troubleshooting:"
-              echo "  - \"pid directive is not allowed here\" -> your frontend image STILL has nginx.conf copied to /etc/nginx/conf.d/default.conf instead of /etc/nginx/nginx.conf. A NEW frontend image MUST be built+pushed after the Dockerfile fix (this push does that automatically)."
-              echo "  - \"host not found in upstream backend:80\" -> nginx is resolving backend eagerly at config-load time. Requires lazy DNS fix: remove static upstream block, add resolver 127.0.0.11, and use 'set \$backend backend:80; proxy_pass http://\$backend\$request_uri;' in locations. A NEW frontend image MUST be built+pushed after the nginx.conf fix (this push does that automatically)."
-              echo "  - If error is 'cannot load certificate' check secrets CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM"
-              echo "  - If error is 'ssl_client_certificate' the Cloudflare AOP CA file is corrupt"
-              echo "  - If you have not set CF secrets yet, that's OK — the self-signed fallback was written above and should work; if not, double-check its permissions."
-              exit 1
-            fi
-
-            echo "Starting full stack (db -> backend -> frontend)..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            echo "Waiting for frontend container to pass healthcheck (max 60s)..."
-            FRONTEND_OK=0
-            LOGS_DUMPED=0
-            for i in $(seq 1 12); do
-              STATE=$(docker inspect --format='{{.State.Health.Status}}' announcement-frontend-prod 2>/dev/null || echo "unknown")
-              RESTARTS=$(docker inspect --format='{{.RestartCount}}' announcement-frontend-prod 2>/dev/null || echo "?")
-              RUNSTATE=$(docker inspect --format='{{.State.Status}}' announcement-frontend-prod 2>/dev/null || echo "unknown")
-              echo "  attempt $i/12: run=$RUNSTATE health=$STATE restarts=$RESTARTS"
-
-              if [ "$STATE" = "healthy" ]; then
-                FRONTEND_OK=1
-                break
-              fi
-
-              if [ "$LOGS_DUMPED" = "0" ] && { [ "$STATE" = "unhealthy" ] || [ "$RUNSTATE" = "exited" ] || [ "$RESTARTS" != "0" ] || [ "$i" -ge 3 ]; }; then
-                echo "  -> EARLY LOG DUMP (frontend nginx stdout/stderr tail 80):"
-                docker logs --tail 80 announcement-frontend-prod 2>&1 || true
-                LOGS_DUMPED=1
-              fi
-
-              sleep 5
-            done
-
-            if [ "$FRONTEND_OK" != "1" ]; then
-              echo "ERROR: frontend did not become healthy. Dumping all container state + full logs:"
-              docker ps -a || true
-              echo "--- frontend FULL logs ---"
-              docker logs announcement-frontend-prod 2>&1 || true
-              echo "--- backend logs (tail 80) ---"
-              docker logs --tail 80 announcement-backend-prod 2>&1 || true
-              echo "--- db logs (tail 40) ---"
-              docker logs --tail 40 announcement-db-prod 2>&1 || true
-              exit 1
-            fi
-
-            echo "Verifying nginx config + reloading..."
-            docker compose -f docker-compose.prod.yml exec -T frontend nginx -t
-            docker compose -f docker-compose.prod.yml exec -T frontend nginx -s reload || true
-
-            if [ "$CERT_WROTE" = "1" ]; then
-              echo "Deploy finished successfully — Cloudflare origin cert installed."
-              echo "  -> In Cloudflare dashboard, set SSL/TLS -> Overview -> Encryption Mode = 'Full (strict)' for end-to-end security."
-            else
-              echo "Deploy finished successfully — running with SELF-SIGNED DUMMY origin cert."
-              echo "  TEMPORARY: In Cloudflare dashboard -> SSL/TLS -> Overview, set mode = 'Full' (NOT strict, because the dummy is self-signed)."
-              echo "  ACTION (once): Cloudflare -> SSL/TLS -> Origin Server -> Create Certificate. Paste cert into GH secret CF_ORIGIN_CERT_PEM, key into CF_ORIGIN_PRIVKEY_PEM. Re-deploy. Then switch CF SSL mode to 'Full (strict)'."
-            fi
-            echo "Domain: https://letsbeus.online"
+            echo "Waiting a moment for containers to settle..."
+            sleep 10
+            docker compose -f docker-compose.prod.yml ps
+            echo "Deploy finished. Domain: https://letsbeus.online"

@@ -52,17 +52,14 @@ services:
     container_name: announcement-frontend-prod
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       backend:
         condition: service_started
-    volumes:
-      - ./cloudflare-origin:/etc/cloudflare-origin:ro
     networks:
       - announcement-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x nginx >/dev/null && (test -f /tmp/nginx.pid || test -f /run/nginx.pid || test -f /var/run/nginx.pid) || exit 1"]
+      test: ["CMD-SHELL", "pgrep -x nginx >/dev/null || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 12
