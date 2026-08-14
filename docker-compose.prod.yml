@@ -42,9 +42,9 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - WWWGROUP=1000
-      - APP_URL=${APP_URL:-https://letsbeus.freeddns.org}
-      - FRONTEND_URL=${FRONTEND_URL:-https://letsbeus.freeddns.org}
-      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-letsbeus.freeddns.org}
+      - APP_URL=${APP_URL:-https://letsbeus.online}
+      - FRONTEND_URL=${FRONTEND_URL:-https://letsbeus.online}
+      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-letsbeus.online}
     networks:
       - announcement-network
     restart: unless-stopped
@@ -58,22 +58,10 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./certbot/conf:/etc/letsencrypt
+      - ./cloudflare-origin:/etc/cloudflare-origin:ro
     networks:
       - announcement-network
     restart: unless-stopped
-
-  certbot:
-    image: certbot/certbot
-    container_name: announcement-certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot-dynu:/etc/letsencrypt/hooks
-    environment:
-      - DYNU_API_KEY=${DYNU_API_KEY}
-    entrypoint: "/bin/sh -c 'trap exit TERM; apk add --no-cache bash curl python3 >/dev/null 2>&1; while :; do certbot renew -q --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh --non-interactive; sleep 12h & wait $${!}; done;'"
-    networks:
-      - announcement-network
 
 networks:
   announcement-network:

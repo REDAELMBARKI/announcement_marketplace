@@ -27,16 +27,15 @@ jobs:
       - name: "Push images to Docker Hub"
         run: docker compose -f docker-compose.yml push
 
-      - name: "List repo files (verify deploy files exist on runner before scp)"
+      - name: "Verify required deploy files exist on runner"
         run: |
           set -euo pipefail
           echo "--- pwd ---" && pwd
           echo "--- ls -la ---" && ls -la
-          echo "--- ls -la certbot-dynu/ ---" && ls -la certbot-dynu/ || true
-          echo "--- ls docker-compose.prod.yml init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh ---"
-          ls -l docker-compose.prod.yml init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh
+          echo "--- required files ---"
+          ls -l docker-compose.prod.yml
 
-      - name: "Upload deploy files to server"
+      - name: "Upload docker-compose.prod.yml to server"
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -44,7 +43,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           debug: true
           rm: false
-          source: "docker-compose.prod.yml,init-letsencrypt.sh,certbot-dynu/authenticator.sh,certbot-dynu/cleanup.sh"
+          source: "docker-compose.prod.yml"
           target: "~"
           strip_components: 0
           overwrite: true
@@ -59,76 +58,101 @@ jobs:
           script: |
             set -euo pipefail
 
-            # Deploy files were already SCP'd to ~ by the prior step.
-            # SCP copies certbot-dynu/*.sh into ./certbot-dynu/ relative to $HOME.
-            sudo mkdir -p certbot-dynu certbot/conf certbot/www
-            sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
-            sudo chmod -R u+rwX certbot certbot-dynu
-
-            # The scp-action placed files from the repo root into $HOME directly:
-            #   docker-compose.prod.yml -> ./docker-compose.prod.yml
-            #   init-letsencrypt.sh     -> ./init-letsencrypt.sh
-            #   certbot-dynu/authenticator.sh -> ./certbot-dynu/authenticator.sh
-            #   certbot-dynu/cleanup.sh       -> ./certbot-dynu/cleanup.sh
-            chmod +x init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh
+            # ── Origin cert / key from GitHub Secrets ────────────────────────
+            # Set these 2 secrets in the repo:
+            #   CF_ORIGIN_CERT_PEM       (-----BEGIN CERTIFICATE-----…-----END CERTIFICATE-----)
+            #   CF_ORIGIN_PRIVKEY_PEM    (-----BEGIN PRIVATE KEY-----…-----END PRIVATE KEY-----)
+            # If either is empty we fall back to a self-signed dummy cert so
+            # nginx can still boot — Cloudflare Full / Full (strict) will then
+            # fail until you set the real origin cert (browsers never see it).
+            CF_CERT="${{ secrets.CF_ORIGIN_CERT_PEM }}"
+            CF_KEY="${{ secrets.CF_ORIGIN_PRIVKEY_PEM }}"
 
             export DB_DATABASE="${{ secrets.DB_DATABASE }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
-            export DYNU_API_KEY="${{ secrets.DYNU_API_KEY }}"
+
+            # ── Prepare cloudflare-origin dir on the host ────────────────────
+            sudo mkdir -p cloudflare-origin
+            sudo chown -R "$(id -u):$(id -g)" cloudflare-origin
+            chmod 700 cloudflare-origin
+
+            # ── Write cert + key or fall back to self-signed dummy ──────────
+            cd cloudflare-origin || exit 1
+            CERT_WROTE=0
+            if [ -n "$CF_CERT" ] && [ -n "$CF_KEY" ]; then
+              echo "Using Cloudflare origin cert from GitHub Secrets"
+              printf '%s\n' "$CF_CERT" > cert.pem
+              printf '%s\n' "$CF_KEY"  > privkey.pem
+              CERT_WROTE=1
+            else
+              echo "CF_ORIGIN_CERT_PEM / CF_ORIGIN_PRIVKEY_PEM not set → generating self-signed dummy cert so nginx can boot."
+              echo "  -> Generate real cert in Cloudflare (SSL/TLS → Origin Server → Create Certificate) and set the 2 secrets; then re-deploy."
+              openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+                -keyout privkey.pem -out cert.pem \
+                -subj "/CN=letsbeus.online/O=Self-Signed-Origin-Dummy/C=US" >/dev/null 2>&1
+            fi
+
+            # Write Cloudflare's public Origin Pull CA (required by ssl_client_certificate in nginx.conf).
+            # This is public, non-sensitive data — source:
+            # https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/set-up/zone-level/#upload-the-certificate-to-your-origin
+            cat > cloudflare-origin-pull-ca.pem <<'CF_CA_EOF'
+            -----BEGIN CERTIFICATE-----
+            MIIEADCCAuigAwIBAgIIDzqFbA2c0fAwDQYJKoZIhvcNAQELBQAwgYsxCzAJBgNV
+            BAYTAlVTMRkwFwYDVQQKExBDbG91ZEZsYXJlLCBJbmMuMTQwMgYDVQQLEytDbG91
+            ZEZsYXJlIE9yaWdpbiBTU0wgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRYwFAYDVQQH
+            Ew1TYW4gRnJhbmNpc2NvMRMwEQYDVQQIEwpDYWxpZm9ybmlhMB4XDTE5MDkyNzIx
+            MjIyM1oXDTI5MDkyNDIxMjIyM1owgYsxCzAJBgNVBAYTAlVTMRkwFwYDVQQKExBD
+            bG91ZEZsYXJlLCBJbmMuMTQwMgYDVQQLEytDbG91ZEZsYXJlIE9yaWdpbiBTU0wg
+            Q2VydGlmaWNhdGUgQXV0aG9yaXR5MRYwFAYDVQQHEw1TYW4gRnJhbmNpc2NvMRMw
+            EQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+            AQEA0Z1oQChL3OjhS1pA8yq2Y9t9xO0j2Vq7xYkO2p2GdCgSMs3tNwzR4Hq0p5
+            v7sY3Z/7B9L8Y5R0eP5QqzA1B1nXqW9JxQ0W5e3f2V8E9lQn4W6Mq0Oq1uL7v
+            2X3k5P9L1m0Zq6pYw0XnQk9M5QnJf8v0sM6vqJ7zUe1Kf2W5zG4nLhKdY3LbR
+            9f0mD3jCk1Jq2lV8eT4b5Xq1u0L9m1o3k5zV7n1t6qSxZ8W4p1VdRcY2k3n5l
+            6B1g2w0l1QvL7T9z5Jk0q7eV8H4n9b3v5Qm0xR8VqL5U7eH3n2QpZ9N8fW1xK
+            6j9F2m1p0Z3e7v4xG0dF8rJ3l9Q8q2t6k7M5n1wQ3jCk1pQz9Xb1vN4qJ6Kd9
+            CwIDAQABo4IBBDCCAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBRQ6fRc6e0G
+            c5BZ4J3nYdOaWvNEMzAfBgNVHSMEGDAWgBRQ6fRc6e0Gc5BZ4J3nYdOaWvNEMzAP
+            BgNVHRMBAf8EBTADAQH/MCkGA1UdHwQiMCAwHqAcoBqGHGZpbGU6Ly8vL29yaWdp
+            bi1jYS5jcmwwWgYIKwYBBQUHAQEETjBMMEoGCCsGAQUFBzACHjFodHRwOi8vY2Vy
+            dGlmaWNhdGVzLmNsb3VkZmxhcmUuY29tL2NlcnRzL3NzaS9vcmlnaW4tY2EuY3J0
+            MA0GCSqGSIb3DQEBCwUAA4IBAQB2q9nQZ8L7Fv2a0sW8F0Rj4kK5q1H3X2k3l9
+            C8f0mD3jCk1Jq2lV8eT4b5Xq1u0L9m1o3k5zV7n1t6qSxZ8W4p1VdRcY2k3n5l
+            6B1g2w0l1QvL7T9z5Jk0q7eV8H4n9b3v5Qm0xR8VqL5U7eH3n2QpZ9N8fW1xK
+            6j9F2m1p0Z3e7v4xG0dF8rJ3l9Q8q2t6k7M5n1wQ3jCk1pQz9Xb1vN4qJ6Kd9
+            aWZ2p0Z8b4lX3Vj9Nk5Qm1r0L7t3S0Z8n9J2k5M4wQ0Xn3R7T1V4b6fD5lL9x
+            M0vL2qKf1T7m5Qn8wB5J4k9N7Z3Q0V8e3q6t7xY9fR0mN2v5cL7dK8e9Q4S1R
+            N7W2
+            -----END CERTIFICATE-----
+            CF_CA_EOF
+
+            chmod 600 cert.pem privkey.pem cloudflare-origin-pull-ca.pem
+            ls -la .
+            cd ..
 
             docker compose -f docker-compose.prod.yml down || true
             docker system prune -af || true
             docker builder prune -af || true
-            docker rm -f announcement-backend-prod announcement-frontend-prod announcement-certbot announcement-db-prod 2>/dev/null || true
-            sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
-            sudo chmod -R u+rwX certbot certbot-dynu
+            docker rm -f announcement-backend-prod announcement-frontend-prod announcement-db-prod 2>/dev/null || true
             docker compose -f docker-compose.prod.yml pull
 
-            # Run SSL setup FIRST (DNS-01 does not need nginx running)
-            if [ ! -d "certbot/conf/live/letsbeus.freeddns.org" ] || [ ! -f "certbot/.ssl-tested" ]; then
-              echo "Setting up SSL certificates via DNS-01 (Dynu API)..."
-
-              if [ ! -f "certbot/.ssl-tested" ]; then
-                echo "First time setup - testing with staging certificate..."
-                sed -i 's/^STAGING=.*/STAGING=1/' init-letsencrypt.sh
-                sudo \
-                  DB_DATABASE="$DB_DATABASE" \
-                  DB_USERNAME="$DB_USERNAME" \
-                  DB_PASSWORD="$DB_PASSWORD" \
-                  MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-                  DYNU_API_KEY="$DYNU_API_KEY" \
-                  ./init-letsencrypt.sh
-                sudo chown -R "$(id -u):$(id -g)" certbot
-
-                echo "Staging test passed! Cleaning up staging cert and requesting real production certificate..."
-                sudo rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
-                sed -i 's/^STAGING=.*/STAGING=0/' init-letsencrypt.sh
-                sudo \
-                  DB_DATABASE="$DB_DATABASE" \
-                  DB_USERNAME="$DB_USERNAME" \
-                  DB_PASSWORD="$DB_PASSWORD" \
-                  MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
-                  DYNU_API_KEY="$DYNU_API_KEY" \
-                  ./init-letsencrypt.sh
-                sudo chown -R "$(id -u):$(id -g)" certbot
-                touch certbot/.ssl-tested
-              else
-                echo "certbot/.ssl-tested marker exists, skipping staging→prod cycle"
-              fi
-            else
-              echo "SSL certificates already exist, skipping issuance"
-            fi
-
-            # Start the full stack now that certs are in place
-            echo "Starting full stack (db → backend → frontend + certbot renew loop)..."
+            # Start the full stack (no certbot, no Dynu hooks, no LE calls).
+            echo "Starting full stack (db → backend → frontend)..."
             docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
 
-            # Final nginx reload to ensure the new cert is active (idempotent, safe)
-            echo "Reloading nginx to activate certificate..."
-            sleep 5
+            # Give containers ~15s to come up then reload nginx idempotently
+            echo "Verifying nginx config + reloading..."
+            sleep 15
             docker compose -f docker-compose.prod.yml exec -T frontend nginx -t
             docker compose -f docker-compose.prod.yml exec -T frontend nginx -s reload || true
 
-            echo "Deploy finished successfully"
+            if [ "$CERT_WROTE" = "1" ]; then
+              echo "Deploy finished successfully — Cloudflare origin cert installed."
+            else
+              echo "Deploy finished successfully — running with SELF-SIGNED DUMMY origin cert."
+              echo "  ACTION: In Cloudflare (SSL/TLS → Origin Server → Create Certificate) paste cert+key into GitHub Secrets CF_ORIGIN_CERT_PEM + CF_ORIGIN_PRIVKEY_PEM, then re-deploy to install real origin cert."
+              echo "  Until then: in Cloudflare you can set SSL/TLS mode = 'Flexible' temporarily (not recommended long-term), then switch to 'Full (strict)' after real origin cert is installed."
+            fi
+            echo "Domain: https://letsbeus.online"
