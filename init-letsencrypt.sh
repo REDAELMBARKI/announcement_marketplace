@@ -57,12 +57,12 @@ fi
 
 # DNS-01: Request Let's Encrypt certificate via Dynu hooks (no nginx/webroot needed)
 echo "### Requesting Let's Encrypt certificate for $DOMAIN via DNS-01 (Dynu) ..."
-COMPOSE_BAKE=1 docker compose -f docker-compose.prod.yml run --rm certbot \
+DYNU_API_KEY="$DYNU_API_KEY" docker compose -f docker-compose.prod.yml run --rm certbot \
   certbot certonly \
     --manual \
     --preferred-challenges dns-01 \
-    --manual-auth-hook /etc/letsencrypt/dynu/authenticator.sh \
-    --manual-cleanup-hook /etc/letsencrypt/dynu/cleanup.sh \
+    --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
+    --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
     $STAGING_FLAG \
     --email "$EMAIL" \
     --agree-tos \
