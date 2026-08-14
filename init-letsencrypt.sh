@@ -61,19 +61,34 @@ fi
 # that is the 12-hour auto-renew loop. `docker compose run` only overrides `command`,
 # NOT `entrypoint`, so without an explicit --entrypoint below the container would
 # run its sleep-forever loop and never execute certonly -> appears frozen -> timeout.
-# We also install curl + python3 once (they're required by the Dynu shell hooks)
-# and set CERTBOT_HOOK_DEBUG=1 so the authenticator hook's echo lines are visible
-# in the CI log instead of being swallowed by certbot's default hook output policy.
+#
+# NOTE on Alpine + bash: certbot/certbot image is Alpine, which ships only with
+# busybox /bin/sh. The Dynu hooks use `#!/bin/bash` and bashisms ([[ glob ]]), so
+# bash MUST be installed via apk, otherwise execve fails with ENOENT on the
+# interpreter and the shell reports a confusing "/path/hook.sh: not found" (err 127)
+# even though the hook file itself exists and is +x. curl + python3 also required
+# by the Dynu hooks.
 echo "### Requesting Let's Encrypt certificate for $DOMAIN via DNS-01 (Dynu) ..."
 DYNU_API_KEY="$DYNU_API_KEY" docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
   /bin/sh -c '
     set -eu
-    apk add --no-cache curl python3 >/dev/null
+    echo "[container] Installing bash curl python3 (Dynu hook deps, Alpine missing bash by default)..."
+    apk add --no-cache bash curl python3 >/dev/null
+    echo "[container] Installed bash: $(bash --version | head -1)"
+    echo "[container] Mounted hook dir listing..."
+    ls -la /etc/letsencrypt/hooks/ || { echo "[container] ERROR: /etc/letsencrypt/hooks/ directory missing! Bind mount not applied."; ls -la /etc/letsencrypt/; exit 9; }
+    AUTH=/etc/letsencrypt/hooks/authenticator.sh
+    CLEAN=/etc/letsencrypt/hooks/cleanup.sh
+    for f in "$AUTH" "$CLEAN"; do
+      echo "[container] Inspect $f -> size=$(wc -c < $f), perms=$(ls -l $f | awk "{print \$1,\$3,\$4}"), shebang=$(head -1 $f)"
+      test -x "$f" || { echo "[container] Making $f executable"; chmod +x "$f"; }
+    done
+    echo "[container] About to invoke: certbot certonly with hooks at $AUTH / $CLEAN"
     certbot certonly \
       --manual \
       --preferred-challenges dns-01 \
-      --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
-      --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
+      --manual-auth-hook "$AUTH" \
+      --manual-cleanup-hook "$CLEAN" \
       '"$STAGING_FLAG"' \
       --email "'"$EMAIL"'" \
       --agree-tos \
