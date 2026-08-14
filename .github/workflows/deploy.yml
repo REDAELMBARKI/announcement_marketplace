@@ -99,36 +99,44 @@ jobs:
             # https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/set-up/zone-level/#upload-the-certificate-to-your-origin
             cat > cloudflare-origin-pull-ca.pem <<'CF_CA_EOF'
             -----BEGIN CERTIFICATE-----
-            MIIEADCCAuigAwIBAgIIDzqFbA2c0fAwDQYJKoZIhvcNAQELBQAwgYsxCzAJBgNV
-            BAYTAlVTMRkwFwYDVQQKExBDbG91ZEZsYXJlLCBJbmMuMTQwMgYDVQQLEytDbG91
-            ZEZsYXJlIE9yaWdpbiBTU0wgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRYwFAYDVQQH
-            Ew1TYW4gRnJhbmNpc2NvMRMwEQYDVQQIEwpDYWxpZm9ybmlhMB4XDTE5MDkyNzIx
-            MjIyM1oXDTI5MDkyNDIxMjIyM1owgYsxCzAJBgNVBAYTAlVTMRkwFwYDVQQKExBD
-            bG91ZEZsYXJlLCBJbmMuMTQwMgYDVQQLEytDbG91ZEZsYXJlIE9yaWdpbiBTU0wg
-            Q2VydGlmaWNhdGUgQXV0aG9yaXR5MRYwFAYDVQQHEw1TYW4gRnJhbmNpc2NvMRMw
-            EQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
-            AQEA0Z1oQChL3OjhS1pA8yq2Y9t9xO0j2Vq7xYkO2p2GdCgSMs3tNwzR4Hq0p5
-            v7sY3Z/7B9L8Y5R0eP5QqzA1B1nXqW9JxQ0W5e3f2V8E9lQn4W6Mq0Oq1uL7v
-            2X3k5P9L1m0Zq6pYw0XnQk9M5QnJf8v0sM6vqJ7zUe1Kf2W5zG4nLhKdY3LbR
-            9f0mD3jCk1Jq2lV8eT4b5Xq1u0L9m1o3k5zV7n1t6qSxZ8W4p1VdRcY2k3n5l
-            6B1g2w0l1QvL7T9z5Jk0q7eV8H4n9b3v5Qm0xR8VqL5U7eH3n2QpZ9N8fW1xK
-            6j9F2m1p0Z3e7v4xG0dF8rJ3l9Q8q2t6k7M5n1wQ3jCk1pQz9Xb1vN4qJ6Kd9
-            CwIDAQABo4IBBDCCAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBRQ6fRc6e0G
-            c5BZ4J3nYdOaWvNEMzAfBgNVHSMEGDAWgBRQ6fRc6e0Gc5BZ4J3nYdOaWvNEMzAP
-            BgNVHRMBAf8EBTADAQH/MCkGA1UdHwQiMCAwHqAcoBqGHGZpbGU6Ly8vL29yaWdp
-            bi1jYS5jcmwwWgYIKwYBBQUHAQEETjBMMEoGCCsGAQUFBzACHjFodHRwOi8vY2Vy
-            dGlmaWNhdGVzLmNsb3VkZmxhcmUuY29tL2NlcnRzL3NzaS9vcmlnaW4tY2EuY3J0
-            MA0GCSqGSIb3DQEBCwUAA4IBAQB2q9nQZ8L7Fv2a0sW8F0Rj4kK5q1H3X2k3l9
-            C8f0mD3jCk1Jq2lV8eT4b5Xq1u0L9m1o3k5zV7n1t6qSxZ8W4p1VdRcY2k3n5l
-            6B1g2w0l1QvL7T9z5Jk0q7eV8H4n9b3v5Qm0xR8VqL5U7eH3n2QpZ9N8fW1xK
-            6j9F2m1p0Z3e7v4xG0dF8rJ3l9Q8q2t6k7M5n1wQ3jCk1pQz9Xb1vN4qJ6Kd9
-            aWZ2p0Z8b4lX3Vj9Nk5Qm1r0L7t3S0Z8n9J2k5M4wQ0Xn3R7T1V4b6fD5lL9x
-            M0vL2qKf1T7m5Qn8wB5J4k9N7Z3Q0V8e3q6t7xY9fR0mN2v5cL7dK8e9Q4S1R
-            N7W2
+            MIIGCjCCA/KgAwIBAgIIV5G6lVbCLmEwDQYJKoZIhvcNAQENBQAwgZAxCzAJBgNV
+            BAYTAlVTMRkwFwYDVQQKExBDbG91ZEZsYXJlLCBJbmMuMRQwEgYDVQQLEwtPcmln
+            aW4gUHVsbDEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzETMBEGA1UECBMKQ2FsaWZv
+            cm5pYTEjMCEGA1UEAxMab3JpZ2luLXB1bGwuY2xvdWRmbGFyZS5uZXQwHhcNMTkx
+            MDEwMTg0NTAwWhcNMjkxMTAxMTcwMDAwWjCBkDELMAkGA1UEBhMCVVMxGTAXBgNV
+            BAoTEENsb3VkRmxhcmUsIEluYy4xFDASBgNVBAsTC09yaWdpbiBQdWxsMRYwFAYD
+            VQQHEw1TYW4gRnJhbmNpc2NvMRMwEQYDVQQIEwpDYWxpZm9ybmlhMSMwIQYDVQQD
+            ExpvcmlnaW4tcHVsbC5jbG91ZGZsYXJlLm5ldDCCAiIwDQYJKoZIhvcNAQEBBQAD
+            ggIPADCCAgoCggIBAN2y2zojYfl0bKfhp0AJBFeV+jQqbCw3sHmvEPwLmqDLqynI
+            42tZXR5y914ZB9ZrwbL/K5O46exd/LujJnV2b3dzcx5rtiQzso0xzljqbnbQT20e
+            ihx/WrF4OkZKydZzsdaJsWAPuplDH5P7J82q3re88jQdgE5hqjqFZ3clCG7lxoBw
+            hLaazm3NJJlUfzdk97ouRvnFGAuXd5cQVx8jYOOeU60sWqmMe4QHdOvpqB91bJoY
+            QSKVFjUgHeTpN8tNpKJfb9LIn3pun3bC9NKNHtRKMNX3Kl/sAPq7q/AlndvA2Kw3
+            Dkum2mHQUGdzVHqcOgea9BGjLK2h7SuX93zTWL02u799dr6Xkrad/WShHchfjjRn
+            aL35niJUDr02YJtPgxWObsrfOU63B8juLUphW/4BOjjJyAG5l9j1//aUGEi/sEe5
+            lqVv0P78QrxoxR+MMXiJwQab5FB8TG/ac6mRHgF9CmkX90uaRh+OC07XjTdfSKGR
+            PpM9hB2ZhLol/nf8qmoLdoD5HvODZuKu2+muKeVHXgw2/A6wM7OwrinxZiyBk5Hh
+            CvaADH7PZpU6z/zv5NU5HSvXiKtCzFuDu4/Zfi34RfHXeCUfHAb4KfNRXJwMsxUa
+            +4ZpSAX2G6RnGU5meuXpU5/V+DQJp/e69XyyY6RXDoMywaEFlIlXBqjRRA2pAgMB
+            AAGjZjBkMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/AgECMB0GA1Ud
+            DgQWBBRDWUsraYuA4REzalfNVzjann3F6zAfBgNVHSMEGDAWgBRDWUsraYuA4REz
+            alfNVzjann3F6zANBgkqhkiG9w0BAQ0FAAOCAgEAkQ+T9nqcSlAuW/90DeYmQOW1
+            QhqOor5psBEGvxbNGV2hdLJY8h6QUq48BCevcMChg/L1CkznBNI40i3/6heDn3IS
+            zVEwXKf34pPFCACWVMZxbQjkNRTiH8iRur9EsaNQ5oXCPJkhwg2+IFyoPAAYURoX
+            VcI9SCDUa45clmYHJ/XYwV1icGVI8/9b2JUqklnOTa5tugwIUi5sTfipNcJXHhgz
+            6BKYDl0/UP0lLKbsUETXeTGDiDpxZYIgbcFrRDDkHC6BSvdWVEiH5b9mH2BON60z
+            0O0j8EEKTwi9jnafVtZQXP/D8yoVowdFDjXcKkOPF/1gIh9qrFR6GdoPVgB3SkLc
+            5ulBqZaCHm563jsvWb/kXJnlFxW+1bsO9BDD6DweBcGdNurgmH625wBXksSdD7y/
+            fakk8DagjbjKShYlPEFOAqEcliwjF45eabL0t27MJV61O/jHzHL3dknXeE4BDa2j
+            bA+JbyJeUMtU7KMsxvx82RmhqBEJJDBCJ3scVptvhDMRrtqDBW5JShxoAOcpFQGm
+            iYWicn46nPDjgTU0bX1ZPpTpryXbvciVL5RkVBuyX2ntcOLDPlZWgxZCBp96x07F
+            AnOzKgZk4RzZPNAxCXERVxajn/FLcOhglVAKo5H0ac+AitlQ0ip55D2/mf8o72tM
+            fVQ6VpyjEXdiIXWUq/o=
             -----END CERTIFICATE-----
             CF_CA_EOF
 
-            chmod 600 cert.pem privkey.pem cloudflare-origin-pull-ca.pem
+            chmod 600 cert.pem privkey.pem
+            chmod 644 cloudflare-origin-pull-ca.pem
             ls -la .
             cd ..
 
@@ -138,13 +146,41 @@ jobs:
             docker rm -f announcement-backend-prod announcement-frontend-prod announcement-db-prod 2>/dev/null || true
             docker compose -f docker-compose.prod.yml pull
 
-            # Start the full stack (no certbot, no Dynu hooks, no LE calls).
-            echo "Starting full stack (db → backend → frontend)..."
+            echo "Starting full stack (db -> backend -> frontend)..."
             docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
 
-            # Give containers ~15s to come up then reload nginx idempotently
+            echo "Waiting for frontend container to pass healthcheck (max 90s)..."
+            FRONTEND_OK=0
+            for i in $(seq 1 18); do
+              STATE=$(docker inspect --format='{{.State.Health.Status}}' announcement-frontend-prod 2>/dev/null || echo "unknown")
+              echo "  attempt $i/18: frontend health=$STATE"
+              if [ "$STATE" = "healthy" ]; then
+                FRONTEND_OK=1
+                break
+              fi
+              if [ "$STATE" = "unhealthy" ] || [ "$STATE" = "exited" ]; then
+                echo "  -> frontend entered state=$STATE, dumping logs for diagnosis:"
+                docker logs --tail 80 announcement-frontend-prod || true
+                echo "  -> backend logs (tail 40):"
+                docker logs --tail 40 announcement-backend-prod || true
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$FRONTEND_OK" != "1" ]; then
+              echo "ERROR: frontend did not become healthy. Dumping all container state:"
+              docker ps -a || true
+              echo "--- frontend logs (tail 100) ---"
+              docker logs --tail 100 announcement-frontend-prod || true
+              echo "--- backend logs (tail 60) ---"
+              docker logs --tail 60 announcement-backend-prod || true
+              echo "--- db logs (tail 40) ---"
+              docker logs --tail 40 announcement-db-prod || true
+              exit 1
+            fi
+
             echo "Verifying nginx config + reloading..."
-            sleep 15
             docker compose -f docker-compose.prod.yml exec -T frontend nginx -t
             docker compose -f docker-compose.prod.yml exec -T frontend nginx -s reload || true
 
@@ -152,7 +188,7 @@ jobs:
               echo "Deploy finished successfully — Cloudflare origin cert installed."
             else
               echo "Deploy finished successfully — running with SELF-SIGNED DUMMY origin cert."
-              echo "  ACTION: In Cloudflare (SSL/TLS → Origin Server → Create Certificate) paste cert+key into GitHub Secrets CF_ORIGIN_CERT_PEM + CF_ORIGIN_PRIVKEY_PEM, then re-deploy to install real origin cert."
+              echo "  ACTION: In Cloudflare (SSL/TLS -> Origin Server -> Create Certificate) paste cert+key into GitHub Secrets CF_ORIGIN_CERT_PEM + CF_ORIGIN_PRIVKEY_PEM, then re-deploy to install real origin cert."
               echo "  Until then: in Cloudflare you can set SSL/TLS mode = 'Flexible' temporarily (not recommended long-term), then switch to 'Full (strict)' after real origin cert is installed."
             fi
             echo "Domain: https://letsbeus.online"
