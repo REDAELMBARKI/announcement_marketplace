@@ -162,14 +162,55 @@ jobs:
 
             cd ..
 
+            echo "--- Disk-space pre-check (BEFORE any cleanup/pull) ---"
+            df -hT / /var/lib/docker /var/lib/containerd 2>/dev/null || df -hT /
+            DISK_PCT=$(df --output=pcent / | awk 'NR==2 {gsub("%",""); print $1}')
+            echo "  /  usage: ${DISK_PCT}%"
+
+            # ── Shutdown running stack FIRST so images/volumes become detachable ──
+            echo "--- Stopping running stack + deleting any orphaned containers ---"
             docker compose -f docker-compose.prod.yml down || true
             docker rm -f announcement-backend-prod announcement-frontend-prod announcement-db-prod 2>/dev/null || true
-            docker container prune -f || true
-            docker builder prune -af || true
+
+            # ── AGGRESSIVE CLEANUP (the real space-regainer) ──────────────────
+            # Order matters: containers (unlock images) → images (the big one) → buildx/buildkit cache → anonymous volumes → dangling networks
+            # This is the ONLY place we run `system prune -af` — and it's BEFORE any pull, so it cannot destroy the just-pulled-tagged images.
+            echo "--- Aggressive Docker cleanup to free disk space ---"
+            docker system prune -af --volumes 2>&1 | tail -3 || true
+            docker builder prune -af     2>&1 | tail -2 || true
+            echo "  pruning dangling images (anything not in docker-compose.prod.yml)..."
+            docker image prune -af       2>&1 | tail -2 || true
+            echo "  pruning stale volumes..."
+            docker volume  prune -f      2>&1 | tail -2 || true
+
+            # Also: containerd snapshotter sometimes leaks "extract-*" failed snapshots
+            # when the VPS disk died mid-write mid-deploy yesterday. Clean these up:
+            if command -v ctr >/dev/null 2>&1; then
+              echo "  purging failed containerd snapshots..."
+              ctr -n moby snapshots ls 2>/dev/null | awk '/extract-/ {print $1}' | xargs -r -n 1 ctr -n moby snapshots rm 2>/dev/null || true
+            fi
+
+            # Clean up old docker/containerd/journald logs (can be many GB on long-running VPS):
+            echo "  trimming system logs + journald vacuum..."
+            sudo journalctl --vacuum-time=3d 2>/dev/null | tail -1 || true
+            sudo truncate -s 0 /var/lib/docker/containers/*/*-json.log 2>/dev/null || true
+
+            echo "--- Disk-space post-cleanup check ---"
+            df -hT / /var/lib/docker /var/lib/containerd 2>/dev/null || df -hT /
+            DISK_PCT=$(df --output=pcent / | awk 'NR==2 {gsub("%",""); print $1}')
+            echo "  /  usage after cleanup: ${DISK_PCT}%"
+            if [ "${DISK_PCT:-100}" -gt 90 ]; then
+              echo "FATAL: even after aggressive cleanup disk is still ${DISK_PCT}% full — image extraction will fail with 'no space left on device'."
+              echo "  -> SSH into VPS and manually free more space (old logs, apt cache: sudo apt clean; sudo rm -rf /var/cache/apt/*), upgrade disk size, or re-run deploy after manually running: docker system prune -af --volumes"
+              exit 1
+            fi
+            echo "  Disk looks good — proceeding with pull."
+
+            echo "--- Pulling latest images ---"
+            docker compose -f docker-compose.prod.yml pull
 
             echo "--- Pre-flight: validating nginx config against the real image + certs (FAST FAIL, no restart loop) ---"
             NGINX_CHECK_IMAGE="redaelmbarki/announcement-app-frontend:latest"
-            docker compose -f docker-compose.prod.yml pull
             if docker run --rm \
               -v "$(pwd)/cloudflare-origin:/etc/cloudflare-origin:ro" \
               --entrypoint nginx \
