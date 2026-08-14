@@ -1,21 +1,12 @@
 #!/bin/bash
+set -euo pipefail
+
 DOMAIN="letsbeus.freeddns.org"
 EMAIL="elmreda05@gmail.com"  # For renewal notifications
-
-# Dynu API Key — create one at https://www.dynu.com/en-US/ControlPanel/APICredentials
-# Either export DYNU_API_KEY before running, or set it below
-DYNU_API_KEY="${DYNU_API_KEY:-}"
 
 # Set to 1 for testing (uses staging - fake certificates)
 # Set to 0 for production (real certificates)
 STAGING=1
-
-if [ -z "${DYNU_API_KEY}" ]; then
-  echo "ERROR: DYNU_API_KEY environment variable is not set" >&2
-  echo "Create one at: https://www.dynu.com/en-US/ControlPanel/APICredentials" >&2
-  echo "Then run:  export DYNU_API_KEY=\"your-api-key\" ; ./init-letsencrypt.sh" >&2
-  exit 1
-fi
 
 if [ "$STAGING" = "1" ]; then
   echo "### TESTING MODE: Using Let's Encrypt STAGING (fake certificate) ###"
@@ -25,55 +16,62 @@ else
   STAGING_FLAG=""
 fi
 
-echo "### Initializing Let's Encrypt DNS-01 certificate for $DOMAIN (via Dynu API) ###"
+echo "### Initializing Let's Encrypt certificate for $DOMAIN (DNS-01 via Dynu) ###"
 
+# Create directories if they don't exist
 mkdir -p certbot/conf
 mkdir -p certbot/www
 
-echo "### Downloading recommended TLS parameters ..."
-mkdir -p certbot/conf
-TMP_OPT=$(mktemp)
-TMP_DHP=$(mktemp)
-curl -fsSL -o "${TMP_OPT}" https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
-curl -fsSL -o "${TMP_DHP}" https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem
-# Use docker to copy into the certbot/conf dir even if it's root-owned (bypasses host permissions)
-docker run --rm \
-  -v "$(pwd)/certbot/conf:/dst:rw" \
-  -v "${TMP_OPT}:/tmp/options.conf:ro" \
-  -v "${TMP_DHP}:/tmp/dhparams.pem:ro" \
-  alpine sh -c "cp /tmp/options.conf /dst/options-ssl-nginx.conf && cp /tmp/dhparams.pem /dst/ssl-dhparams.pem && chmod 0644 /dst/options-ssl-nginx.conf /dst/ssl-dhparams.pem"
-rm -f "${TMP_OPT}" "${TMP_DHP}"
-echo
+# Write recommended TLS parameters locally (avoid remote fetch failures)
+echo "### Writing recommended TLS parameters ..."
+cat > "./certbot/conf/options-ssl-nginx.conf" <<'EOF'
+# This file contains important security parameters. If you modify this file
+# manually, Certbot will be unable to automatically provide future security
+# updates. Instead, Certbot will print and log an error message with a path to
+# the up-to-date file that you will need to refer to when manually updating
+# this file.
 
-echo "### Installing certbot runtime deps (curl, python3) + issuing certificate via DNS-01 ..."
-chmod +x "$(pwd)/certbot-dynu/authenticator.sh" "$(pwd)/certbot-dynu/cleanup.sh" || true
-docker compose -f docker-compose.prod.yml run --rm \
-  -e DYNU_API_KEY="${DYNU_API_KEY}" \
-  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks" \
-  certbot sh -c "
-    apk add --no-cache curl python3 >/dev/null 2>&1
-    certbot certonly \
-      --manual \
-      --preferred-challenges dns \
-      --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
-      --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
-      ${STAGING_FLAG} \
-      --email ${EMAIL} \
-      --agree-tos \
-      --no-eff-email \
-      --force-renewal \
-      --non-interactive \
-      --cert-name ${DOMAIN} \
-      -d ${DOMAIN}
-  "
-CERTBOT_EXIT=$?
+ssl_session_cache shared:le_nginx_SSL:10m;
+ssl_session_timeout 1440m;
+ssl_session_tickets off;
 
-if [ "${CERTBOT_EXIT}" -ne 0 ]; then
-  echo "ERROR: certbot DNS-01 issuance failed (exit ${CERTBOT_EXIT})" >&2
-  exit ${CERTBOT_EXIT}
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers off;
+
+ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+EOF
+
+# Generate DH params if missing (2048-bit, sufficient for most setups)
+if [ ! -f "./certbot/conf/ssl-dhparams.pem" ]; then
+  echo "### Generating DH params (this may take a moment)..."
+  openssl dhparam -out "./certbot/conf/ssl-dhparams.pem" 2048 2>/dev/null || \
+  curl -sSL https://ssl-config.mozilla.org/ffdhe2048.txt > "./certbot/conf/ssl-dhparams.pem"
 fi
 echo
 
-echo "### DNS-01 certificate issued for ${DOMAIN}! ###"
-echo "### (Caller is responsible for starting/recreating containers now) ###"
-echo "### Setup complete. ###"
+# Ensure Dynu API key is available
+if [ -z "${DYNU_API_KEY:-}" ]; then
+  echo "ERROR: DYNU_API_KEY env var is not set. DNS-01 challenge cannot proceed."
+  exit 1
+fi
+
+# DNS-01: Request Let's Encrypt certificate via Dynu hooks (no nginx/webroot needed)
+echo "### Requesting Let's Encrypt certificate for $DOMAIN via DNS-01 (Dynu) ..."
+COMPOSE_BAKE=1 docker compose -f docker-compose.prod.yml run --rm certbot \
+  certbot certonly \
+    --manual \
+    --preferred-challenges dns-01 \
+    --manual-auth-hook /etc/letsencrypt/dynu/authenticator.sh \
+    --manual-cleanup-hook /etc/letsencrypt/dynu/cleanup.sh \
+    $STAGING_FLAG \
+    --email "$EMAIL" \
+    --agree-tos \
+    --no-eff-email \
+    --non-interactive \
+    --force-renewal \
+    -d "$DOMAIN"
+echo
+
+echo "### Certificate setup complete! ###"
+echo "Your certificate files live in the host bind-mount: certbot/conf/live/$DOMAIN/"
+echo "Start the frontend/nginx stack separately to serve https://$DOMAIN"

@@ -92,7 +92,7 @@ curl -s -X GET "${API_BASE}/dns/update" \
   -H "API-Key: ${API_KEY}" \
   -H "accept: application/json" >/dev/null 2>&1 || true
 
-echo "  Waiting 45s for DNS propagation..."
-sleep 45
+echo "  Waiting 20s for DNS propagation..."
+sleep 20
 
 echo "DNS-01 authenticator: Done for ${AUTH_DOMAIN}"

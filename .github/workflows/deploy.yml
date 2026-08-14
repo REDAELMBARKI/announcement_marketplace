@@ -38,10 +38,10 @@ jobs:
 
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml?v=$(date +%s)"
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/init-letsencrypt.sh?v=$(date +%s)"
-            mkdir -p certbot-dynu certbot/conf certbot/www
+            sudo mkdir -p certbot-dynu certbot/conf certbot/www
             # Ensure these dirs are writable by our user (prior runs may have left them root-owned)
-            sudo -n chown -R "$(id -u):$(id -g)" certbot certbot-dynu 2>/dev/null || true
-            chmod -R u+rwX certbot certbot-dynu 2>/dev/null || true
+            sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
+            sudo chmod -R u+rwX certbot certbot-dynu
 
             curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/authenticator.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/authenticator.sh?v=$(date +%s)"
             curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/cleanup.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/cleanup.sh?v=$(date +%s)"
@@ -58,7 +58,8 @@ jobs:
             docker builder prune -af || true
             docker rm -f announcement-backend-prod announcement-frontend-prod announcement-certbot announcement-db-prod 2>/dev/null || true
             # After prune, certbot/conf might be re-owned by root if docker recreated it
-            sudo -n chown -R "$(id -u):$(id -g)" certbot 2>/dev/null || true
+            sudo chown -R "$(id -u):$(id -g)" certbot certbot-dynu
+            sudo chmod -R u+rwX certbot certbot-dynu
             docker compose -f docker-compose.prod.yml pull
 
             # Run SSL setup FIRST (DNS-01 does not need nginx running)
@@ -68,12 +69,14 @@ jobs:
               if [ ! -f "certbot/.ssl-tested" ]; then
                 echo "First time setup - testing with staging certificate..."
                 sed -i 's/^STAGING=.*/STAGING=1/' init-letsencrypt.sh
-                ./init-letsencrypt.sh
+                sudo ./init-letsencrypt.sh
+                sudo chown -R "$(id -u):$(id -g)" certbot
 
                 echo "Staging test passed! Cleaning up staging cert and requesting real production certificate..."
-                rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
+                sudo rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
                 sed -i 's/^STAGING=.*/STAGING=0/' init-letsencrypt.sh
-                ./init-letsencrypt.sh
+                sudo ./init-letsencrypt.sh
+                sudo chown -R "$(id -u):$(id -g)" certbot
                 touch certbot/.ssl-tested
               else
                 echo "certbot/.ssl-tested marker exists, skipping staging→prod cycle"
