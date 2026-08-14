@@ -9,16 +9,15 @@ fi
 
 echo "### Renewing SSL Certificate via DNS-01 (Dynu API) ###"
 
+chmod +x "$(pwd)/certbot-dynu/authenticator.sh" "$(pwd)/certbot-dynu/cleanup.sh" || true
 docker compose -f docker-compose.prod.yml run --rm \
   -e DYNU_API_KEY="${DYNU_API_KEY}" \
-  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks:ro" \
+  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks" \
   certbot sh -c "
     apk add --no-cache curl python3 >/dev/null 2>&1
-    chmod +x /etc/letsencrypt/hooks/authenticator.sh /etc/letsencrypt/hooks/cleanup.sh
     certbot renew \
       --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
       --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
-      --manual-public-ip-logging-ok \
       --non-interactive
   "
 

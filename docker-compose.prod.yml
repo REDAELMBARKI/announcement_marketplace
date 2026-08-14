@@ -68,10 +68,10 @@ services:
     container_name: announcement-certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
-      - ./certbot-dynu:/etc/letsencrypt/hooks:ro
+      - ./certbot-dynu:/etc/letsencrypt/hooks
     environment:
       - DYNU_API_KEY=${DYNU_API_KEY}
-    entrypoint: "/bin/sh -c 'trap exit TERM; apk add --no-cache curl python3 >/dev/null 2>&1; chmod +x /etc/letsencrypt/hooks/authenticator.sh /etc/letsencrypt/hooks/cleanup.sh; while :; do certbot renew -q --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh --manual-public-ip-logging-ok --non-interactive --deploy-hook \"echo Reloading skipped, nginx reload handled separately\"; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; apk add --no-cache curl python3 >/dev/null 2>&1; while :; do certbot renew -q --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh --non-interactive; sleep 12h & wait $${!}; done;'"
     networks:
       - announcement-network
 

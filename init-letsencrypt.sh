@@ -31,23 +31,32 @@ mkdir -p certbot/conf
 mkdir -p certbot/www
 
 echo "### Downloading recommended TLS parameters ..."
-curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "./certbot/conf/options-ssl-nginx.conf"
-curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > "./certbot/conf/ssl-dhparams.pem"
+mkdir -p certbot/conf
+TMP_OPT=$(mktemp)
+TMP_DHP=$(mktemp)
+curl -fsSL -o "${TMP_OPT}" https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
+curl -fsSL -o "${TMP_DHP}" https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem
+# Use docker to copy into the certbot/conf dir even if it's root-owned (bypasses host permissions)
+docker run --rm \
+  -v "$(pwd)/certbot/conf:/dst:rw" \
+  -v "${TMP_OPT}:/tmp/options.conf:ro" \
+  -v "${TMP_DHP}:/tmp/dhparams.pem:ro" \
+  alpine sh -c "cp /tmp/options.conf /dst/options-ssl-nginx.conf && cp /tmp/dhparams.pem /dst/ssl-dhparams.pem && chmod 0644 /dst/options-ssl-nginx.conf /dst/ssl-dhparams.pem"
+rm -f "${TMP_OPT}" "${TMP_DHP}"
 echo
 
 echo "### Installing certbot runtime deps (curl, python3) + issuing certificate via DNS-01 ..."
+chmod +x "$(pwd)/certbot-dynu/authenticator.sh" "$(pwd)/certbot-dynu/cleanup.sh" || true
 docker compose -f docker-compose.prod.yml run --rm \
   -e DYNU_API_KEY="${DYNU_API_KEY}" \
-  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks:ro" \
+  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks" \
   certbot sh -c "
     apk add --no-cache curl python3 >/dev/null 2>&1
-    chmod +x /etc/letsencrypt/hooks/authenticator.sh /etc/letsencrypt/hooks/cleanup.sh
     certbot certonly \
       --manual \
       --preferred-challenges dns \
       --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
       --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
-      --manual-public-ip-logging-ok \
       ${STAGING_FLAG} \
       --email ${EMAIL} \
       --agree-tos \
