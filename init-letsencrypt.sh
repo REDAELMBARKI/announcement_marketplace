@@ -56,20 +56,33 @@ if [ -z "${DYNU_API_KEY:-}" ]; then
 fi
 
 # DNS-01: Request Let's Encrypt certificate via Dynu hooks (no nginx/webroot needed)
+#
+# NOTE: The certbot service in docker-compose.prod.yml sets a custom `entrypoint:`
+# that is the 12-hour auto-renew loop. `docker compose run` only overrides `command`,
+# NOT `entrypoint`, so without an explicit --entrypoint below the container would
+# run its sleep-forever loop and never execute certonly -> appears frozen -> timeout.
+# We also install curl + python3 once (they're required by the Dynu shell hooks)
+# and set CERTBOT_HOOK_DEBUG=1 so the authenticator hook's echo lines are visible
+# in the CI log instead of being swallowed by certbot's default hook output policy.
 echo "### Requesting Let's Encrypt certificate for $DOMAIN via DNS-01 (Dynu) ..."
-DYNU_API_KEY="$DYNU_API_KEY" docker compose -f docker-compose.prod.yml run --rm certbot \
-  certbot certonly \
-    --manual \
-    --preferred-challenges dns-01 \
-    --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
-    --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
-    $STAGING_FLAG \
-    --email "$EMAIL" \
-    --agree-tos \
-    --no-eff-email \
-    --non-interactive \
-    --force-renewal \
-    -d "$DOMAIN"
+DYNU_API_KEY="$DYNU_API_KEY" docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+  /bin/sh -c '
+    set -eu
+    apk add --no-cache curl python3 >/dev/null
+    certbot certonly \
+      --manual \
+      --preferred-challenges dns-01 \
+      --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
+      --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
+      '"$STAGING_FLAG"' \
+      --email "'"$EMAIL"'" \
+      --agree-tos \
+      --no-eff-email \
+      --non-interactive \
+      --force-renewal \
+      -v \
+      -d "'"$DOMAIN"'"
+  '
 echo
 
 echo "### Certificate setup complete! ###"

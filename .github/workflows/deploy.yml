@@ -69,13 +69,25 @@ jobs:
               if [ ! -f "certbot/.ssl-tested" ]; then
                 echo "First time setup - testing with staging certificate..."
                 sed -i 's/^STAGING=.*/STAGING=1/' init-letsencrypt.sh
-                sudo DYNU_API_KEY="$DYNU_API_KEY" ./init-letsencrypt.sh
+                sudo \
+                  DB_DATABASE="$DB_DATABASE" \
+                  DB_USERNAME="$DB_USERNAME" \
+                  DB_PASSWORD="$DB_PASSWORD" \
+                  MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                  DYNU_API_KEY="$DYNU_API_KEY" \
+                  ./init-letsencrypt.sh
                 sudo chown -R "$(id -u):$(id -g)" certbot
 
                 echo "Staging test passed! Cleaning up staging cert and requesting real production certificate..."
                 sudo rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
                 sed -i 's/^STAGING=.*/STAGING=0/' init-letsencrypt.sh
-                sudo DYNU_API_KEY="$DYNU_API_KEY" ./init-letsencrypt.sh
+                sudo \
+                  DB_DATABASE="$DB_DATABASE" \
+                  DB_USERNAME="$DB_USERNAME" \
+                  DB_PASSWORD="$DB_PASSWORD" \
+                  MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                  DYNU_API_KEY="$DYNU_API_KEY" \
+                  ./init-letsencrypt.sh
                 sudo chown -R "$(id -u):$(id -g)" certbot
                 touch certbot/.ssl-tested
               else
