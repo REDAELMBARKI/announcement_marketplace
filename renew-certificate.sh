@@ -1,12 +1,28 @@
 #!/bin/bash
 
-echo "### Renewing SSL Certificate ###"
+DYNU_API_KEY="${DYNU_API_KEY:-}"
+if [ -z "${DYNU_API_KEY}" ]; then
+  echo "ERROR: DYNU_API_KEY environment variable is not set" >&2
+  echo "Run:  export DYNU_API_KEY=\"your-api-key\" ; ./renew-certificate.sh" >&2
+  exit 1
+fi
 
-# Renew certificate
-docker-compose -f docker-compose.prod.yml run --rm certbot renew
+echo "### Renewing SSL Certificate via DNS-01 (Dynu API) ###"
 
-# Reload nginx to apply new certificate
+docker compose -f docker-compose.prod.yml run --rm \
+  -e DYNU_API_KEY="${DYNU_API_KEY}" \
+  -v "$(pwd)/certbot-dynu:/etc/letsencrypt/hooks:ro" \
+  certbot sh -c "
+    apk add --no-cache curl python3 >/dev/null 2>&1
+    chmod +x /etc/letsencrypt/hooks/authenticator.sh /etc/letsencrypt/hooks/cleanup.sh
+    certbot renew \
+      --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh \
+      --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh \
+      --manual-public-ip-logging-ok \
+      --non-interactive
+  "
+
 echo "### Reloading nginx ..."
-docker-compose -f docker-compose.prod.yml exec frontend nginx -s reload
+docker compose -f docker-compose.prod.yml exec frontend nginx -s reload
 
 echo "### Certificate renewal complete! ###"

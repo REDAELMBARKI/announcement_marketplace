@@ -42,9 +42,9 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - WWWGROUP=1000
-      - APP_URL=${APP_URL:-https://letsbeus.duckdns.org}
-      - FRONTEND_URL=${FRONTEND_URL:-https://letsbeus.duckdns.org}
-      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-letsbeus.duckdns.org}
+      - APP_URL=${APP_URL:-https://letsbeus.freeddns.org}
+      - FRONTEND_URL=${FRONTEND_URL:-https://letsbeus.freeddns.org}
+      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-letsbeus.freeddns.org}
     networks:
       - announcement-network
     restart: unless-stopped
@@ -59,7 +59,6 @@ services:
       - backend
     volumes:
       - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
     networks:
       - announcement-network
     restart: unless-stopped
@@ -69,8 +68,10 @@ services:
     container_name: announcement-certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - ./certbot-dynu:/etc/letsencrypt/hooks:ro
+    environment:
+      - DYNU_API_KEY=${DYNU_API_KEY}
+    entrypoint: "/bin/sh -c 'trap exit TERM; apk add --no-cache curl python3 >/dev/null 2>&1; chmod +x /etc/letsencrypt/hooks/authenticator.sh /etc/letsencrypt/hooks/cleanup.sh; while :; do certbot renew -q --manual-auth-hook /etc/letsencrypt/hooks/authenticator.sh --manual-cleanup-hook /etc/letsencrypt/hooks/cleanup.sh --manual-public-ip-logging-ok --non-interactive --deploy-hook \"echo Reloading skipped, nginx reload handled separately\"; sleep 12h & wait $${!}; done;'"
     networks:
       - announcement-network
 

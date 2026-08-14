@@ -28,47 +28,62 @@ jobs:
         run: docker compose -f docker-compose.yml push
 
       - name: "SSH to server and deploy"
-        uses: appleboy/ssh-action@v1.0.3  
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -euo pipefail
+
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/docker-compose.prod.yml?v=$(date +%s)"
             curl -fsSL -H 'Cache-Control: no-cache' -O "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/init-letsencrypt.sh?v=$(date +%s)"
+            mkdir -p certbot-dynu certbot/conf
+            curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/authenticator.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/authenticator.sh?v=$(date +%s)"
+            curl -fsSL -H 'Cache-Control: no-cache' -o certbot-dynu/cleanup.sh "https://raw.githubusercontent.com/REDAELMBARKI/announcement_marketplace/main/certbot-dynu/cleanup.sh?v=$(date +%s)"
+            chmod +x init-letsencrypt.sh certbot-dynu/authenticator.sh certbot-dynu/cleanup.sh
+
             export DB_DATABASE="${{ secrets.DB_DATABASE }}"
             export DB_USERNAME="${{ secrets.DB_USERNAME }}"
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
-            docker compose -f docker-compose.prod.yml down
-            docker system prune -af
-            docker builder prune -af
-            docker rm -f announcement-backend-prod || true
-            docker rm -f announcement-frontend-prod || true
-            docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
-            
-            # Run SSL setup if certificates don't exist
-            if [ ! -d "certbot/conf/live/letsbeus.duckdns.org" ]; then
-              echo "Setting up SSL certificates..."
-              chmod +x init-letsencrypt.sh
-              
-              # First run: Test with staging
+            export DYNU_API_KEY="${{ secrets.DYNU_API_KEY }}"
+
+            docker compose -f docker-compose.prod.yml down || true
+            docker system prune -af || true
+            docker builder prune -af || true
+            docker rm -f announcement-backend-prod announcement-frontend-prod announcement-certbot announcement-db-prod 2>/dev/null || true
+            docker compose -f docker-compose.prod.yml pull
+
+            # Run SSL setup FIRST (DNS-01 does not need nginx running)
+            if [ ! -d "certbot/conf/live/letsbeus.freeddns.org" ] || [ ! -f "certbot/.ssl-tested" ]; then
+              echo "Setting up SSL certificates via DNS-01 (Dynu API)..."
+
               if [ ! -f "certbot/.ssl-tested" ]; then
                 echo "First time setup - testing with staging certificate..."
-                sed -i 's/STAGING=1/STAGING=1/g' init-letsencrypt.sh
+                sed -i 's/^STAGING=.*/STAGING=1/' init-letsencrypt.sh
                 ./init-letsencrypt.sh
-                
-                if [ $? -eq 0 ]; then
-                  echo "Staging test successful! Cleaning up and getting real certificate..."
-                  rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
-                  sed -i 's/STAGING=1/STAGING=0/g' init-letsencrypt.sh
-                  ./init-letsencrypt.sh
-                  touch certbot/.ssl-tested
-                else
-                  echo "Staging test failed! Check logs. Aborting production certificate request."
-                  exit 1
-                fi
+
+                echo "Staging test passed! Cleaning up staging cert and requesting real production certificate..."
+                rm -rf certbot/conf/live certbot/conf/archive certbot/conf/renewal
+                sed -i 's/^STAGING=.*/STAGING=0/' init-letsencrypt.sh
+                ./init-letsencrypt.sh
+                touch certbot/.ssl-tested
+              else
+                echo "certbot/.ssl-tested marker exists, skipping staging→prod cycle"
               fi
             else
-              echo "SSL certificates already exist, skipping setup"
+              echo "SSL certificates already exist, skipping issuance"
             fi
+
+            # Start the full stack now that certs are in place
+            echo "Starting full stack (db → backend → frontend + certbot renew loop)..."
+            docker compose -f docker-compose.prod.yml up -d --pull always --remove-orphans
+
+            # Final nginx reload to ensure the new cert is active (idempotent, safe)
+            echo "Reloading nginx to activate certificate..."
+            sleep 5
+            docker compose -f docker-compose.prod.yml exec -T frontend nginx -t
+            docker compose -f docker-compose.prod.yml exec -T frontend nginx -s reload || true
+
+            echo "Deploy finished successfully"
