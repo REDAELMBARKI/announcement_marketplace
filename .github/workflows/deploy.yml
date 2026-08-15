@@ -39,23 +39,38 @@ jobs:
 
       - name: "Deploy on server"
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 20m
+          envs: DB_DATABASE,DB_USERNAME,DB_PASSWORD,MYSQL_ROOT_PASSWORD
           script: |
             set -euo pipefail
             cd ~
-            export DB_DATABASE="${{ secrets.DB_DATABASE }}"
-            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
-            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-            export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
+            SUDO=""
+            if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+              SUDO="sudo -n"
+            fi
+
+            docker system prune -af --volumes
+
+            if command -v ctr >/dev/null 2>&1 && [ -n "$SUDO" ]; then
+              $SUDO ctr -n moby snapshots ls | awk '/extract-/ {print $1}' | xargs -r -n1 $SUDO ctr -n moby snapshots rm || true
+            fi
+
+            if command -v journalctl >/dev/null 2>&1 && [ -n "$SUDO" ]; then
+              $SUDO journalctl --vacuum-time=2d || true
+            fi
 
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            echo "Waiting a moment for containers to settle..."
             sleep 10
             docker compose -f docker-compose.prod.yml ps
             echo "Deploy finished. Domain: https://letsbeus.online"
