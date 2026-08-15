@@ -33,6 +33,9 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 60s
+          command_timeout: 5m
+          debug: true
           source: "docker-compose.prod.yml"
           target: "~"
           overwrite: true
@@ -48,6 +51,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 60s
           command_timeout: 20m
           envs: DB_DATABASE,DB_USERNAME,DB_PASSWORD,MYSQL_ROOT_PASSWORD
           script: |
