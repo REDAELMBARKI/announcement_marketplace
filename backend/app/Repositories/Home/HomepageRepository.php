@@ -45,9 +45,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         $query = $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
+            'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+            ->with(['user:id,name,email', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
             ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->orderBy('views_count', 'desc')
@@ -68,9 +68,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         return $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
+            'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+            ->with(['user:id,name,email', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
             ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->orderBy('created_at', 'desc')
@@ -82,9 +82,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         return $this->product->select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
+            'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+            ->with(['user:id,name,email', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
             ->whereIn('listing_mode', ['sell', 'donate'])
             ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
             ->where('super_category_id', $categoryId)
@@ -101,9 +101,9 @@ class HomepageRepository implements HomepageRepositoryInterface
         foreach ($categories as $category) {
             $products = $this->product->select([
                 'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-                'views_count', 'favorites_count', 'created_at', 'user_id'
+                'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
             ])
-                ->with(['user:id,name', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
+                ->with(['user:id,name,email', 'categories:id,name,slug', 'address', 'thumbnail', 'gallery'])
                 ->whereIn('listing_mode', ['sell', 'donate'])
                 ->whereIn('status', ['published', 'draft', 'sell', 'donate'])
                 ->where('super_category_id', $category->id)
@@ -156,9 +156,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         return Product::select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
+            'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'addresses' => function ($query) use ($city) {
+            ->with(['user:id,name,email', 'addresses' => function ($query) use ($city) {
                 $query->select(['addressable_id', 'addressable_type', 'city', 'district'])
                     ->where('addressable_type', Product::class)
                     ->where('city', $city);
@@ -176,9 +176,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         return Product::select([
             'id', 'title', 'slug', 'age_range', 'condition', 'views_count',
-            'favorites_count', 'created_at', 'user_id'
+            'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug'])
+            ->with(['user:id,name,email', 'categories:id,name,slug', 'thumbnail', 'gallery'])
             ->where('listing_mode', 'donate')
             ->where('status', 'donate')
             ->orderBy('created_at', 'desc')
@@ -190,9 +190,9 @@ class HomepageRepository implements HomepageRepositoryInterface
     {
         return Product::select([
             'id', 'title', 'slug', 'price', 'listing_mode', 'age_range', 'condition',
-            'views_count', 'favorites_count', 'created_at', 'user_id'
+            'views_count', 'favorites_count', 'created_at', 'user_id', 'contact_phone'
         ])
-            ->with(['user:id,name', 'categories:id,name,slug', 'thumbnail'])
+            ->with(['user:id,name,email', 'categories:id,name,slug', 'thumbnail', 'gallery'])
             ->whereIn('status', ['sell', 'donate'])
             ->orderBy('views_count', 'desc')
             ->limit(10)

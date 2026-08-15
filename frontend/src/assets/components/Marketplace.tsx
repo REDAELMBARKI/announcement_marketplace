@@ -357,12 +357,16 @@ const Marketplace: React.FC = () => {
             </div>
           ) : products.length > 0 ? (
             <>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', 
-                gap: '25px',
-                flex: 1
-              }}>
+              <div
+                className="marketplace-listings-grid"
+                style={{
+                  display: filters.view === 'grid' ? 'grid' : 'flex',
+                  flexDirection: filters.view === 'list' ? 'column' : undefined,
+                  gridTemplateColumns: filters.view === 'grid' ? 'repeat(4, minmax(0, 1fr))' : undefined,
+                  gap: filters.view === 'grid' ? '24px' : '20px',
+                  flex: 1,
+                }}
+              >
                 {products.map(product => (
                   <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} colors={colors} />
                 ))}

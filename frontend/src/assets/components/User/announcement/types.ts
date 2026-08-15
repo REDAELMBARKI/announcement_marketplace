@@ -53,7 +53,7 @@ export interface Product {
   currency: string;
   price_negotiable: boolean;
   pickup_address?: string;
-  phone_contact?: string;
+  contact_phone?: string;
   handover_method: 'pickup' | 'delivery' | 'both';
   status: 'draft' | 'active' | 'sell' | 'donate' | 'reserved' | 'sold' | 'donated' | 'closed';
   condition: string;
