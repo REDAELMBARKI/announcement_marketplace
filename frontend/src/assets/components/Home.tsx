@@ -413,6 +413,20 @@ function Home() {
     return <Box size={size} />;
   };
 
+  const getCategoryDescription = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('jouet') || name.includes('toy')) return 'Toys that bring joy to little ones.';
+    if (name.includes('vêtement') || name.includes('cloth')) return 'Gently used clothes for the whole family.';
+    if (name.includes('livre') || name.includes('book')) return 'Books, school supplies and learning essentials.';
+    if (name.includes('mobilier') || name.includes('furniture')) return 'Quality furniture for every home.';
+    if (name.includes('bébé') || name.includes('baby')) return 'Everything for your little one.';
+    if (name.includes('jeu') || name.includes('game')) return 'Games and activities for all ages.';
+    if (name.includes('chaussure') || name.includes('shoe')) return 'Shoes, ready for new adventures.';
+    if (name.includes('home') || name.includes('decor')) return 'Decor, kitchenware and more.';
+    if (name.includes('activité') || name.includes('activit') || name.includes('art')) return 'Creative supplies and craft materials.';
+    return 'Find great items in this category.';
+  };
+
   const popularProducts = useMemo<Product[]>(() => 
     homepageData?.popular_products || [], 
     [homepageData?.popular_products]
@@ -754,35 +768,61 @@ function Home() {
         </div>
       </section>
 
-      {/* Collections Grid */}
-      <section className="collections-grid-section tt-container animate-on-scroll">
-        <div className="section-header-editorial">
-          <h2 className="editorial-title gradient-reveal">Browse Collections</h2>
-          <p>Explore our curated selections for every stage.</p>
+      {/* Browse by Category - Bento Grid */}
+      <section className="shop-category-bento tt-container animate-on-scroll">
+        <div className="section-header-with-action">
+          <div>
+            <h2 className="editorial-title">Browse by Category</h2>
+            <p>Find items, give them a new home and support your community.</p>
+          </div>
+          <Link to="/announcements" style={{ textDecoration: 'none' }}>
+            <AppButton variant="outline" size="md" rightIcon={<ArrowRight size={16} />}>
+              View all categories
+            </AppButton>
+          </Link>
         </div>
-        <div className="collections-grid-redesign">
-          {homepageData?.featured_categories?.slice(0, 8).map((cat) => (
+        
+        <div className="category-bento-grid">
+          {homepageData?.featured_categories?.slice(0, 6).map((cat, idx) => (
             <Link 
               key={cat.id} 
               to={`/category/${cat.slug}`} 
-              className="collection-tile"
-              onMouseMove={handleCardMouseMove}
+              className={`category-bento-card card-${idx + 1}`}
             >
-              <div className="tile-bg-wrap">
-                {cat.thumbnail?.url ? (
-                  <img src={cat.thumbnail.url} alt={cat.name} className="tile-image" />
-                ) : (
-                  <div className="tile-bg" style={{ background: `linear-gradient(135deg, ${getCategoryColor(cat.id)} 0%, ${getCategoryColor(cat.id)}cc 100%)` }}>
-                    <span className="tile-emoji">{getCategoryIcon(cat.name, 32)}</span>
-                  </div>
-                )}
+              <div className="category-card-content">
+                <div className="category-icon-badge">
+                  {getCategoryIcon(cat.name, 24)}
+                </div>
+                <h3>{cat.name}</h3>
+                <p>{getCategoryDescription(cat.name)}</p>
+                <div className="category-arrow-btn">
+                  <ArrowRight size={18} />
+                </div>
               </div>
-              <div className="tile-info">
-                <h4>{cat.name}</h4>
-                <span>{cat.products_count || 0} treasures</span>
+              <div className="category-card-image">
+                {cat.thumbnail?.url ? (
+                  <img src={cat.thumbnail.url} alt={cat.name} />
+                ) : (
+                  <div className="category-placeholder" style={{ background: getCategoryColor(cat.id) }} />
+                )}
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="category-impact-banner">
+          <div className="impact-banner-icon">
+            <Leaf size={24} />
+          </div>
+          <div className="impact-banner-text">
+            <strong>Every purchase makes a difference.</strong>
+            <span>Thank you for supporting reuse and local families.</span>
+          </div>
+          <Link to="/our_partners" style={{ textDecoration: 'none' }}>
+            <AppButton variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />}>
+              Learn more about our impact
+            </AppButton>
+          </Link>
         </div>
       </section>
 
