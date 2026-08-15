@@ -119,12 +119,12 @@ const lightTheme: Theme = {
     border: "#D5C9BE",
     borderDark: "#C4B5A8",
 
-    // Primary = brand warm coral (the main color everywhere)
-    primary: "#C45E7A",
-    primaryHover: "#A84B65",
+    // Primary = sage green from volunteer shirts
+    primary: "#5F7A5C",
+    primaryHover: "#4A6048",
     primaryContrast: "#FFFFFF",
 
-    // Success = verified charity / donate / free mode badge
+    // Success = darker forest green
     success: "#3F6B50",
     successHover: "#2F5340",
     successContrast: "#FFFFFF",
@@ -132,32 +132,31 @@ const lightTheme: Theme = {
 
     warning: "#D8986B",
     danger: "#C94040",
-    infoBg: "#F4DAE2",
-    infoText: "#7A2E44",
+    infoBg: "#E8F3EC",
+    infoText: "#2A4F38",
 
     iconPrimary: "#2E2018",
     iconSecondary: "#7A6558",
     iconMuted: "#BEB0A5",
-    iconCoral: "#C45E7A",
+    iconCoral: "#5F7A5C",
     iconSuccess: "#3F6B50",
     iconDanger: "#C94040",
 
-    heroGradientStart: "#C45E7A",
-    heroGradientEnd: "#7A2E44",
+    heroGradientStart: "#5F7A5C",
+    heroGradientEnd: "#3F6B50",
     darkGradientStart: "#F5EFE8",
     darkGradientEnd: "#FDFAF7",
 
-    accent: "#C45E7A",
+    accent: "#5F7A5C",
     accentGreen: "#3F6B50",
     accentMint: "#5C8C6B",
     accentLightGreen: "#8BB89A",
 
-    // CORRECTED: coral is now the actual warm pink/coral family,
-    // NOT the random blue (#5580A8) that was breaking every button/badge.
-    coral: "#E06B88",
-    coralHover: "#C94F6F",
+    // Coral now matches the sage green theme
+    coral: "#5F7A5C",
+    coralHover: "#4A6048",
     coralContrast: "#FFFFFF",
-    coralLight: "#F4DAE2",
+    coralLight: "#E8F3EC",
 
     darkNavy: "#2B1F1A",
     sidebarBorder: "#D5C9BE",
@@ -174,18 +173,18 @@ const lightTheme: Theme = {
 
     eyebrow: "#7A6558",
     heroText: "#2E2018",
-    heroBorder: "rgba(196, 94, 122, 0.18)",
+    heroBorder: "rgba(95, 122, 92, 0.18)",
 
-    buttonPrimary: "#1E1410",            // Deep charcoal primary button (hero)
-    buttonPrimaryHover: "#3A2A23",
+    buttonPrimary: "#5F7A5C",            // Sage green primary button
+    buttonPrimaryHover: "#4A6048",
     buttonPrimaryContrast: "#FFFFFF",
     buttonSecondary: "#FFFFFF",
     buttonSecondaryHover: "#F5EFE8",
     buttonSecondaryContrast: "#2E2018",
-    buttonBorder: "#C45E7A",
-    focusRing: "rgba(224, 107, 136, 0.45)", // Visible focus (coral family)
+    buttonBorder: "#5F7A5C",
+    focusRing: "rgba(95, 122, 92, 0.45)",
 
-    filterActive: "#C45E7A",
+    filterActive: "#5F7A5C",
     filterActiveText: "#FFFFFF",
 
     seasonBg: "#F5E4D3",

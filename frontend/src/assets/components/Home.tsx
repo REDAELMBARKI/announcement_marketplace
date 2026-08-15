@@ -474,12 +474,13 @@ function Home() {
       <section className="hero-magnific">
         <div className="hero-magnific-bg">
           <img
-            src={activeHero.thumbnail?.url || "/close-up-woman-front-clothing-pile.jpg"}
+            src={activeHero.thumbnail?.url || "/src/images/hero.png"}
             alt="Hero background"
             className="hero-magnific-image"
             key={activeHero.id}
           />
           <div className="hero-magnific-scrim"></div>
+          <div className="hero-magnific-glow"></div>
         </div>
 
         <div className="hero-magnific-container">
@@ -679,6 +680,13 @@ function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Better Environment Visual Story */}
+      <section className="better-environment-section">
+        <div className="better-environment-image">
+          <img src="/betterenvirement.png" alt="Together we can make a difference - Your donation brings hope, happiness and a better tomorrow" />
         </div>
       </section>
 
@@ -1083,16 +1091,8 @@ function Home() {
               work with your group — all in the same community.
             </p>
             <div className="bento-canvas">
-              <div className="canvas-triptych">
-                <div className="canvas-trip-img">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=neatly%20folded%20children%20clothes%20on%20wooden%20table%20pastel%20jerseys%20onesies%20soft%20natural%20light%20cozy%20premium&image_size=square_hd" alt="Children clothes" />
-                </div>
-                <div className="canvas-trip-img">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=young%20child%20playing%20with%20colorful%20wooden%20toys%20soft%20morning%20light%20cozy%20nursery%20warm%20tones&image_size=square_hd" alt="Child playing" />
-                </div>
-                <div className="canvas-trip-img">
-                  <img src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=happy%20family%20unboxing%20second%20hand%20kids%20furniture%20bookshelf%20assembly%20sunny%20living%20room%20warm%20tones&image_size=square_hd" alt="Family unboxing" />
-                </div>
+              <div className="canvas-single-image">
+                <img src="/donanJourneytio.png" alt="Donation journey visualization" />
               </div>
             </div>
           </article>
@@ -1138,38 +1138,22 @@ function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="testimonials-redesign tt-container">
-        <div className="section-header-editorial centered">
-          <h2 className="editorial-title gradient-reveal">Trust Reviews</h2>
-          <p>Join thousands of families making a difference.</p>
-        </div>
-        <div className="testimonials-grid-redesign">
-          {(homepageData?.recent_reviews?.length ?? 0) === 0 ? (
-            <EmptyRowState wide icon={<Star size={28} />} title="Reviews coming soon" hint="Be the first to share your experience." />
-          ) : (
-            homepageData?.recent_reviews?.slice(0, 3).map((review) => (
-              <div key={review.id} className="testimonial-editorial-card testimonial-glass-card gloweffect-light" onMouseMove={handleCardMouseMove}>
-                <div className="rating-stars">
-                  {[...Array(review.rating || 5)].map((_, i) => <Star key={i} size={14} fill={colors.coral} color={colors.coral} />)}
-                </div>
-                <p>"{review.comment || 'Great experience with this community. Found perfect outfits for my toddler!'}"</p>
-                <div className="reviewer">
-                  <img src={review.reviewer?.avatar || `https://ui-avatars.com/api/?name=${review.reviewer?.name || 'U'}`} alt={review.reviewer?.name} />
-                  <strong>{review.reviewer?.name || 'Happy Customer'}</strong>
-                </div>
-              </div>
-            ))
-          )}
+      {/* Community Impact Image Section */}
+      <section className="community-impact-section">
+        <div className="community-impact-image">
+          <img src="/comunity.png" alt="Join thousands of families making a difference" />
         </div>
       </section>
 
-      {/* Newsletter */}
-      <section className="newsletter-editorial">
+      {/* Newsletter with Visual Impact Background */}
+      <section className="newsletter-visual-section">
+        <div className="newsletter-visual-bg">
+          <img src="/src/images/Group6.png" alt="Community Impact Visualization" />
+        </div>
         <div className="tt-container">
-          <div className="newsletter-box" style={{ backgroundColor: colors.primary, color: colors.bgPrimary }}>
+          <div className="newsletter-box">
             <div className="newsletter-content">
-              <h2 className="editorial-title" style={{ color: colors.bgPrimary }}>Stay close to what matters</h2>
+              <h2 className="editorial-title">Stay close to what matters</h2>
               <p>Get thoughtful updates, local finds, and stories of impact in your inbox.</p>
               <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
                 <div className="input-with-icon">
@@ -1180,9 +1164,6 @@ function Home() {
                   Subscribe
                 </AppButton>
               </form>
-            </div>
-            <div className="newsletter-decor">
-              <ShoppingBag size={120} opacity={0.1} />
             </div>
           </div>
         </div>
