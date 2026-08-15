@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Check,
   Camera,
@@ -24,6 +24,8 @@ interface SidebarProps {
   onApply: () => void;
   resultsCount: number;
   loading?: boolean;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -34,10 +36,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   onReset,
   onApply,
   resultsCount,
-  loading = false
+  loading = false,
+  isMobile = false,
+  onClose
 }) => {
   const { colors } = useTheme();
   const [sizeTab, setSizeTab] = useState<'clothes' | 'shoes'>('clothes');
+  const [isScreenMobile, setIsScreenMobile] = useState(window.innerWidth <= 768);
+
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => setIsScreenMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <div style={{
@@ -73,27 +85,51 @@ const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <aside style={{ 
-      width: '280px', 
-      borderRight: `1px solid ${colors.sidebarBorder}`, 
-      backgroundColor: colors.bgSecondary, 
-      height: 'calc(100vh - 80px)', 
-      position: 'sticky', 
-      top: '80px', 
-      display: 'flex', 
-      flexDirection: 'column',
-      zIndex: 10
-    }}>
-      {/* Top Row — Clear Only */}
+    <aside 
+      className="marketplace-sidebar"
+      style={{ 
+        width: '280px', 
+        borderRight: `1px solid ${colors.sidebarBorder}`, 
+        backgroundColor: colors.bgSecondary, 
+        height: isMobile ? '100vh' : 'calc(100vh - 80px)', 
+        position: isMobile ? 'fixed' : 'sticky', 
+        top: isMobile ? '0' : '80px', 
+        left: isMobile ? '0' : 'auto',
+        display: 'flex', 
+        flexDirection: 'column',
+        zIndex: 10
+      }}>
+      {/* Top Row — Clear + Close (mobile) */}
       <div style={{ 
         padding: '10px 16px', 
         backgroundColor: colors.filterBg, 
         borderBottom: `1px solid ${colors.filterBorder}`,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         flexShrink: 0
       }}>
+        {isMobile && onClose && (
+          <button 
+            onClick={onClose}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: colors.textSecondary, 
+              cursor: 'pointer', 
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+              fontWeight: '600'
+            }}
+          >
+            <X size={18} strokeWidth={2} />
+            Fermer
+          </button>
+        )}
+        {!isMobile && <div />}
         <button onClick={onReset} style={{ background: 'none', border: 'none', color: colors.textSecondary, fontSize: '12px', cursor: 'pointer', padding: 0 }}>Effacer tout</button>
       </div>
 
@@ -111,6 +147,99 @@ const Sidebar: React.FC<SidebarProps> = ({
           .custom-scrollbar::-webkit-scrollbar-track { background: ${colors.scrollbarTrack}; }
           .custom-scrollbar::-webkit-scrollbar-thumb { background: ${colors.coral}; border-radius: 10px; }
         `}</style>
+
+        {/* Mobile-Only: Search, Sort, View Toggle */}
+        {isMobile && (
+          <>
+            {/* Search Bar */}
+            <div style={{ marginBottom: '16px' }}>
+              <SectionLabel>Rechercher</SectionLabel>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="text"
+                  placeholder="Rechercher un article..."
+                  value={filters.search}
+                  onChange={(e) => onFilterChange('search', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: `1px solid ${colors.border}`,
+                    backgroundColor: colors.bgTertiary,
+                    color: colors.textPrimary,
+                    fontSize: '14px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div style={{ marginBottom: '16px' }}>
+              <SectionLabel>Trier par</SectionLabel>
+              <CustomSelect 
+                options={initData?.sortOptions || []}
+                value={filters.sort}
+                onChange={(val) => onFilterChange('sort', val)}
+                placeholder="Trier par"
+              />
+            </div>
+
+            {/* View Toggle */}
+            <div style={{ marginBottom: '16px' }}>
+              <SectionLabel>Affichage</SectionLabel>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => onFilterChange('view', 'grid')}
+                  style={{ 
+                    flex: 1,
+                    padding: '10px', 
+                    borderRadius: '10px', 
+                    border: filters.view === 'grid' ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: filters.view === 'grid' ? colors.coral : colors.bgTertiary,
+                    color: filters.view === 'grid' ? colors.bgSecondary : colors.textSecondary,
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  Grille
+                </button>
+                <button 
+                  onClick={() => onFilterChange('view', 'list')}
+                  style={{ 
+                    flex: 1,
+                    padding: '10px', 
+                    borderRadius: '10px', 
+                    border: filters.view === 'list' ? 'none' : `1px solid ${colors.border}`,
+                    backgroundColor: filters.view === 'list' ? colors.coral : colors.bgTertiary,
+                    color: filters.view === 'list' ? colors.bgSecondary : colors.textSecondary,
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  Liste
+                </button>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div style={{ 
+              height: '1px', 
+              backgroundColor: colors.border, 
+              margin: '20px 0'
+            }} />
+          </>
+        )}
 
         {/* Catégorie */}
         <div style={{ marginBottom: '20px' }}>

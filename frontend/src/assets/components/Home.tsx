@@ -36,6 +36,8 @@ import "../../css/home.css";
 import { useTheme } from "../../context/ThemeContext";
 import LoadingScreen from "../../components/Loading/LoadingScreen";
 import AppButton from "./Common/AppButton";
+import hero2Image from "../../images/hero2.png";
+import Group6Image from "../../images/Group6.png";
 
 interface User {
   id: number;
@@ -510,7 +512,7 @@ function Home() {
       <section className="hero-magnific">
         <div className="hero-magnific-bg">
           <img
-            src="/src/images/hero2.png"
+            src={hero2Image}
             alt="Together, We Can Make a Difference"
             className="hero-magnific-image"
           />
@@ -1161,7 +1163,7 @@ function Home() {
       {/* Newsletter with Visual Impact Background */}
       <section className="newsletter-visual-section animate-on-scroll">
         <div className="newsletter-visual-bg">
-          <img src="/src/images/Group6.png" alt="Community Impact Visualization" />
+          <img src={Group6Image} alt="Community Impact Visualization" />
         </div>
         <div className="tt-container">
           <div className="newsletter-box">

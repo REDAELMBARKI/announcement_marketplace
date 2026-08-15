@@ -198,26 +198,41 @@ class AnnouncementSeeder extends Seeder
         $users = User::all();
         $categories = Category::whereNotNull('parent_id')->get();
 
-        $productNames = [
-            'Vélo Enfant Sécurisé', 'Costume Traditionnel Maroc', 'Puzzle Géographie Maroc',
-            'Sac à Dos École Maroc', 'Jouet Bois Artisanal', 'Robe Enfant Soie',
-            'Livre Histoire Maroc', 'Meuble Chambre Enfant', 'Jeu Construction Maroc',
-            'Chaussures Sport Enfant', 'Activité Peinture Maroc', 'Jouet Peluche Animaux',
-            'Vêtement Sport Enfant', 'Livre Coloriage Maroc'
+        $productsData = [
+            ['name' => 'Vélo Enfant Sécurisé', 'category_hint' => 'plein-air', 'product_num' => '01'],
+            ['name' => 'Costume Traditionnel Maroc', 'category_hint' => 'ensembles', 'product_num' => '02'],
+            ['name' => 'Puzzle Géographie Maroc', 'category_hint' => 'jeux-societe', 'product_num' => '03'],
+            ['name' => 'Sac à Dos École Maroc', 'category_hint' => 'accessoires', 'product_num' => '04'],
+            ['name' => 'Jouet Bois Artisanal', 'category_hint' => 'eveil-premier-age', 'product_num' => '05'],
+            ['name' => 'Robe Enfant Soie', 'category_hint' => 'robes-jupes', 'product_num' => '06'],
+            ['name' => 'Livre Histoire Maroc', 'category_hint' => 'contes-histoires', 'product_num' => '07'],
+            ['name' => 'Meuble Chambre Enfant', 'category_hint' => 'mobilier', 'product_num' => '08'],
+            ['name' => 'Jeu Construction Maroc', 'category_hint' => 'jeux-construction', 'product_num' => '09'],
+            ['name' => 'Chaussures Sport Enfant', 'category_hint' => 'baskets-sneakers', 'product_num' => '10'],
+            ['name' => 'Activité Peinture Maroc', 'category_hint' => 'activites-coloriages', 'product_num' => '11'],
+            ['name' => 'Jouet Peluche Animaux', 'category_hint' => 'peluches', 'product_num' => '12'],
+            ['name' => 'Vêtement Sport Enfant', 'category_hint' => 'hauts-t-shirts', 'product_num' => '13'],
+            ['name' => 'Livre Coloriage Maroc', 'category_hint' => 'activites-coloriages', 'product_num' => '14'],
+            ['name' => 'Poussette Bébé Confort', 'category_hint' => 'poussettes-sieges-auto', 'product_num' => '15'],
+            ['name' => 'Bottes Pluie Enfant', 'category_hint' => 'bottes-bottines', 'product_num' => '16'],
+            ['name' => 'Poupée Éducative', 'category_hint' => 'poupees-figurines', 'product_num' => '17'],
+            ['name' => 'Manteau Hiver Chaud', 'category_hint' => 'manteaux-vestes', 'product_num' => '18'],
+            ['name' => 'Voiture Télécommandée', 'category_hint' => 'vehicules-circuits', 'product_num' => '19'],
+            ['name' => 'Lit Bébé Moderne', 'category_hint' => 'sommeil', 'product_num' => '20'],
         ];
 
-        // Create 20 products distributed across categories
-        foreach ($productNames as $index => $productName) {
-            $category = $categories[$index % $categories->count()];
+        foreach ($productsData as $index => $productData) {
+            // Find matching category by slug hint
+            $category = $categories->firstWhere('slug', $productData['category_hint']) ?? $categories->random();
             $user = $users[$index % $users->count()];
             $parentCategory = Category::find($category->parent_id);
 
             $mode = fake()->randomElement(['sell', 'donate']);
             $product = Product::factory()->create([
-                'title' => $productName,
-                'slug' => Str::slug($productName),
+                'title' => $productData['name'],
+                'slug' => Str::slug($productData['name']),
                 'description' => 'Produit de qualité pour enfants au Maroc. ' . fake()->sentence(),
-                'price' => fake()->randomFloat(2, 50, 500),
+                'price' => $mode === 'donate' ? 0 : fake()->randomFloat(2, 50, 500),
                 'listing_mode' => $mode,
                 'status' => 'published',
                 'user_id' => $user->id,
@@ -240,28 +255,69 @@ class AnnouncementSeeder extends Seeder
                 'address_line' => fake()->streetAddress(),
             ]);
 
-            // Create thumbnail
-            Media::factory()->create([
-                'mediable_id' => $product->id,
-                'mediable_type' => Product::class,
-                'collection' => 'thumbnail',
-                'url' => 'https://picsum.photos/seed/' . Str::slug($productName) . '/400/300.jpg',
-            ]);
+            // Define image filenames (simple numbered format: product-01.jpg, product-01-a.jpg, product-01-b.jpg)
+            $productNum = $productData['product_num'];
+            $thumbnailFile = "product-{$productNum}.jpg";
+            $galleryFiles = [
+                "product-{$productNum}-a.jpg",
+                "product-{$productNum}-b.jpg",
+                "product-{$productNum}-c.jpg",
+            ];
 
-             Media::factory()->create([
-                'mediable_id' => $product->id,
-                'mediable_type' => Product::class,
-                'collection' => 'gallery',
-                'url' => 'https://picsum.photos/seed/' . Str::slug($productName . "1") . '/400/300.jpg',
-            ]);
+            // Create media from seed images (check if files exist, fallback to placeholder)
+            $seedImagesPath = storage_path('app/public/seeds/announcements/');
+            $thumbnailPath = $seedImagesPath . $thumbnailFile;
+            
+            // Thumbnail
+            if (file_exists($thumbnailPath)) {
+                Media::create([
+                    'mediable_id' => $product->id,
+                    'mediable_type' => Product::class,
+                    'collection' => 'thumbnail',
+                    'disk' => 'public',
+                    'path' => 'seeds/announcements/' . $thumbnailFile,
+                    'url' => asset('storage/seeds/announcements/' . $thumbnailFile),
+                    'file_name' => $thumbnailFile,
+                ]);
+            } else {
+                // Fallback to placeholder
+                Media::create([
+                    'mediable_id' => $product->id,
+                    'mediable_type' => Product::class,
+                    'collection' => 'thumbnail',
+                    'disk' => 'public',
+                    'path' => 'placeholders/product.jpg',
+                    'url' => 'https://picsum.photos/seed/' . Str::slug($productData['name']) . '/400/300.jpg',
+                    'file_name' => 'placeholder.jpg',
+                ]);
+            }
 
-             Media::factory()->create([
-                'mediable_id' => $product->id,
-                'mediable_type' => Product::class,
-                'collection' => 'gallery',
-                'url' => 'https://picsum.photos/seed/' . Str::slug($productName . "2")  . '/400/300.jpg',
-            ]);
-
+            // Gallery images
+            foreach ($galleryFiles as $imageFile) {
+                $imagePath = $seedImagesPath . $imageFile;
+                if (file_exists($imagePath)) {
+                    Media::create([
+                        'mediable_id' => $product->id,
+                        'mediable_type' => Product::class,
+                        'collection' => 'gallery',
+                        'disk' => 'public',
+                        'path' => 'seeds/announcements/' . $imageFile,
+                        'url' => asset('storage/seeds/announcements/' . $imageFile),
+                        'file_name' => $imageFile,
+                    ]);
+                } else {
+                    // Fallback to placeholder
+                    Media::create([
+                        'mediable_id' => $product->id,
+                        'mediable_type' => Product::class,
+                        'collection' => 'gallery',
+                        'disk' => 'public',
+                        'path' => 'placeholders/product.jpg',
+                        'url' => 'https://picsum.photos/seed/' . Str::slug($productData['name'] . '-' . $imageFile) . '/400/300.jpg',
+                        'file_name' => 'placeholder.jpg',
+                    ]);
+                }
+            }
         }
     }
 

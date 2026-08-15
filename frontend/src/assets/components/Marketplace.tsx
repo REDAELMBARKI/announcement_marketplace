@@ -76,6 +76,7 @@ const Marketplace: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [initLoading, setInitLoading] = useState<boolean>(true);
   const [listingsLoading, setListingsLoading] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
     lastPage: 1,
@@ -224,6 +225,26 @@ const Marketplace: React.FC = () => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
+  // Count active filters
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.category) count++;
+    if (filters.cities.length > 0) count += filters.cities.length;
+    if (filters.mode.length > 0) count += filters.mode.length;
+    if (filters.age_range.length > 0) count += filters.age_range.length;
+    if (filters.gender) count++;
+    if (filters.condition) count++;
+    if (filters.min_price) count++;
+    if (filters.max_price) count++;
+    if (filters.sizes.length > 0) count += filters.sizes.length;
+    if (filters.free_only) count++;
+    if (filters.with_media) count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
+
   const getImageUrl = (media: any) => {
     if (!media) return null;
     if (media.url && media.url.startsWith('http')) return media.url;
@@ -236,25 +257,187 @@ const Marketplace: React.FC = () => {
       display: 'flex', 
       backgroundColor: colors.bgPrimary, 
       minHeight: '100vh',
-      fontFamily: 'var(--font-official)'
+      fontFamily: 'var(--font-official)',
+      position: 'relative'
     }}>
+      {/* Mobile Filter Button - Fixed at bottom */}
+      <button
+        className="mobile-filter-button"
+        onClick={() => setIsMobileSidebarOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 100,
+          display: 'none',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '14px 24px',
+          backgroundColor: activeFiltersCount > 0 ? '#10b981' : colors.coral,
+          color: 'white',
+          border: activeFiltersCount > 0 ? '2px solid #059669' : 'none',
+          borderRadius: '999px',
+          fontWeight: '700',
+          fontSize: '15px',
+          cursor: 'pointer',
+          boxShadow: activeFiltersCount > 0 
+            ? '0 10px 30px rgba(16, 185, 129, 0.5), 0 0 0 4px rgba(16, 185, 129, 0.1)' 
+            : '0 8px 24px rgba(0, 0, 0, 0.15)',
+          transition: 'all 0.3s ease',
+          transform: activeFiltersCount > 0 ? 'scale(1.05)' : 'scale(1)',
+        }}
+      >
+        <svg 
+          width="20" 
+          height="20" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2.5"
+          style={{
+            filter: activeFiltersCount > 0 ? 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.5))' : 'none'
+          }}
+        >
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        <span style={{ fontWeight: '700' }}>
+          {activeFiltersCount > 0 ? `Filtres (${activeFiltersCount})` : 'Filtres'}
+        </span>
+        {activeFiltersCount > 0 && (
+          <span style={{
+            marginLeft: '4px',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: '800',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
+            animation: 'badge-pulse 2s ease-in-out infinite'
+          }}>
+            ✓
+          </span>
+        )}
+      </button>
+
+      {/* Add animations */}
+      <style>{`
+        @keyframes badge-pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+        
+        .mobile-filter-button:hover {
+          transform: scale(1.08) !important;
+        }
+        
+        .mobile-filter-button:active {
+          transform: scale(0.98) !important;
+        }
+      `}</style>
+
+      {/* Mobile Sidebar Overlay/Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="mobile-sidebar-backdrop"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+            display: 'none'
+          }}
+        />
+      )}
+
       {/* --- Sidebar with Selects from initData --- */}
-      <Sidebar 
-        initData={initData}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onToggleArrayFilter={handleToggleArrayFilter}
-        onReset={handleReset}
-        onApply={() => fetchListings(1)}
-        resultsCount={pagination.total}
-        loading={loading}
-      />
+      <div className={`sidebar-wrapper ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
+        <Sidebar 
+          initData={initData}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onToggleArrayFilter={handleToggleArrayFilter}
+          onReset={handleReset}
+          onApply={() => {
+            fetchListings(1);
+            setIsMobileSidebarOpen(false); // Close sidebar after apply on mobile
+          }}
+          resultsCount={pagination.total}
+          loading={loading}
+          isMobile={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+        />
+      </div>
+
+      {/* Add responsive CSS for sidebar modal */}
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-filter-button {
+            display: flex !important;
+          }
+          .mobile-sidebar-backdrop {
+            display: block !important;
+          }
+          .sidebar-wrapper {
+            position: fixed !important;
+            left: -100% !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            height: 100vh !important;
+            height: 100dvh !important; /* Use dynamic viewport height for mobile browsers */
+            width: 85% !important;
+            max-width: 320px !important;
+            z-index: 1000 !important;
+            transition: left 0.3s ease-in-out !important;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+          }
+          .sidebar-wrapper.mobile-open {
+            left: 0 !important;
+          }
+          .marketplace-page > div:last-child {
+            width: 100% !important;
+          }
+          /* Ensure sidebar content takes full height */
+          .sidebar-wrapper > div {
+            min-height: 100vh !important;
+            min-height: 100dvh !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .sidebar-wrapper {
+            position: relative;
+          }
+        }
+      `}</style>
 
       {/* --- Main Content --- */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         
         {/* --- Top Bar --- */}
-        <div style={{ 
+        <div className="marketplace-top-bar" style={{ 
           position: 'sticky', 
           top: '80px', 
           zIndex: 5,
@@ -270,7 +453,8 @@ const Marketplace: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '24px', fontWeight: '800', color: colors.textPrimary, margin: 0 }}>Marketplace</h1>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Desktop-only filters */}
+            <div className="desktop-only-filters" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative', width: '260px' }}>
                 <Search 
                   size={18} 
@@ -327,7 +511,8 @@ const Marketplace: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* Desktop-only view toggle */}
+          <div className="desktop-only-view-toggle" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <div style={{ display: 'flex', backgroundColor: colors.bgTertiary, padding: '4px', borderRadius: '8px' }}>
               <button 
                 onClick={() => handleFilterChange('view', 'grid')}
@@ -344,6 +529,26 @@ const Marketplace: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Add responsive CSS */}
+        <style>{`
+          @media (max-width: 768px) {
+            .desktop-only-filters,
+            .desktop-only-view-toggle {
+              display: none !important;
+            }
+            .marketplace-top-bar {
+              top: 0 !important;
+              padding: 12px 16px !important;
+              margin: 0 !important;
+              position: relative !important;
+            }
+            .marketplace-top-bar h1 {
+              font-size: 18px !important;
+              font-weight: 700 !important;
+            }
+          }
+        `}</style>
 
         {/* --- Listings Grid --- */}
         <div style={{ padding: '30px 40px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -362,7 +567,7 @@ const Marketplace: React.FC = () => {
                 style={{
                   display: filters.view === 'grid' ? 'grid' : 'flex',
                   flexDirection: filters.view === 'list' ? 'column' : undefined,
-                  gridTemplateColumns: filters.view === 'grid' ? 'repeat(4, minmax(0, 1fr))' : undefined,
+                  gridTemplateColumns: filters.view === 'grid' ? 'repeat(auto-fill, minmax(260px, 1fr))' : undefined,
                   gap: filters.view === 'grid' ? '24px' : '20px',
                   flex: 1,
                 }}
@@ -371,6 +576,30 @@ const Marketplace: React.FC = () => {
                   <MarketplaceCard key={product.id} product={product} view={filters.view} getImageUrl={getImageUrl} colors={colors} />
                 ))}
               </div>
+
+              {/* Add responsive grid CSS */}
+              <style>{`
+                @media (min-width: 1200px) {
+                  .marketplace-listings-grid {
+                    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                  }
+                }
+                @media (min-width: 769px) and (max-width: 1199px) {
+                  .marketplace-listings-grid {
+                    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                  }
+                }
+                @media (min-width: 481px) and (max-width: 768px) {
+                  .marketplace-listings-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                  }
+                }
+                @media (max-width: 480px) {
+                  .marketplace-listings-grid {
+                    grid-template-columns: 1fr !important;
+                  }
+                }
+              `}</style>
 
               {/* --- Pagination Bar --- */}
               <div style={{
