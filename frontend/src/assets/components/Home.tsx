@@ -164,6 +164,28 @@ function Home() {
   const [freeScroll, setFreeScroll] = useState<ScrollState>(initialScrollState);
   const [categoryScroll, setCategoryScroll] = useState<Record<number, ScrollState>>({});
 
+  // Scroll animations - Intersection Observer
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all sections with animate-on-scroll class
+    const sections = document.querySelectorAll('.animate-on-scroll');
+    sections.forEach(section => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [homepageData]);
+
   // rAF frame ref for mouse-glow throttling
   const mouseGlowFrameRef = useRef<number>(0);
   const mouseGlowPendingRef = useRef<{ el: HTMLElement; x: number; y: number } | null>(null);
@@ -470,113 +492,71 @@ function Home() {
       '--shadow': colors.shadow || 'rgba(0,0,0,0.05)'
     } as React.CSSProperties}>
       
-      {/* Hero – now wired to hero_sliders rotation (P2-9) */}
+      {/* Hero */}
       <section className="hero-magnific">
         <div className="hero-magnific-bg">
           <img
-            src={activeHero.thumbnail?.url || "/src/images/hero.png"}
-            alt="Hero background"
+            src="/src/images/hero2.png"
+            alt="Together, We Can Make a Difference"
             className="hero-magnific-image"
-            key={activeHero.id}
           />
           <div className="hero-magnific-scrim"></div>
-          <div className="hero-magnific-glow"></div>
         </div>
 
         <div className="hero-magnific-container">
-          {/* Left content – populated by current hero_slider entry */}
           <div className="hero-magnific-left">
             <div className="hero-magnific-pill">
-              <span>{APP_HERO_PILL}</span>
-              <Link to="/our_partners" className="hero-magnific-pill-link">
-                Meet our partners
-                <ArrowRight size={16} />
-              </Link>
+              <Leaf size={14} style={{ color: colors.sage }} />
+              <span>Stronger Together</span>
             </div>
 
-            <h1 className="hero-magnific-headline" key={`h-${activeHero.id}`}>
-              {activeHero.headline || APP_TAGLINE}
+            <h1 className="hero-magnific-headline">
+              Together,<br />
+              We Can Make<br />
+              a Difference
             </h1>
 
-            <p className="hero-magnific-subline" key={`s-${activeHero.id}`}>
-              {activeHero.subline || "Every listing, donation and exchange supports your community. Intelligent filters, verified sellers, and charity partners built in — for meaningful second lives at any scale."}
+            <p className="hero-magnific-subline">
+              Your donation brings hope,<br />
+              happiness and a better tomorrow.
             </p>
 
             <div className="hero-magnific-actions">
-              <Link to={activeHero.cta1_link || "/announcements"} style={{ textDecoration: 'none' }}>
-                <AppButton variant="primary" size="lg">
-                  {activeHero.cta1_text || "Browse marketplace"}
+              <Link to="/add_announcement" style={{ textDecoration: 'none' }}>
+                <AppButton variant="primary" size="lg" leftIcon={<Heart size={18} />}>
+                  Donate Now
                 </AppButton>
               </Link>
-              <Link to={activeHero.cta2_link || "/add_announcement"} style={{ textDecoration: 'none' }}>
-                <AppButton variant="outline" size="lg" leftIcon={
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <polygon points="3,1 14,8 3,15" />
-                  </svg>
-                }>
-                  {activeHero.cta2_text || "Start donating"}
+              <Link to="/about" style={{ textDecoration: 'none' }}>
+                <AppButton variant="outline" size="lg" rightIcon={<ArrowRight size={18} />}>
+                  Learn More
                 </AppButton>
               </Link>
             </div>
 
-            {/* Slider controls + percent progress */}
-            {heroSlides.length > 1 && (
-              <div className="hero-slider-controls">
-                <div className="hero-slide-dots">
-                  {heroSlides.map((slide, idx) => (
-                    <button
-                      key={slide.id}
-                      className={`hero-slide-dot ${idx === activeSlide ? 'active' : ''}`}
-                      aria-label={`Go to slide ${idx + 1}`}
-                      onClick={() => { setActiveSlide(idx); setSlideProgress(0); }}
-                      style={{
-                        backgroundColor: idx === activeSlide ? colors.coral : 'rgba(255,255,255,0.35)',
-                      }}
-                    />
-                  ))}
-                </div>
-                {renderHeroProgress()}
+            <div className="hero-impact-badges">
+              <div className="hero-impact-badge">
+                <Users size={20} />
+                <span>Support<br />Families</span>
               </div>
-            )}
-          </div>
-
-          {/* Right feature list */}
-          <div className="hero-magnific-right">
-            <ul className="hero-magnific-features">
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Donate clothes &amp; toys</span>
-              </li>
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Sell pre-loved furniture</span>
-              </li>
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Support local families</span>
-              </li>
-              <li className="hero-magnific-feature hero-magnific-feature-active">
-                <span className="hero-magnific-feature-arrow">
-                  <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-                    <polygon points="6,4 24,14 6,24" fill={colors.coral} />
-                  </svg>
-                </span>
-                <span className="hero-magnific-feature-name hero-magnific-feature-highlight">
-                  Keep value in your community
-                </span>
-              </li>
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Fund verified charities</span>
-              </li>
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Track your impact</span>
-              </li>
-              <li className="hero-magnific-feature">
-                <span className="hero-magnific-feature-name faded">Ship or local pickup</span>
-              </li>
-            </ul>
+              <div className="hero-impact-badge">
+                <Recycle size={20} />
+                <span>Reduce<br />Waste</span>
+              </div>
+              <div className="hero-impact-badge">
+                <Home2 size={20} />
+                <span>Build Better<br />Communities</span>
+              </div>
+              <div className="hero-impact-badge">
+                <Sparkles size={20} />
+                <span>Create a Better<br />Tomorrow</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="purpose-section tt-container">
+      <section className="purpose-section tt-container animate-on-scroll">
         <div className="purpose-heading">
           <span className="eyebrow">A better way to pass things on</span>
           <h2 className="editorial-title gradient-reveal">From your home to a home that needs it.</h2>
@@ -596,7 +576,7 @@ function Home() {
             <div className="purpose-icon"><Store size={25} /></div>
             <span className="purpose-number">02</span>
             <h3>Find more for less</h3>
-            <p>Discover pre-loved clothes, furniture, toys, and everyday essentials from your community.</p>
+            <p>Discover clothes, furniture, toys, and everyday essentials from your community.</p>
             <Link to="/announcements" style={{ textDecoration: 'none' }}>
               <AppButton variant="ghost" size="sm" rightIcon={<ArrowRight size={16} />}>Explore listings</AppButton>
             </Link>
@@ -614,7 +594,7 @@ function Home() {
       </section>
 
       {/* Stats Band */}
-      <div className="stats-band" style={{ backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}` }}>
+      <div className="stats-band animate-on-scroll" style={{ backgroundColor: colors.bgSecondary, borderBottom: `1px solid ${colors.border}` }}>
         <div className="stats-container">
               <div className="stat-item">
             <Box size={24} color={colors.coral} />
@@ -641,7 +621,7 @@ function Home() {
       </div>
 
       {/* Impact parallax */}
-      <section className="impact-parallax">
+      <section className="impact-parallax animate-on-scroll">
         <div className="impact-parallax-inner">
           <div className="impact-grid">
             <div className="impact-copy">
@@ -649,7 +629,7 @@ function Home() {
               <h2 className="gradient-reveal">Every item passed on is a small win for everyone.</h2>
               <p>
                 Together we've kept gently used things in circulation, supported local families,
-                and raised meaningful funds for verified charities — one donation at a time.
+                and raised meaningful funds for verified charities, one donation at a time.
               </p>
               <Link to="/add_announcement" style={{ textDecoration: 'none' }}>
                 <AppButton variant="coral" size="md" rightIcon={<ArrowRight size={16} />}>
@@ -661,12 +641,12 @@ function Home() {
               <div className="metric-card metric-1 gloweffect-light" onMouseMove={handleCardMouseMove}>
                 <div className="metric-icon"><Heart size={22} fill="currentColor" /></div>
                 <span className="metric-value">{(homepageData?.stats?.total_donations || 0) + 1280}</span>
-                <span className="metric-label">Items donated &amp; re-loved</span>
+                <span className="metric-label">Items donated and loved again</span>
               </div>
               <div className="metric-card metric-2 gloweffect-light" onMouseMove={handleCardMouseMove}>
                 <div className="metric-icon"><Recycle size={22} /></div>
                 <span className="metric-value">2.4t</span>
-                <span className="metric-label">CO₂e diverted from landfill</span>
+                <span className="metric-label">CO₂ diverted from landfill</span>
               </div>
               <div className="metric-card metric-3 gloweffect-light" onMouseMove={handleCardMouseMove}>
                 <div className="metric-icon"><Users size={22} /></div>
@@ -683,15 +663,8 @@ function Home() {
         </div>
       </section>
 
-      {/* Better Environment Visual Story */}
-      <section className="better-environment-section">
-        <div className="better-environment-image">
-          <img src="/betterenvirement.png" alt="Together we can make a difference - Your donation brings hope, happiness and a better tomorrow" />
-        </div>
-      </section>
-
       {/* Shop by Category Tabs */}
-      <section className="shop-by-tabs-section tt-container">
+      <section className="shop-by-tabs-section tt-container animate-on-scroll">
         <div className="section-header-editorial">
           <h2 className="editorial-title gradient-reveal">Shop by Category</h2>
           <p>Find exactly what they need, sorted by category.</p>
@@ -782,7 +755,7 @@ function Home() {
       </section>
 
       {/* Collections Grid */}
-      <section className="collections-grid-section tt-container">
+      <section className="collections-grid-section tt-container animate-on-scroll">
         <div className="section-header-editorial">
           <h2 className="editorial-title gradient-reveal">Browse Collections</h2>
           <p>Explore our curated selections for every stage.</p>
@@ -813,8 +786,8 @@ function Home() {
         </div>
       </section>
 
-      {/* Trending Now – with chevron enable/disable + percent + scroll-snap */}
-      <section className="trending-row-section tt-container">
+      {/* Trending Now */}
+      <section className="trending-row-section tt-container animate-on-scroll">
         <div className="section-header-editorial with-nav">
           <div>
             <h2 className="editorial-title gradient-reveal">Trending Now</h2>
@@ -866,7 +839,7 @@ function Home() {
       </section>
 
       {/* New Arrivals */}
-      <section className="trending-row-section tt-container">
+      <section className="trending-row-section tt-container animate-on-scroll">
         <div className="section-header-editorial with-nav">
           <div>
             <h2 className="editorial-title gradient-reveal">New Arrivals</h2>
@@ -919,7 +892,7 @@ function Home() {
 
       {/* Nearby Products */}
       {nearbyProducts.length > 0 && (
-        <section className="trending-row-section tt-container">
+        <section className="trending-row-section tt-container animate-on-scroll">
           <div className="section-header-editorial with-nav">
             <div>
               <h2 className="editorial-title gradient-reveal">Nearby Treasures</h2>
@@ -969,7 +942,7 @@ function Home() {
 
       {/* Free Items */}
       {freeItems.length > 0 && (
-        <section className="trending-row-section tt-container">
+        <section className="trending-row-section tt-container animate-on-scroll">
           <div className="section-header-editorial with-nav">
             <div>
               <h2 className="editorial-title gradient-reveal">Free for All</h2>
@@ -1146,7 +1119,7 @@ function Home() {
       </section>
 
       {/* Newsletter with Visual Impact Background */}
-      <section className="newsletter-visual-section">
+      <section className="newsletter-visual-section animate-on-scroll">
         <div className="newsletter-visual-bg">
           <img src="/src/images/Group6.png" alt="Community Impact Visualization" />
         </div>
