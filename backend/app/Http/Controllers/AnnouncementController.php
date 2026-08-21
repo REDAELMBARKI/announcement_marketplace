@@ -116,7 +116,7 @@ class AnnouncementController extends Controller
      function show(Product $announcement)
     {
         try {
-            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'address']);
+            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'address.country']);
             
             return response()->json([
                 'status'  => 'success',
@@ -136,7 +136,7 @@ class AnnouncementController extends Controller
     public function showBySlug(Product $announcement)
     {
         try {
-            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'address']);
+            $announcement->load(['user', 'thumbnail', 'gallery', 'superCategory', 'subCategories', 'items', 'address.country']);
             
             return response()->json([
                 'status'  => 'success',

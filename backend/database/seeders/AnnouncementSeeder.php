@@ -248,9 +248,10 @@ class AnnouncementSeeder extends Seeder
             $product->categories()->attach($category->id);
 
             // Create Moroccan address
-            $randomCity = \App\Models\City::inRandomOrder()->first();
+            $moroccanCities = ['Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Agadir', 'Fès', 'Meknès'];
             $product->address()->create([
-                'city_id' => $randomCity->id,
+                'country_id' => 1,
+                'city' => fake()->randomElement($moroccanCities),
                 'district' => fake()->word(),
                 'address_line' => fake()->streetAddress(),
             ]);

@@ -73,15 +73,22 @@ const formatWhatsAppLink = (phone: string, title: string): string => {
 };
 
 const formatLocation = (product: Product): string | null => {
-  const addr = (product as any).city?.name
-    || (product as any).city_name
-    || product.pickup_address
-    || (product as any).location;
-  if (!addr) return null;
-  const clean = String(addr).trim();
-  if (!clean) return null;
-  const parts = clean.split(',').map((s) => s.trim()).filter(Boolean);
-  return parts.slice(0, 2).join(', ');
+  const city = product.city || (product as any).address?.city || (product as any).city_name;
+  const district = (product as any).district || (product as any).address?.district;
+  const country = (product as any).country?.name || (product as any).address?.country?.name;
+  const pickup = product.pickup_address || (product as any).address?.address_line;
+
+  const locationParts: string[] = [];
+  if (city) locationParts.push(city);
+  if (district && district.toLowerCase() !== city.toLowerCase()) locationParts.push(district);
+  if (country) locationParts.push(country);
+
+  if (locationParts.length > 0) {
+    return locationParts.join(', ');
+  }
+
+  if (pickup) return pickup;
+  return (product as any).location || null;
 };
 
 const Product_Details: React.FC = () => {
@@ -789,6 +796,14 @@ const Product_Details: React.FC = () => {
                     </div>
                   </div>
                 )}
+                {(product.pickup_address || (product as any).address?.address_line) && (
+                  <div>
+                    <div style={{ color: colors.textMuted, fontSize: '12px', marginBottom: '2px' }}>Adresse de retrait</div>
+                    <div style={{ fontWeight: 600, color: colors.textPrimary }}>
+                      {product.pickup_address || (product as any).address?.address_line}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <div style={{ color: colors.textMuted, fontSize: '12px', marginBottom: '2px' }}>Catégorie</div>
                   <div style={{
@@ -859,6 +874,43 @@ const Product_Details: React.FC = () => {
             {product.description || 'Aucune description fournie par le vendeur.'}
           </p>
         </section>
+
+        {/* ====== LOCATION & PICKUP ADDRESS SECTION ====== */}
+        {(locationLine || product.pickup_address || (product as any).address?.address_line) && (
+          <section className="pd-location-section" style={{
+            marginTop: '28px',
+            backgroundColor: colors.bgPrimary || '#ffffff',
+            border: `1px solid ${colors.border || 'rgba(0,0,0,0.06)'}`,
+            borderRadius: '12px',
+            padding: '24px 26px',
+          }}>
+            <h2 style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              margin: 0,
+              marginBottom: '12px',
+              color: colors.textPrimary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <MapPin size={20} weight="BoldDuotone" color={priceColor} />
+              Emplacement & Adresse de retrait
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14.5px', color: colors.textSecondary }}>
+              {locationLine && (
+                <div>
+                  <strong>Ville / Région :</strong> {locationLine}
+                </div>
+              )}
+              {(product.pickup_address || (product as any).address?.address_line) && (
+                <div>
+                  <strong>Adresse de retrait :</strong> {product.pickup_address || (product as any).address?.address_line}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ====== REVIEWS ====== */}
         <section className="pd-reviews" style={{ marginTop: '56px' }}>

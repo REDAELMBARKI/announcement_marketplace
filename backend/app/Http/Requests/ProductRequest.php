@@ -21,8 +21,7 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
-        $required = $isUpdate ? 'sometimes|required' : 'required';
+        $required = 'required';
 
         return [
             'super_category_id' => "$required|exists:categories,id",
@@ -40,8 +39,12 @@ class ProductRequest extends FormRequest
             'season'            => 'nullable|string',
             'sizes'             => 'nullable|array',
             'colors'            => 'nullable|array',
+            'city'              => "$required|string|max:255",
             'city_name'         => 'nullable|string',
             'city_id'           => 'nullable',
+            'country_id'        => 'nullable|exists:countries,id',
+            'district'          => 'nullable|string',
+            'place_id'          => 'nullable|string',
             'pickup_address'    => 'nullable|string',
             'handover_method'   => 'nullable|string',
             'contact_phone'     => [$required, 'string'],

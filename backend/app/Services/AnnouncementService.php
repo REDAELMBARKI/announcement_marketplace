@@ -66,12 +66,14 @@ class AnnouncementService
         }
 
         // Sync address if city or pickup_address provided
-        if (!empty($data['city']) || !empty($data['pickup_address'])) {
+        if (!empty($data['city']) || !empty($data['city_name']) || !empty($data['pickup_address'])) {
+            $city = $data['city'] ?? $data['city_name'] ?? null;
             $product->address()->updateOrCreate(
                 [], // Since each product typically has one pickup address
                 [
                     'country_id'   => $data['country_id'] ?? null,
-                    'city'         => $data['city'] ?? null,
+                    'city'         => $city,
+                    'district'     => $data['district'] ?? null,
                     'place_id'     => $data['place_id'] ?? null,
                     'address_line' => $data['pickup_address'] ?? null,
                 ]

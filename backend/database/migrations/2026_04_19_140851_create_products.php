@@ -15,7 +15,7 @@ return new class extends Migration
             $table->morphs('addressable');
  
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
-            $table->string('city')->nullable();          // city name as plain text string from Google Places
+            $table->string('city');                      // city name as plain text string (required)
             $table->string('place_id')->nullable();      // Google Place ID (optional)
             $table->string('district')->nullable();
             $table->string('address_line')->nullable();  // street / landmark

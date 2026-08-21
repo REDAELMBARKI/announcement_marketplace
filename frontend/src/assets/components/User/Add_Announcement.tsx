@@ -112,6 +112,8 @@ interface FormState {
   sizes: string[];
   colors: string[];
   city: string;
+  district?: string;
+  place_id?: string;
   country_id?: number | string;
   handover_method: string;
   pickup_address: string;
@@ -309,6 +311,8 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     currency: "MAD",
     price_negotiable: false,
     city: "",
+    district: "",
+    place_id: "",
     pickup_address: "",
     contact_phone: "+212",
     handover_method: "both",
@@ -504,7 +508,6 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
       if (!form.city.trim()) errors.city = "Saisissez ou choisissez votre ville.";
-      if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
       if (!form.contact_phone.trim() || form.contact_phone === selectedCountry?.dial_code) {
         errors.contact_phone = "Le numéro de téléphone est obligatoire.";
       }
@@ -658,6 +661,8 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       ...form,
       user_id: user.id,
       city: form.city,
+      district: form.district || null,
+      place_id: form.place_id || null,
       country_id: selectedCountry?.id,
       price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
@@ -1320,6 +1325,8 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                           key={sug.placeId}
                           onClick={() => {
                             updateField("city", sug.cityName);
+                            updateField("district", sug.secondaryText || "");
+                            updateField("place_id", sug.placeId);
                             resetSessionToken();
                             setShowCitySuggestions(false);
                           }}
@@ -1356,63 +1363,22 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               </Box>
             </ClickAwayListener>
 
-            {/* Adresse exacte (Google Places Autocomplete) */}
-            <Box sx={{ width: '100%', position: 'relative' }}>
+            {/* Adresse de retrait (Simple text field, optional) */}
+            <Box sx={{ width: '100%' }}>
               <TextField
                 fullWidth
-                label="Adresse exacte"
-                placeholder="Ex: Rue 123, Quartier... (Google Places)"
+                label="Adresse de retrait (optionnel)"
+                placeholder="Ex: Rue 123, Quartier..."
                 value={form.pickup_address}
-                onChange={async (e) => {
-                  const val = e.target.value;
-                  updateField("pickup_address", val);
-                  if (val.length >= 3) {
-                    const suggestions = await fetchPlaceSuggestions(val, selectedCountry?.code, 'address');
-                    setAddressSuggestions(suggestions);
-                    setShowAddressSuggestions(true);
-                  } else {
-                    setAddressSuggestions([]);
-                    setShowAddressSuggestions(false);
-                  }
-                }}
+                onChange={(e) => updateField("pickup_address", e.target.value)}
                 error={!!fieldErrors.pickup_address}
-                helperText={fieldErrors.pickup_address}
+                helperText={fieldErrors.pickup_address || "Indiquez l'adresse ou le quartier de retrait (optionnel)"}
                 slotProps={{
                   input: {
                     startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
                   }
                 }}
               />
-              {showAddressSuggestions && addressSuggestions.length > 0 && (
-                <Paper
-                  elevation={4}
-                  sx={{
-                    position: 'absolute',
-                    zIndex: 100,
-                    width: '100%',
-                    mt: 0.5,
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                    borderRadius: 2,
-                    border: '1px solid #cbd5e1',
-                  }}
-                >
-                  {addressSuggestions.map((sug) => (
-                    <MenuItem
-                      key={sug.placeId}
-                      onClick={() => {
-                        updateField("pickup_address", sug.fullAddress);
-                        setShowAddressSuggestions(false);
-                      }}
-                      sx={{ py: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
-                        {sug.fullAddress}
-                      </Typography>
-                    </MenuItem>
-                  ))}
-                </Paper>
-              )}
             </Box>
 
             {/* Contact Téléphonique - Dynamic Dial Code */}

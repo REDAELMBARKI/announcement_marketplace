@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Address extends Model
 {
@@ -13,8 +14,10 @@ class Address extends Model
     protected $fillable = [
         'addressable_id',
         'addressable_type',
-        'city_id',
+        'country_id',
+        'city',
         'district',
+        'place_id',
         'address_line',
         'lat',
         'lng',
@@ -22,7 +25,7 @@ class Address extends Model
     ];
 
     protected $casts = [
-        'city_id' => 'integer',
+        'country_id' => 'integer',
         'lat' => 'decimal:7',
         'lng' => 'decimal:7',
         'is_default' => 'boolean',
@@ -45,8 +48,8 @@ class Address extends Model
         return $this->morphTo();
     }
 
-    public function city()
+    public function country(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(Country::class);
     }
 }

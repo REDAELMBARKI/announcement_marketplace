@@ -53,6 +53,31 @@ export interface Product {
   currency: string;
   price_negotiable: boolean;
   pickup_address?: string;
+  city?: string;
+  district?: string;
+  place_id?: string;
+  country_id?: number;
+  country?: {
+    id: number;
+    name: string;
+    code: string;
+    flag?: string;
+    dial_code?: string;
+  };
+  address?: {
+    city?: string;
+    district?: string;
+    place_id?: string;
+    address_line?: string;
+    country_id?: number;
+    country?: {
+      id: number;
+      name: string;
+      code: string;
+      flag?: string;
+      dial_code?: string;
+    };
+  };
   contact_phone?: string;
   handover_method: 'pickup' | 'delivery' | 'both';
   status: 'draft' | 'active' | 'sell' | 'donate' | 'reserved' | 'sold' | 'donated' | 'closed';
