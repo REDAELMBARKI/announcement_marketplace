@@ -153,10 +153,11 @@ class AnnouncementController extends Controller
     /**
      * Update the specified announcement.
      */
-    function update(ProductRequest $request, User $user, Product $announcement)
+    function update(ProductRequest $request, Product $announcement)
     {
         try {
-            if ($announcement->user_id !== $user->id) {
+            $userId = Auth::id() ?? $request->input('user_id');
+            if ($userId && $announcement->user_id != $userId) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Unauthorized: Announcement does not belong to this user',
@@ -182,10 +183,11 @@ class AnnouncementController extends Controller
     /**
      * Remove the specified announcement.
      */
-     function destroy(User $user, Product $announcement)
+     function destroy(Product $announcement)
     {
         try {
-            if ($announcement->user_id !== $user->id) {
+            $userId = Auth::id();
+            if ($userId && $announcement->user_id != $userId) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Unauthorized: Announcement does not belong to this user',

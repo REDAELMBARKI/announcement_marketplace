@@ -6,6 +6,8 @@ use App\Models\Media;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class MediaController extends Controller
 {
@@ -14,14 +16,24 @@ class MediaController extends Controller
      */
     public function upload(Request $request)
     {
+        Log::info('[MediaController@upload] Initiating upload process', [
+            'user_id' => Auth::id(),
+            'has_file' => $request->hasFile('image'),
+            'collection' => $request->input('collection'),
+            'mediable_type' => $request->input('mediable_type'),
+        ]);
+
         try {
             $validated = $request->validate([
-                'image' => ['required', 'image', 'max:8192'], // Increased max size
-                'collection' => ['nullable', 'string'], // Allow any collection string
+                'image' => ['required', 'image', 'max:8192'], // Max 8MB
+                'collection' => ['nullable', 'string'],
                 'mediable_type' => ['required', 'string', 'in:product,user,category,hero_slider,banner'],
             ]);
 
             if (!$request->hasFile('image')) {
+                Log::warning('[MediaController@upload] Upload attempt without image file', [
+                    'user_id' => Auth::id(),
+                ]);
                 return response()->json([
                     'status' => 'error',
                     'message' => 'No image file provided.',
@@ -30,11 +42,21 @@ class MediaController extends Controller
 
             $image = $request->file('image');
             $collection = $validated['collection'] ?? 'gallery';
+
+            Log::info('[MediaController@upload] Processing file', [
+                'original_name' => $image->getClientOriginalName(),
+                'mime_type' => $image->getMimeType(),
+                'size_bytes' => $image->getSize(),
+            ]);
             
             // Store the image in temp_media folder
             $path = $image->store('temp_media', 'public');
 
             if (!$path) {
+                Log::error('[MediaController@upload] Failed to store image on public disk', [
+                    'user_id' => Auth::id(),
+                    'original_name' => $image->getClientOriginalName(),
+                ]);
                 throw new \Exception('Failed to store image on disk.');
             }
             
@@ -53,6 +75,13 @@ class MediaController extends Controller
                 'is_temporary' => true, 
             ]);
 
+            Log::info('[MediaController@upload] Image uploaded successfully', [
+                'media_id' => $media->id,
+                'url' => $media->url,
+                'path' => $media->path,
+                'user_id' => Auth::id(),
+            ]);
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Image uploaded successfully.',
@@ -62,12 +91,21 @@ class MediaController extends Controller
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[MediaController@upload] Validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id(),
+            ]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            Log::error('[MediaController@upload] Exception during upload', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage(),

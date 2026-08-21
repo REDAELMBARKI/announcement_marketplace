@@ -10,6 +10,8 @@ import {
   Plus,
   X,
   ChevronRight,
+  Eye,
+  Sparkles,
 } from "lucide-react";
 import {
   UserRounded as Baby,
@@ -42,6 +44,8 @@ import {
   FormHelperText,
   InputLabel,
   Snackbar,
+  Drawer,
+  Fab,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
@@ -246,6 +250,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   const [stepKey, setStepKey] = useState<string>("category");
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>(
     Array(8).fill(null).map(() => ({ status: 'idle', url: null, id: null }))
@@ -315,11 +320,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
 
           // Pre-fill form if in edit mode
           if (isEditMode && product) {
+            const subCategoryNames = product.sub_category_names || [];
             setForm({
               super_category_id: product.super_category_id,
               super_category_name: product.super_category_name || null,
-              sub_category_names: product.sub_category_names || [],
-              sub_category_ids: [], // Backend might need this but we use names for now
+              sub_category_names: subCategoryNames,
+              sub_category_ids: [], 
               title: product.title,
               description: product.description,
               listing_type: product.listing_type,
@@ -330,7 +336,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               sizes: product.sizes || [],
               colors: product.colors || [],
               season: product.season || "",
-              material: "", // Missing in product?
+              material: "", 
               listing_mode: product.listing_mode,
               price: String(product.price),
               currency: product.currency,
@@ -339,7 +345,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               pickup_address: product.pickup_address,
               contact_phone: product.contact_phone || (product as any).phone_contact,
               handover_method: product.handover_method,
-              custom_colors: [], // Assuming custom colors aren't separate in backend yet
+              custom_colors: [],
             });
 
             // Set upload slots
@@ -373,7 +379,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   const isLastStep = currentStepNumber === visibleSteps.length;
 
   const selectedCategory = useMemo(() => 
-    categories.find(c => c.id === form.super_category_id), 
+    categories.find(c => Number(c.id) === Number(form.super_category_id)), 
     [categories, form.super_category_id]
   );
 
@@ -384,16 +390,23 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       ...prev,
       super_category_id: id,
       super_category_name: name,
-      sub_category_names: [], // Reset sub-categories when main category changes
+      sub_category_names: [], 
       sub_category_ids: []
     }));
     clearFieldError('super_category_id');
   };
 
-  const handleSubCategoryChange = (selectedIds: number[]) => {
+  const handleSubCategoryChange = (selectedIds: (number | string)[]) => {
+    const numericIds = selectedIds.map(id => Number(id));
+    const targetCat = categories.find(c => Number(c.id) === Number(form.super_category_id));
+    const names = (targetCat?.children || [])
+      .filter(child => numericIds.includes(Number(child.id)))
+      .map(child => child.label || (child as any).name);
+
     setForm(prev => ({
       ...prev,
-      sub_category_ids: selectedIds
+      sub_category_ids: numericIds,
+      sub_category_names: names
     }));
     clearFieldError('sub_category_ids');
   };
@@ -465,6 +478,13 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   };
 
   const handleUpload = async (index: number, file: File) => {
+    console.log(`[MediaUpload] Starting upload for slot ${index}`, {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      collection: index === 0 ? 'thumbnail' : 'gallery'
+    });
+
     // Set slot to uploading
     setUploadSlots(prev => {
       const next = [...prev];
@@ -481,6 +501,8 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
 
       const response = await api.post(ziggyRoute('media.upload'), formData);
 
+      console.log(`[MediaUpload] Upload response for slot ${index}:`, response.data);
+
       if (response.data.status === 'success') {
         setUploadSlots(prev => {
           const next = [...prev];
@@ -496,19 +518,26 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
         ? Object.values(error.response.data.errors).flat().join(', ') 
         : (error.response?.data?.message || error.message || 'Upload failed');
       
-      console.error('Upload error:', errorMessage);
+      console.error(`[MediaUpload Error] Failed slot ${index}:`, {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        errorMsg: errorMessage
+      });
       
       setUploadSlots(prev => {
         const next = [...prev];
         next[index] = { ...next[index], status: 'error' };
         return next;
       });
+      setStatus({ type: 'error', message: `Échec de téléversement (${file.name}): ${errorMessage}` });
     }
   };
 
   const onPhotoChange = async (event: React.ChangeEvent<HTMLInputElement>, slotIndex?: number) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
+    console.log('[MediaUpload] Files selected from input:', files.map(f => f.name));
 
     if (slotIndex !== undefined) {
       // Single slot upload
@@ -529,11 +558,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
 
   const removePhoto = async (indexToRemove: number) => {
     const slot = uploadSlots[indexToRemove];
+    console.log(`[MediaUpload] Removing photo at slot ${indexToRemove}`, slot);
     if (slot.id) {
       try {
         await api.delete(ziggyRoute('media.delete-temporary', { mediaId: slot.id }));
       } catch (error) {
-        console.error('Failed to delete temporary media:', error);
+        console.error('[MediaUpload Error] Failed to delete temporary media:', error);
       }
     }
     
@@ -545,6 +575,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   };
 
   const submitAnnouncement = async () => {
+    console.log('[AnnouncementSubmit] Initiating submission...', { form, isEditMode });
     if (!user?.id) {
       setStatus({ type: "error", message: "Connectez-vous d'abord." });
       return;
@@ -616,12 +647,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               {(categories.length > 0 ? categories : FALLBACK_CATEGORIES).map((cat: any) => {
                 const isFromApi = categories.length > 0;
                 const Icon = isFromApi ? getCategoryIcon(cat.icon) : cat.icon;
-                const label = isFromApi ? cat.name : cat.name; // Both fallback and api use 'name' now
+                const label = isFromApi ? cat.name : cat.name;
                 const id = cat.id;
-                const isActive = form.super_category_id === id;
+                const isActive = Number(form.super_category_id) === Number(id);
 
                 return (
-                  <Grid item xs={12} sm={4} key={label}>
+                  <Grid item xs={6} sm={4} key={label}>
                     <IconCardButton
                       icon={Icon}
                       title={label}
@@ -639,7 +670,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
             )}
 
             {form.super_category_id && (
-              <Box className="aa-subcategories-container" sx={{ mt: 6 }}>
+              <Box className="aa-subcategories-container" sx={{ mt: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <Box sx={{ width: 4, height: 24, bgcolor: '#3b82f6', borderRadius: 1 }} />
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
@@ -650,6 +681,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                 <CustomSelect
                   label="Sélectionner des sous-catégories"
                   multiple={true}
+                  searchable={true}
                   options={(categories.find(c => Number(c.id) === Number(form.super_category_id))?.children || []).map((child) => ({
                     id: String(child.id),
                     label: child.label || child.name,
@@ -676,28 +708,28 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               Détails du produit
             </Typography>
             
-            {/* Row 1: Titre and Marque - Equal-width inputs side by side taking the LEFT half of the row. */}
-            <Box sx={{ mb: 4, width: '100%' }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <TextField
-                      fullWidth
-                      label="Titre de l'annonce"
-                      placeholder="Ex: Poussette"
-                      value={form.title}
-                      onChange={(e) => updateField("title", e.target.value)}
-                      error={!!fieldErrors.title}
-                      helperText={fieldErrors.title}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Marque (Optionnel)"
-                      value={form.brand}
-                      onChange={(e) => updateField("brand", e.target.value)}
-                      placeholder="Ex: Cybex"
-                    />
-                  </Box>
+            {/* Row 1: Titre and Marque - Responsive 2 column grid */}
+            <Box sx={{ mb: 3, width: '100%' }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Titre de l'annonce"
+                    placeholder="Ex: Poussette Cybex Mios"
+                    value={form.title}
+                    onChange={(e) => updateField("title", e.target.value)}
+                    error={!!fieldErrors.title}
+                    helperText={fieldErrors.title}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Marque (Optionnel)"
+                    value={form.brand}
+                    onChange={(e) => updateField("brand", e.target.value)}
+                    placeholder="Ex: Cybex"
+                  />
                 </Grid>
               </Grid>
             </Box>
@@ -1213,20 +1245,181 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     }
   };
 
+  const renderPreviewCard = () => (
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        p: 3, 
+        borderRadius: 4, 
+        border: '1px solid #e2e8f0', 
+        bgcolor: '#fff',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+        width: '100%'
+      }}
+    >
+      <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ width: 4, height: 18, bgcolor: '#3b82f6', borderRadius: 1 }} />
+        Aperçu de l'annonce
+      </Typography>
+
+      {/* Main Photo Preview */}
+      <Box sx={{ 
+        width: '100%', 
+        aspectRatio: '1/1', 
+        borderRadius: 3, 
+        bgcolor: '#f1f5f9',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        mb: 2.5,
+        position: 'relative',
+        border: '1px solid #e2e8f0'
+      }}>
+        {uploadSlots.find(s => s.status === 'done')?.url ? (
+          <img 
+            src={uploadSlots.find(s => s.status === 'done')!.url!}
+            alt="Principale" 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
+        ) : (
+          <Box sx={{ textAlign: 'center', color: '#94a3b8' }}>
+            <AddPhotoAlternateIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>Aucune photo</Typography>
+          </Box>
+        )}
+        <Box sx={{ 
+          position: 'absolute', 
+          top: 12, 
+          left: 12, 
+          bgcolor: form.listing_mode === 'sell' ? '#3b82f6' : '#10b981', 
+          color: '#fff', 
+          px: 1.5, 
+          py: 0.5, 
+          borderRadius: 1.5, 
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          textTransform: 'uppercase'
+        }}>
+          {form.listing_mode === 'sell' ? `${form.price || 0} MAD` : 'GRATUIT'}
+        </Box>
+      </Box>
+
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1e293b', lineHeight: 1.3 }}>
+        {form.title || "Titre de l'annonce"}
+      </Typography>
+      
+      <Typography variant="body2" sx={{ color: '#64748b', mb: 2.5, minHeight: '2.5em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {form.description || "Votre description apparaîtra ici..."}
+      </Typography>
+
+      <Divider sx={{ mb: 2.5, borderStyle: 'dashed' }} />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* Category & Sub-categories */}
+        <Box>
+          <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Catégorie</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>{form.super_category_name || "-"}</Typography>
+          {form.sub_category_names.length > 0 && (
+            <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2, color: '#64748b' }}>
+              {form.sub_category_names.map((name, i) => (
+                <Box component="li" key={i} sx={{ fontSize: '0.75rem', fontWeight: 500, mb: 0.2 }}>
+                  {name}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Brand */}
+        {form.brand && (
+          <Box>
+            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Marque</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.brand}</Typography>
+          </Box>
+        )}
+
+        {/* Condition */}
+        <Box>
+          <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>État</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+            {form.condition === 'new_tag' ? 'Neuf avec étiquette' : 
+             form.condition === 'new_no_tag' ? 'Neuf sans étiquette' :
+             form.condition === 'very_good' ? 'Très bon état' : 
+             form.condition === 'good' ? 'Bon état' : 
+             form.condition === 'fair' ? 'Satisfaisant' : '-'}
+          </Typography>
+        </Box>
+
+        {/* Sizes */}
+        {form.sizes.length > 0 && (
+          <Box>
+            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Tailles</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {form.sizes.map(size => (
+                <Chip key={size} label={size} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, bgcolor: '#f1f5f9' }} />
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Colors */}
+        {form.colors.length > 0 && (
+          <Box>
+            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Couleurs</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.colors.join(', ')}</Typography>
+          </Box>
+        )}
+
+        {/* Season */}
+        {form.season && (
+          <Box>
+            <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Saison</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.season}</Typography>
+          </Box>
+        )}
+
+        {/* Handover Method */}
+        <Box>
+          <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Mode de remise</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+            {form.handover_method === 'pickup' ? 'Remise en main propre' : 
+             form.handover_method === 'delivery' ? 'Livraison' : 
+             form.handover_method === 'both' ? 'Main propre & Livraison' : '-'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ mt: 3, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <MapPin size={18} color="#64748b" />
+        <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
+          {form.city_id ? `${attributes.cities.find(c => String(c.id || c.value) === String(form.city_id))?.label || ""}, ` : ""}{form.pickup_address || "Localisation..."}
+        </Typography>
+      </Box>
+    </Paper>
+  );
+
   return (
-    <Container maxWidth={false} sx={{ py: 0, px: 0 }}>
+    <Container maxWidth={false} sx={{ py: 0, px: 0, pb: { xs: 8, md: 0 } }}>
       <Grid container spacing={0} sx={{ width: '100%', m: 0 }}>
-        {/* Left Column - Form (70%) - Sticky left edge, no padding */}
+        {/* Main Form Column (100% on mobile, 70% on desktop) */}
         <Grid item xs={12} md={8.4} sx={{ 
-          flexBasis: { md: '70% !important' },
-          maxWidth: { md: '70% !important' },
-          width: { md: '70% !important' },
+          flexBasis: { xs: '100%', md: '70% !important' },
+          maxWidth: { xs: '100%', md: '70% !important' },
+          width: { xs: '100%', md: '70% !important' },
           p: 0,
           m: 0
         }}>
-          <Paper elevation={0} sx={{ p: { xs: 2, md: 6 }, borderRadius: 0, borderRight: '1px solid #e2e8f0', minHeight: '100vh', width: '100%' }}>
-            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 700, mb: 4 }}>
-              Publier une annonce
+          <Paper elevation={0} sx={{ 
+            p: { xs: 2.5, sm: 4, md: 6 }, 
+            borderRadius: 0, 
+            borderRight: { xs: 'none', md: '1px solid #e2e8f0' }, 
+            minHeight: { xs: 'auto', md: '100vh' }, 
+            width: '100%' 
+          }}>
+            <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 800, mb: { xs: 3, md: 4 }, color: '#0f172a' }}>
+              {isEditMode ? "Modifier l'annonce" : "Publier une annonce"}
             </Typography>
 
             <Stepper 
@@ -1240,7 +1433,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               }} 
             />
 
-            <Box sx={{ mt: 4, minHeight: '400px', width: '100%' }}>
+            <Box sx={{ mt: { xs: 2, md: 4 }, minHeight: '350px', width: '100%' }}>
               {status && (
                 <Box sx={{ 
                   p: 2, 
@@ -1256,13 +1449,20 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               {renderStep()}
             </Box>
 
-            <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{ 
+              mt: 6, 
+              display: 'flex', 
+              justify: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+              flexDirection: { xs: 'column-reverse', sm: 'row' }
+            }}>
               <Button
                 variant="outlined"
                 onClick={currentStepNumber === 1 ? () => navigate("/user_dashboard") : goPrev}
-                sx={{ borderRadius: 2, px: 4, textTransform: 'none', fontWeight: 600 }}
+                sx={{ borderRadius: 2.5, px: 4, py: 1.2, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
               >
-                Retour
+                {currentStepNumber === 1 ? "Annuler" : "Retour"}
               </Button>
               
               {!isLastStep ? (
@@ -1270,7 +1470,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                   variant="contained"
                   color="primary"
                   onClick={goNext}
-                  sx={{ borderRadius: 2, px: 4, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 600 }}
+                  sx={{ borderRadius: 2.5, px: 5, py: 1.2, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
                 >
                   Suivant
                 </Button>
@@ -1280,7 +1480,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                   color="primary"
                   onClick={submitAnnouncement}
                   disabled={isUploading}
-                  sx={{ borderRadius: 2, px: 4, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
+                  sx={{ borderRadius: 2.5, px: 5, py: 1.2, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' }, textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
                 >
                   {isUploading ? (
                     <CircularProgress size={24} color="inherit" />
@@ -1295,181 +1495,23 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
           </Paper>
         </Grid>
 
-        {/* Right Column - Preview (30%) - Sticky right edge, no padding */}
+        {/* Right Column - Desktop Preview (30%) - Hidden on mobile */}
         <Grid item xs={12} md={3.6} sx={{ 
+          display: { xs: 'none', md: 'block' },
           flexBasis: { md: '30% !important' },
           maxWidth: { md: '30% !important' },
           width: { md: '30% !important' },
           p: 0,
           m: 0,
-          bgcolor: '#f8fafc' // Subtle background for the preview column
+          bgcolor: '#f8fafc'
         }}>
           <Box sx={{ position: 'sticky', top: 0, width: '100%', height: '100vh', overflowY: 'auto', p: 4 }}>
-            <Paper 
-              elevation={0} 
-              sx={{ 
-                p: 3, 
-                borderRadius: 4, 
-                border: '1px solid #e2e8f0', 
-                bgcolor: '#fff',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                width: '100%'
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 4, height: 18, bgcolor: '#3b82f6', borderRadius: 1 }} />
-                Aperçu de l'annonce
-              </Typography>
-
-              {/* Main Photo Preview */}
-              <Box sx={{ 
-                width: '100%', 
-                aspectRatio: '1/1', 
-                borderRadius: 3, 
-                bgcolor: '#f1f5f9',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 3,
-                position: 'relative',
-                border: '1px solid #e2e8f0'
-              }}>
-                {uploadSlots.find(s => s.status === 'done')?.url ? (
-                  <img 
-                    src={uploadSlots.find(s => s.status === 'done')!.url!}
-                    alt="Principale" 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  />
-                ) : (
-                  <Box sx={{ textAlign: 'center', color: '#94a3b8' }}>
-                    <AddPhotoAlternateIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Aucune photo</Typography>
-                  </Box>
-                )}
-                <Box sx={{ 
-                  position: 'absolute', 
-                  top: 12, 
-                  left: 12, 
-                  bgcolor: form.listing_mode === 'sell' ? '#3b82f6' : '#10b981', 
-                  color: '#fff', 
-                  px: 1.5, 
-                  py: 0.5, 
-                  borderRadius: 1.5, 
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  textTransform: 'uppercase'
-                }}>
-                  {form.listing_mode === 'sell' ? `${form.price || 0} MAD` : 'GRATUIT'}
-                </Box>
-              </Box>
-
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1e293b', lineHeight: 1.3 }}>
-                {form.title || "Titre de l'annonce"}
-              </Typography>
-              
-              <Typography variant="body2" sx={{ color: '#64748b', mb: 3, minHeight: '3em', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {form.description || "Votre description apparaîtra ici..."}
-              </Typography>
-
-              <Divider sx={{ mb: 3, borderStyle: 'dashed' }} />
-
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                {/* Category & Sub-categories */}
-                <Box>
-                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Catégorie</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>{form.super_category_name || "-"}</Typography>
-                  {form.sub_category_names.length > 0 && (
-                    <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2, color: '#64748b' }}>
-                      {form.sub_category_names.map((name, i) => (
-                        <Box component="li" key={i} sx={{ fontSize: '0.75rem', fontWeight: 500, mb: 0.2 }}>
-                          {name}
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-
-                {/* Brand */}
-                {form.brand && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Marque</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.brand}</Typography>
-                  </Box>
-                )}
-
-                {/* Condition */}
-                <Box>
-                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>État</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                    {form.condition === 'new_tag' ? 'Neuf avec étiquette' : 
-                     form.condition === 'new_no_tag' ? 'Neuf sans étiquette' :
-                     form.condition === 'very_good' ? 'Très bon état' : 
-                     form.condition === 'good' ? 'Bon état' : 
-                     form.condition === 'fair' ? 'Satisfaisant' : '-'}
-                  </Typography>
-                </Box>
-
-                {/* Sizes */}
-                {form.sizes.length > 0 && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Tailles</Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {form.sizes.map(size => (
-                        <Chip key={size} label={size} size="small" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, bgcolor: '#f1f5f9' }} />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-
-                {/* Colors */}
-                {form.colors.length > 0 && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Couleurs</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.colors.join(', ')}</Typography>
-                  </Box>
-                )}
-
-                {/* Season */}
-                {form.season && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Saison</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.season}</Typography>
-                  </Box>
-                )}
-
-                {/* Material */}
-                {form.material && (
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Matière</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>{form.material}</Typography>
-                  </Box>
-                )}
-
-                {/* Handover Method */}
-                <Box>
-                  <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>Mode de remise</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                    {form.handover_method === 'pickup' ? 'Remise en main propre' : 
-                     form.handover_method === 'delivery' ? 'Livraison' : 
-                     form.handover_method === 'both' ? 'Main propre & Livraison' : '-'}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ mt: 4, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <MapPin size={18} color="#64748b" />
-                <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                  {form.city_id ? `${attributes.cities.find(c => String(c.id || c.value) === String(form.city_id))?.label || ""}, ` : ""}{form.pickup_address || "Localisation..."}
-                </Typography>
-              </Box>
-            </Paper>
+            {renderPreviewCard()}
 
             <Box sx={{ mt: 2, p: 2, bgcolor: '#eff6ff', borderRadius: 3, border: '1px solid #dbeafe', display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, width: '100%', textAlign: 'center' }}>?</Typography>
-                </Box>
+              <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, width: '100%', textAlign: 'center' }}>?</Typography>
+              </Box>
               <Typography variant="caption" sx={{ color: '#1e40af', fontWeight: 500, lineHeight: 1.4 }}>
                 Besoin d'aide ? Consultez nos conseils pour une annonce réussie.
               </Typography>
@@ -1477,6 +1519,54 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
           </Box>
         </Grid>
       </Grid>
+
+      {/* Floating Mobile Preview Button */}
+      <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+        <Fab
+          color="primary"
+          variant="extended"
+          onClick={() => setMobilePreviewOpen(true)}
+          sx={{
+            bgcolor: '#3b82f6',
+            '&:hover': { bgcolor: '#2563eb' },
+            boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)',
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 2.5
+          }}
+        >
+          <Eye size={20} style={{ marginRight: 8 }} />
+          Aperçu
+        </Fab>
+      </Box>
+
+      {/* Mobile Preview Drawer */}
+      <Drawer
+        anchor="bottom"
+        open={mobilePreviewOpen}
+        onClose={() => setMobilePreviewOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            p: 2.5,
+            maxHeight: '85vh',
+            bgcolor: '#f8fafc'
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
+            Aperçu de votre annonce
+          </Typography>
+          <IconButton onClick={() => setMobilePreviewOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Box sx={{ overflowY: 'auto', pb: 2 }}>
+          {renderPreviewCard()}
+        </Box>
+      </Drawer>
 
       {/* Success Toast */}
       <Snackbar
