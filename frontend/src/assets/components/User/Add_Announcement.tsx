@@ -43,13 +43,17 @@ import {
   OutlinedInput,
   FormHelperText,
   InputLabel,
+  ClickAwayListener,
   Snackbar,
   Drawer,
   Fab,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
 import CustomSelect from "../Common/CustomSelect";
+import { detectUserLocationByIp, DbCountry, fetchPlaceSuggestions, PlaceSuggestion, resetSessionToken } from "../../../services/locationService";
 import {
   IconCardButton,
   PillButton,
@@ -107,7 +111,8 @@ interface FormState {
   season: string;
   sizes: string[];
   colors: string[];
-  city_id: string;
+  city: string;
+  country_id?: number | string;
   handover_method: string;
   pickup_address: string;
   contact_phone: string;
@@ -264,6 +269,14 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   const [mainPhotoIndex, setMainPhotoIndex] = useState<number>(0);
   const isUploading = useMemo(() => uploadSlots.some(s => s.status === 'uploading'), [uploadSlots]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [dbCountries, setDbCountries] = useState<DbCountry[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<DbCountry | null>(null);
+  const [citySuggestions, setCitySuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState<boolean>(false);
+  const [isSearchingCity, setIsSearchingCity] = useState<boolean>(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState<boolean>(false);
+
   const [attributes, setAttributes] = useState<FilterAttributes>({
     cities: [],
     ageRanges: [],
@@ -274,7 +287,6 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     materials: [],
     colors: []
   });
-  const [loading, setLoading] = useState<boolean>(true);
 
   const [form, setForm] = useState<FormState>({
     super_category_id: null,
@@ -296,7 +308,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     price: "",
     currency: "MAD",
     price_negotiable: false,
-    city_id: "",
+    city: "",
     pickup_address: "",
     contact_phone: "+212",
     handover_method: "both",
@@ -306,15 +318,41 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   const [tempColorName, setTempColorName] = useState("");
   const [tempColorHex, setTempColorHex] = useState("#3b82f6");
 
+  // Debounced Place Autocomplete (250ms delay to prevent excessive API requests)
+  useEffect(() => {
+    if (!form.city || form.city.trim().length < 2) {
+      setCitySuggestions([]);
+      setShowCitySuggestions(false);
+      setIsSearchingCity(false);
+      return;
+    }
+
+    setIsSearchingCity(true);
+    setShowCitySuggestions(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const suggestions = await fetchPlaceSuggestions(form.city, selectedCountry?.code);
+        setCitySuggestions(suggestions);
+      } finally {
+        setIsSearchingCity(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [form.city, selectedCountry?.code]);
+
   // Fetch initial data and pre-fill if in edit mode
   useEffect(() => {
     const fetchInitData = async () => {
       try {
         const response = await api.get(ziggyRoute('marketplace.init-data'));
         if (response.data.status === "success") {
+          const loadedCountries: DbCountry[] = response.data.countries || [];
+          setDbCountries(loadedCountries);
           setCategories(response.data.categories || []);
           setAttributes({
-            cities: response.data.cities || [],
+            cities: [],
             ageRanges: response.data.ageRanges || [],
             clothingSizes: response.data.clothingSizes || [],
             shoeSizes: response.data.shoeSizes || [],
@@ -323,6 +361,26 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
             materials: response.data.materials || [],
             colors: response.data.colors || []
           });
+
+          // Detect IP location and set initial country & dial code
+          try {
+            const loc = await detectUserLocationByIp();
+            const matched = loadedCountries.find(
+              c => c.code.toUpperCase() === loc.countryCode.toUpperCase()
+            ) || loadedCountries[0];
+
+            if (matched) {
+              setSelectedCountry(matched);
+              setForm(prev => ({
+                ...prev,
+                contact_phone: matched.dial_code
+              }));
+            }
+          } catch (e) {
+            if (loadedCountries.length > 0) {
+              setSelectedCountry(loadedCountries[0]);
+            }
+          }
 
           // Pre-fill form if in edit mode
           if (isEditMode && product) {
@@ -347,7 +405,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               price: String(product.price),
               currency: product.currency,
               price_negotiable: product.price_negotiable,
-              city_id: String(product.city_id || ""),
+              city: product.city || "",
               pickup_address: product.pickup_address,
               contact_phone: product.contact_phone || (product as any).phone_contact,
               handover_method: product.handover_method,
@@ -371,8 +429,6 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
         }
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchInitData();
@@ -447,12 +503,10 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     }
     if (targetStepKey === "location") {
       if (!form.handover_method) errors.handover_method = "Choisissez un mode de remise.";
-      if (!form.city_id) errors.city_id = "Choisissez une ville.";
+      if (!form.city.trim()) errors.city = "Saisissez ou choisissez votre ville.";
       if (!form.pickup_address.trim()) errors.pickup_address = "L'adresse est obligatoire.";
-      if (!form.contact_phone.trim() || form.contact_phone === "+212") {
+      if (!form.contact_phone.trim() || form.contact_phone === selectedCountry?.dial_code) {
         errors.contact_phone = "Le numéro de téléphone est obligatoire.";
-      } else if (!/^\+212[5-7]\d{8}$/.test(form.contact_phone)) {
-        errors.contact_phone = "Format: 9 chiffres après +212, commençant par 5, 6 ou 7.";
       }
     }
     return errors;
@@ -603,7 +657,8 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
     const payload = {
       ...form,
       user_id: user.id,
-      city_id: form.city_id,
+      city: form.city,
+      country_id: selectedCountry?.id,
       price: form.listing_mode === "donate" ? 0 : parseFloat(form.price) || 0,
       currency: "MAD",
       media_ids: mediaIds,
@@ -1182,27 +1237,144 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
               </Box>
             </Box>
 
-            {/* Ville - Single row alone */}
+            {/* Pays (Database-driven) */}
             <Box sx={{ width: '100%' }}>
               <CustomSelect
-                label="Ville"
-                options={attributes.cities}
-                value={form.city_id}
-                onChange={(val) => updateField("city_id", val)}
-                placeholder="Choisissez votre ville..."
-                error={!!fieldErrors.city_id}
-                helperText={fieldErrors.city_id}
+                label="Pays"
+                options={dbCountries.map((c) => ({
+                  id: c.code,
+                  label: `${c.flag || ''} ${c.name} (${c.dial_code})`,
+                  value: c.code,
+                }))}
+                value={selectedCountry?.code || ""}
+                onChange={(code) => {
+                  const country = dbCountries.find((c) => c.code === code);
+                  if (country) {
+                    setSelectedCountry(country);
+                    const currentPhoneRaw = (form.contact_phone || "").replace(/^\+\d+/, '');
+                    updateField("contact_phone", `${country.dial_code}${currentPhoneRaw}`);
+                  }
+                }}
+                placeholder="Sélectionnez un pays..."
               />
             </Box>
 
-            {/* Adresse exacte - Single row alone */}
-            <Box sx={{ width: '100%' }}>
+            {/* Ville (Autocomplete - Plain string) */}
+            <ClickAwayListener onClickAway={() => setShowCitySuggestions(false)}>
+              <Box sx={{ width: '100%', position: 'relative' }}>
+                <TextField
+                  fullWidth
+                  label="Ville"
+                  placeholder="Rechercher une ville..."
+                  value={form.city}
+                  onChange={(e) => {
+                    updateField("city", e.target.value);
+                    if (e.target.value.trim().length >= 2) {
+                      setShowCitySuggestions(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (form.city.trim().length >= 2) {
+                      setShowCitySuggestions(true);
+                    }
+                  }}
+                  error={!!fieldErrors.city}
+                  helperText={fieldErrors.city || "Saisie semi-automatique des villes"}
+                  slotProps={{
+                    htmlInput: { spellCheck: false, autoCorrect: 'off' },
+                    input: {
+                      startAdornment: <InputAdornment position="start"><MapPin size={18} /></InputAdornment>,
+                      endAdornment: isSearchingCity ? (
+                        <InputAdornment position="end">
+                          <CircularProgress size={18} />
+                        </InputAdornment>
+                      ) : null,
+                    }
+                  }}
+                />
+                {showCitySuggestions && form.city.trim().length >= 2 && (
+                  <Paper
+                    elevation={4}
+                    sx={{
+                      position: 'absolute',
+                      zIndex: 9999,
+                      width: '100%',
+                      mt: 0.5,
+                      maxHeight: 240,
+                      overflowY: 'auto',
+                      borderRadius: 2,
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                    }}
+                  >
+                    {isSearchingCity ? (
+                      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <CircularProgress size={16} />
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Recherche de villes...
+                        </Typography>
+                      </Box>
+                    ) : citySuggestions.length > 0 ? (
+                      citySuggestions.map((sug) => (
+                        <Box
+                          key={sug.placeId}
+                          onClick={() => {
+                            updateField("city", sug.cityName);
+                            resetSessionToken();
+                            setShowCitySuggestions(false);
+                          }}
+                          sx={{
+                            py: 1.5,
+                            px: 2,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            transition: 'background-color 0.15s ease',
+                            '&:hover': {
+                              backgroundColor: '#f1f5f9',
+                            },
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                            {sug.cityName}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#64748b' }}>
+                            {sug.secondaryText || sug.fullAddress}
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Box sx={{ p: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Aucune ville trouvée
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                )}
+              </Box>
+            </ClickAwayListener>
+
+            {/* Adresse exacte (Google Places Autocomplete) */}
+            <Box sx={{ width: '100%', position: 'relative' }}>
               <TextField
                 fullWidth
                 label="Adresse exacte"
-                placeholder="Ex: Rue 123, Quartier..."
+                placeholder="Ex: Rue 123, Quartier... (Google Places)"
                 value={form.pickup_address}
-                onChange={(e) => updateField("pickup_address", e.target.value)}
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  updateField("pickup_address", val);
+                  if (val.length >= 3) {
+                    const suggestions = await fetchPlaceSuggestions(val, selectedCountry?.code, 'address');
+                    setAddressSuggestions(suggestions);
+                    setShowAddressSuggestions(true);
+                  } else {
+                    setAddressSuggestions([]);
+                    setShowAddressSuggestions(false);
+                  }
+                }}
                 error={!!fieldErrors.pickup_address}
                 helperText={fieldErrors.pickup_address}
                 slotProps={{
@@ -1211,9 +1383,39 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                   }
                 }}
               />
+              {showAddressSuggestions && addressSuggestions.length > 0 && (
+                <Paper
+                  elevation={4}
+                  sx={{
+                    position: 'absolute',
+                    zIndex: 100,
+                    width: '100%',
+                    mt: 0.5,
+                    maxHeight: 240,
+                    overflowY: 'auto',
+                    borderRadius: 2,
+                    border: '1px solid #cbd5e1',
+                  }}
+                >
+                  {addressSuggestions.map((sug) => (
+                    <MenuItem
+                      key={sug.placeId}
+                      onClick={() => {
+                        updateField("pickup_address", sug.fullAddress);
+                        setShowAddressSuggestions(false);
+                      }}
+                      sx={{ py: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                        {sug.fullAddress}
+                      </Typography>
+                    </MenuItem>
+                  ))}
+                </Paper>
+              )}
             </Box>
 
-            {/* Contact Téléphonique - Single row alone */}
+            {/* Contact Téléphonique - Dynamic Dial Code */}
             <Box sx={{ width: '100%' }}>
               <FormControl fullWidth variant="outlined" error={!!fieldErrors.contact_phone}>
                 <InputLabel htmlFor="contact-phone">Numéro de téléphone</InputLabel>
@@ -1221,19 +1423,58 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
                   id="contact-phone"
                   label="Numéro de téléphone"
                   placeholder="6XXXXXXXX"
-                  value={(form.contact_phone || "").replace('+212', '')}
+                  value={
+                    selectedCountry
+                      ? (form.contact_phone || "").replace(selectedCountry.dial_code, '')
+                      : (form.contact_phone || "").replace(/^\+\d+/, '')
+                  }
                   onChange={(e) => {
                     let val = e.target.value.replace(/\D/g, '');
                     if (val.startsWith('0')) val = val.substring(1);
-                    if (val.length > 9) val = val.substring(0, 9);
-                    updateField("contact_phone", `+212${val}`);
+                    const dial = selectedCountry?.dial_code || "+212";
+                    updateField("contact_phone", `${dial}${val}`);
                   }}
                   startAdornment={
-                    <InputAdornment position="start">
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1, borderRight: '1px solid #cbd5e1', mr: 1.5 }}>
-                        <span style={{ fontSize: '20px' }}>🇲🇦</span>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>+212</Typography>
-                      </Box>
+                    <InputAdornment position="start" sx={{ mr: 1 }}>
+                      <Select
+                        variant="standard"
+                        disableUnderline
+                        value={selectedCountry?.code || (dbCountries[0]?.code || "")}
+                        onChange={(e) => {
+                          const country = dbCountries.find((c) => c.code === e.target.value);
+                          if (country) {
+                            setSelectedCountry(country);
+                            const currentDigits = (form.contact_phone || "").replace(/^\+\d+/, '');
+                            updateField("contact_phone", `${country.dial_code}${currentDigits}`);
+                          }
+                        }}
+                        sx={{
+                          '& .MuiSelect-select': {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.8,
+                            py: 0.5,
+                            pr: '22px !important',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                            color: '#1e293b',
+                            cursor: 'pointer',
+                          }
+                        }}
+                      >
+                        {dbCountries.map((c) => (
+                          <MenuItem key={c.id || c.code} value={c.code} sx={{ py: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <span style={{ fontSize: '18px' }}>{c.flag || '🌐'}</span>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                              {c.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ ml: 'auto', color: '#64748b', fontWeight: 700 }}>
+                              {c.dial_code}
+                            </Typography>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <Box sx={{ height: 24, width: '1px', bgcolor: '#cbd5e1', ml: 1, mr: 0.5 }} />
                     </InputAdornment>
                   }
                 />
@@ -1400,7 +1641,7 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
       <Box sx={{ mt: 3, p: 2, bgcolor: '#f1f5f9', borderRadius: 2.5, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <MapPin size={18} color="#64748b" />
         <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-          {form.city_id ? `${attributes.cities.find(c => String(c.id || c.value) === String(form.city_id))?.label || ""}, ` : ""}{form.pickup_address || "Localisation..."}
+          {form.city ? `${form.city}, ` : ""}{form.pickup_address || "Localisation..."}
         </Typography>
       </Box>
     </Paper>

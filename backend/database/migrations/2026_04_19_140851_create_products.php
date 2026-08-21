@@ -14,7 +14,9 @@ return new class extends Migration
             // Works for users (home address) and products (pickup location)
             $table->morphs('addressable');
  
-            $table->foreignId('city_id')->constrained('cities')->cascadeOnDelete();
+            $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
+            $table->string('city')->nullable();          // city name as plain text string from Google Places
+            $table->string('place_id')->nullable();      // Google Place ID (optional)
             $table->string('district')->nullable();
             $table->string('address_line')->nullable();  // street / landmark
             $table->decimal('lat', 10, 7)->nullable();   // for map pin

@@ -6,6 +6,7 @@ use App\Repositories\AnnouncementRepository;
 use App\Repositories\FilterAttributeRepository;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Country;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -64,12 +65,14 @@ class AnnouncementService
             $this->announcementRepository->linkMediaToProduct($data['media_ids'], $product);
         }
 
-        // Sync city/address if provided
-        if (!empty($data['city_id'])) {
+        // Sync address if city or pickup_address provided
+        if (!empty($data['city']) || !empty($data['pickup_address'])) {
             $product->address()->updateOrCreate(
                 [], // Since each product typically has one pickup address
                 [
-                    'city_id' => $data['city_id'],
+                    'country_id'   => $data['country_id'] ?? null,
+                    'city'         => $data['city'] ?? null,
+                    'place_id'     => $data['place_id'] ?? null,
                     'address_line' => $data['pickup_address'] ?? null,
                 ]
             );
@@ -137,15 +140,18 @@ class AnnouncementService
 
         $attributes = $this->filterAttributeRepository->getAllGrouped();
 
-        $cities = \App\Models\City::all()->map(fn($city) => [
-            'id' => (string) $city->id,
-            'label' => $city->name,
-            'value' => (string) $city->id,
+        $countries = Country::orderBy('name')->get()->map(fn($country) => [
+            'id' => (string) $country->id,
+            'name' => $country->name,
+            'code' => $country->code,
+            'dial_code' => $country->dial_code,
+            'flag' => $country->flag,
         ]);
 
         return [
             'categories' => $categories,
-            'cities' => $cities,
+            'cities' => [],
+            'countries' => $countries,
             'ageRanges' => $attributes['ageRanges'] ?? [],
             'clothingSizes' => $attributes['clothingSizes'] ?? [],
             'shoeSizes' => $attributes['shoeSizes'] ?? [],

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         // Run seeders in order
         $this->call([
+            CountrySeeder::class,
             HeroSliderSeeder::class,
             BannerSeeder::class,
             FilterAttributeSeeder::class,
