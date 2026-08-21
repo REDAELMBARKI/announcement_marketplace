@@ -248,6 +248,12 @@ export default function Add_Announcement({ product: propProduct }: AddAnnounceme
   }, [userSlug, announcementSlug, product]);
 
   const [stepKey, setStepKey] = useState<string>("category");
+
+  // Scroll to top of the page whenever step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [stepKey]);
+  
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);

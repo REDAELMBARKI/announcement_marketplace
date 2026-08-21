@@ -152,7 +152,6 @@ export default function Layout() {
     "/view_users",
     "/data_reports",
     "/my_profile",
-    "/add_announcement",
     "/add_charity",
     "/admin_inventory",
     "/admin_donations",
