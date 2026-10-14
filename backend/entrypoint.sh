@@ -38,6 +38,17 @@ else
     echo "Database already seeded (marker file exists), skipping seed."
 fi
 
+# Migrate local storage to S3 (one-time, on first boot with S3 enabled)
+S3_MARKER="/var/www/html/storage/.s3_migrated"
+if [ "$FILESYSTEM_DISK" = "s3" ] && [ ! -f "$S3_MARKER" ]; then
+    echo "First boot with S3 — migrating local files to S3..."
+    php artisan storage:migrate-to-s3 || true
+    touch "$S3_MARKER"
+    echo "S3 migration complete."
+else
+    echo "S3 migration already done or not using S3, skipping."
+fi
+
 # Clear cached config, routes, and application cache
 echo "Clearing application cache..."
 php artisan config:clear
