@@ -23,12 +23,20 @@ until php -r "try { new PDO('mysql:host=' . (getenv('DB_HOST') ?: 'db') . ';port
 done
 echo "MySQL connection established successfully!"
 
-# Run migrations and seeders
+# Run migrations
 echo "Running database migrations..."
 php artisan migrate --force
 
-echo "Seeding database with initial data..."
-php artisan db:seed --force
+# Only seed on first boot (use a marker file to prevent duplicate seeding)
+SEED_MARKER="/var/www/html/storage/.seeded"
+if [ ! -f "$SEED_MARKER" ]; then
+    echo "First boot detected — seeding database..."
+    php artisan db:seed --force
+    touch "$SEED_MARKER"
+    echo "Seeding complete."
+else
+    echo "Database already seeded (marker file exists), skipping seed."
+fi
 
 # Clear cached config, routes, and application cache
 echo "Clearing application cache..."
@@ -36,14 +44,22 @@ php artisan config:clear
 php artisan route:clear
 php artisan cache:clear
 
+# Cache config and routes for production performance
+echo "Caching config and routes for production..."
+php artisan config:cache
+php artisan route:cache
+
 # Link storage
 echo "Linking storage..."
-php artisan storage:link
+php artisan storage:link 2>/dev/null || true
 
 # Change permissions
 chown -R sail:sail /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Start server
-echo "Starting Laravel server..."
-exec php artisan serve --host=0.0.0.0 --port=80
+# Ensure PHP-FPM socket directory exists
+mkdir -p /run/php
+
+# Start Supervisor (manages php-fpm + nginx)
+echo "Starting Supervisor (php-fpm + nginx)..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

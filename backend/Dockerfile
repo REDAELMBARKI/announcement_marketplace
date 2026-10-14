@@ -21,6 +21,7 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get update \
     && apt-get install -y \
         php8.2-cli \
+        php8.2-fpm \
         php8.2-gd \
         php8.2-curl \
         php8.2-mbstring \
@@ -32,6 +33,8 @@ RUN apt-get update && apt-get upgrade -y \
         php8.2-sqlite3 \
         php8.2-mysql \
         php8.2-pgsql \
+        nginx \
+        supervisor \
     && curl -sLS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer \
     && apt-get -y autoremove \
     && apt-get clean \
@@ -39,23 +42,40 @@ RUN apt-get update && apt-get upgrade -y \
 
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.2
 
+# Configure PHP-FPM to listen on unix socket with open permissions
+RUN mkdir -p /run/php && \
+    sed -i 's|^listen = .*|listen = /run/php/php8.2-fpm.sock|' /etc/php/8.2/fpm/pool.d/www.conf && \
+    sed -i 's|^;listen.owner = .*|listen.owner = www-data|' /etc/php/8.2/fpm/pool.d/www.conf && \
+    sed -i 's|^;listen.group = .*|listen.group = www-data|' /etc/php/8.2/fpm/pool.d/www.conf && \
+    sed -i 's|^;listen.mode = .*|listen.mode = 0666|' /etc/php/8.2/fpm/pool.d/www.conf
+
+# Create supervisor log directory
+RUN mkdir -p /var/log/supervisor
+
 RUN userdel -r ubuntu || true
 RUN groupadd --force -g ${WWWGROUP:-1000} sail
 RUN useradd -ms /bin/bash --no-user-group -g ${WWWGROUP:-1000} -u 1337 sail
+# Add sail user to www-data group so PHP-FPM socket is accessible
+RUN usermod -aG www-data sail
 RUN git config --global --add safe.directory /var/www/html
 
-# 1. Copy all your local Laravel project files into the container working directory
+# Copy all Laravel project files into the container
 COPY . /var/www/html
 
 RUN composer update --no-interaction --prefer-dist --no-scripts --ignore-platform-reqs
 
 RUN composer dump-autoload --optimize --no-scripts --ignore-platform-reqs
 
-# 3. Change ownership of the copied files so your app runner user has full access
+# Change ownership
 RUN chown -R sail:sail /var/www/html
-# ───────────────────────────────────────────
 
-# Create a simple entrypoint script
+# Copy nginx config for backend
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
+# Copy supervisor config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

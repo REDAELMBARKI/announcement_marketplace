@@ -33,6 +33,21 @@ Route::get('/status', function () {
     return response()->json(['message' => 'Laravel API working']);
 });
 
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'ok',
+            'timestamp' => now()->toISOString(),
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Database connection failed',
+        ], 500);
+    }
+});
+
 Route::get('/test-db', function () {
     return response()->json([
         'tables' => DB::select("SELECT name FROM sqlite_master WHERE type='table'")
