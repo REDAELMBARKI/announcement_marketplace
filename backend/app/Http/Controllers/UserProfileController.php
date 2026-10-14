@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class UserProfileController extends Controller
 {
+    private function mediaDisk(): string
+    {
+        return config('filesystems.media_disk');
+    }
+
     public function show(Request $request, int $id): JsonResponse
     {
         if ((int) $id !== (int) $request->user('api')?->id) {
@@ -29,7 +34,7 @@ class UserProfileController extends Controller
         }
 
         $avatarUrl = $user->avatar_path
-            ? asset('storage/'.ltrim($user->avatar_path, '/'))
+            ? Storage::disk($this->mediaDisk())->url($user->avatar_path)
             : null;
 
         return response()->json([
@@ -53,10 +58,11 @@ class UserProfileController extends Controller
             'avatar' => ['required', 'image', 'max:4096'],
         ]);
 
-        $path = $request->file('avatar')->store('avatars/'.$user->id, 'public');
+        $disk = $this->mediaDisk();
+        $path = $request->file('avatar')->store('avatars/'.$user->id, $disk);
 
-        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
-            Storage::disk('public')->delete($user->avatar_path);
+        if ($user->avatar_path && Storage::disk($disk)->exists($user->avatar_path)) {
+            Storage::disk($disk)->delete($user->avatar_path);
         }
 
         $user->avatar_path = $path;
@@ -64,7 +70,7 @@ class UserProfileController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'avatar_url' => asset('storage/'.$path),
+            'avatar_url' => Storage::disk($disk)->url($path),
         ]);
     }
 

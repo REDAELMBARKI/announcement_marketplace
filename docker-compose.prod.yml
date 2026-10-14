@@ -56,6 +56,12 @@ services:
       - APP_URL=${APP_URL:-https://letsbeus.online}
       - FRONTEND_URL=${FRONTEND_URL:-https://letsbeus.online}
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-letsbeus.online}
+      - FILESYSTEM_DISK=s3
+      - MEDIA_DISK=s3
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - AWS_BUCKET=${AWS_BUCKET}
     networks:
       - announcement-network
     restart: unless-stopped

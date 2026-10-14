@@ -90,7 +90,7 @@ class BannerSeeder extends Seeder
                     'url' => $imageUrl,
                     'path' => $imageUrl,
                     'collection' => 'thumbnail',
-                    'disk' => 'public',
+                    'disk' => config('filesystems.media_disk'),
                     'file_name' => basename($imageUrl),
                     'mime_type' => 'image/jpeg',
                     'size' => 0,

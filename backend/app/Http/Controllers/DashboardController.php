@@ -100,7 +100,9 @@ class DashboardController extends Controller
                 $thumb = $product->thumbnail;
                 $imageUrl = $thumb?->url;
                 if (! $imageUrl && $thumb?->path) {
-                    $imageUrl = asset('storage/'.ltrim(str_replace('public/', '', $thumb->path), '/'));
+                    $cleanPath = ltrim(str_replace('public/', '', $thumb->path), '/');
+                    $disk = $thumb->disk ?: config('filesystems.media_disk');
+                    $imageUrl = \Illuminate\Support\Facades\Storage::disk($disk)->url($cleanPath);
                 }
 
                 return [

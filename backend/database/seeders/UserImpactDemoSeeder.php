@@ -261,7 +261,7 @@ class UserImpactDemoSeeder extends Seeder
                 Media::query()->create([
                     'mediable_id' => $product->id,
                     'mediable_type' => Product::class,
-                    'disk' => 'public',
+                    'disk' => config('filesystems.media_disk'),
                     'path' => 'external/'.Str::slug($row['title']).'.jpg',
                     'url' => 'https://picsum.photos/seed/'.Str::slug($row['title']).'/400/300.jpg',
                     'file_name' => 'thumb.jpg',

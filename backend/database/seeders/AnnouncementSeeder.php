@@ -13,6 +13,7 @@ use App\Models\Favorite;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -77,7 +78,7 @@ class AnnouncementSeeder extends Seeder
                 'mediable_id' => $user->id,
                 'mediable_type' => User::class,
                 'collection' => 'avatar',
-                'disk' => 'public',
+                'disk' => config('filesystems.media_disk'),
                 'path' => 'avatars/' . $user->slug . '.jpg',
                 'url' => 'https://i.pravatar.cc/150?u=' . $user->email,
                 'file_name' => 'avatar.jpg',
@@ -176,7 +177,7 @@ class AnnouncementSeeder extends Seeder
                 'mediable_id' => $parent->id,
                 'mediable_type' => Category::class,
                 'collection' => 'category',
-                'disk' => 'public',
+                'disk' => config('filesystems.media_disk'),
                 'path' => 'categories/' . $parent->slug . '.jpg',
                 'url' => $super['image'],
                 'file_name' => 'category.jpg',
@@ -275,9 +276,9 @@ class AnnouncementSeeder extends Seeder
                     'mediable_id' => $product->id,
                     'mediable_type' => Product::class,
                     'collection' => 'thumbnail',
-                    'disk' => 'public',
+                    'disk' => config('filesystems.media_disk'),
                     'path' => 'seeds/announcements/' . $thumbnailFile,
-                    'url' => asset('storage/seeds/announcements/' . $thumbnailFile),
+                    'url' => Storage::disk(config('filesystems.media_disk'))->url('seeds/announcements/' . $thumbnailFile),
                     'file_name' => $thumbnailFile,
                 ]);
             } else {
@@ -286,7 +287,7 @@ class AnnouncementSeeder extends Seeder
                     'mediable_id' => $product->id,
                     'mediable_type' => Product::class,
                     'collection' => 'thumbnail',
-                    'disk' => 'public',
+                    'disk' => config('filesystems.media_disk'),
                     'path' => 'placeholders/product.jpg',
                     'url' => 'https://picsum.photos/seed/' . Str::slug($productData['name']) . '/400/300.jpg',
                     'file_name' => 'placeholder.jpg',
@@ -301,9 +302,9 @@ class AnnouncementSeeder extends Seeder
                         'mediable_id' => $product->id,
                         'mediable_type' => Product::class,
                         'collection' => 'gallery',
-                        'disk' => 'public',
+                        'disk' => config('filesystems.media_disk'),
                         'path' => 'seeds/announcements/' . $imageFile,
-                        'url' => asset('storage/seeds/announcements/' . $imageFile),
+                        'url' => Storage::disk(config('filesystems.media_disk'))->url('seeds/announcements/' . $imageFile),
                         'file_name' => $imageFile,
                     ]);
                 } else {
@@ -312,7 +313,7 @@ class AnnouncementSeeder extends Seeder
                         'mediable_id' => $product->id,
                         'mediable_type' => Product::class,
                         'collection' => 'gallery',
-                        'disk' => 'public',
+                        'disk' => config('filesystems.media_disk'),
                         'path' => 'placeholders/product.jpg',
                         'url' => 'https://picsum.photos/seed/' . Str::slug($productData['name'] . '-' . $imageFile) . '/400/300.jpg',
                         'file_name' => 'placeholder.jpg',

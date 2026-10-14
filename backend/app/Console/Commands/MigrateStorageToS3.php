@@ -1,0 +1,93 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Media;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
+
+class MigrateStorageToS3 extends Command
+{
+    protected $signature = 'storage:migrate-to-s3 {--dry-run : Show what would be migrated without actually doing it}';
+
+    protected $description = 'Migrate all files from local public storage to S3 and update media records';
+
+    public function handle(): int
+    {
+        $localDisk = Storage::disk('public');
+        $s3Disk = Storage::disk('s3');
+
+        $files = $localDisk->allFiles();
+
+        if (empty($files)) {
+            $this->info('No files found in local storage. Nothing to migrate.');
+            return 0;
+        }
+
+        $this->info("Found " . count($files) . " files to migrate.");
+
+        if ($this->option('dry-run')) {
+            $this->warn('DRY RUN — no files will be copied.');
+            foreach ($files as $file) {
+                $size = round($localDisk->size($file) / 1024, 1);
+                $this->line("  Would copy: {$file} ({$size} KB)");
+            }
+            $this->info("Total: " . count($files) . " files");
+            return 0;
+        }
+
+        $bar = $this->output->createProgressBar(count($files));
+        $bar->start();
+
+        $success = 0;
+        $failed = 0;
+
+        foreach ($files as $file) {
+            try {
+                $stream = $localDisk->readStream($file);
+                $s3Disk->writeStream($file, $stream, ['visibility' => 'public']);
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+                $success++;
+            } catch (\Exception $e) {
+                $this->newLine();
+                $this->error("Failed to migrate: {$file} — {$e->getMessage()}");
+                $failed++;
+            }
+            $bar->advance();
+        }
+
+        $bar->finish();
+        $this->newLine(2);
+
+        $this->info("File migration complete!");
+        $this->info("  ✅ Migrated: {$success}");
+        if ($failed > 0) {
+            $this->error("  ❌ Failed: {$failed}");
+        }
+
+        $this->newLine();
+        $this->info('Updating media database records to point to S3...');
+
+        $updated = 0;
+        Media::where('disk', 'public')->chunkById(100, function ($mediaItems) use ($s3Disk, &$updated) {
+            foreach ($mediaItems as $media) {
+                $cleanPath = ltrim(str_replace('public/', '', $media->path), '/');
+                $media->update([
+                    'disk' => 's3',
+                    'path' => $cleanPath,
+                    'url' => $s3Disk->url($cleanPath),
+                ]);
+                $updated++;
+            }
+        });
+
+        $this->info("  ✅ Updated {$updated} media records to S3.");
+
+        $this->newLine();
+        $this->info('Done. Set MEDIA_DISK=s3 in your .env to serve all new uploads from S3.');
+
+        return $failed > 0 ? 1 : 0;
+    }
+}

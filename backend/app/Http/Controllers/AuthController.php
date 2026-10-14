@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -26,7 +27,7 @@ class AuthController extends Controller
 
             $avatarUrl = null;
             if (! empty($user->avatar_path)) {
-                $avatarUrl = asset('storage/'.ltrim($user->avatar_path, '/'));
+                $avatarUrl = Storage::disk(config('filesystems.media_disk'))->url($user->avatar_path);
             }
 
             $userData = [

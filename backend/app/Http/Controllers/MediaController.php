@@ -42,20 +42,23 @@ class MediaController extends Controller
 
             $image = $request->file('image');
             $collection = $validated['collection'] ?? 'gallery';
+            $disk = config('filesystems.media_disk');
 
             Log::info('[MediaController@upload] Processing file', [
                 'original_name' => $image->getClientOriginalName(),
                 'mime_type' => $image->getMimeType(),
                 'size_bytes' => $image->getSize(),
+                'disk' => $disk,
             ]);
             
             // Store the image in temp_media folder
-            $path = $image->store('temp_media', 'public');
+            $path = $image->store('temp_media', $disk);
 
             if (!$path) {
-                Log::error('[MediaController@upload] Failed to store image on public disk', [
+                Log::error('[MediaController@upload] Failed to store image on disk', [
                     'user_id' => Auth::id(),
                     'original_name' => $image->getClientOriginalName(),
+                    'disk' => $disk,
                 ]);
                 throw new \Exception('Failed to store image on disk.');
             }
@@ -64,9 +67,9 @@ class MediaController extends Controller
             $media = Media::create([
                 'mediable_id' => null, 
                 'mediable_type' => null, 
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
-                'url' => Storage::disk('public')->url($path),
+                'url' => Storage::disk($disk)->url($path),
                 'file_name' => $image->getClientOriginalName(),
                 'mime_type' => $image->getMimeType(),
                 'size' => $image->getSize(),
@@ -129,16 +132,17 @@ class MediaController extends Controller
         }
 
         $uploadedMedia = [];
+        $disk = config('filesystems.media_disk');
         
         foreach ($request->file('images') as $index => $image) {
-            $path = $image->store('temp_media', 'public');
+            $path = $image->store('temp_media', $disk);
             
             $media = Media::create([
                 'mediable_id' => null,
                 'mediable_type' => null,
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
-                'url' => Storage::disk('public')->url($path),
+                'url' => Storage::disk($disk)->url($path),
                 'file_name' => $image->getClientOriginalName(),
                 'mime_type' => $image->getMimeType(),
                 'size' => $image->getSize(),
@@ -224,7 +228,7 @@ class MediaController extends Controller
 
         // Delete file from storage
         if ($media->path) {
-            Storage::disk('public')->delete($media->path);
+            Storage::disk($media->disk)->delete($media->path);
         }
 
         // Delete media record
@@ -246,7 +250,7 @@ class MediaController extends Controller
 
         foreach ($oldMedia as $media) {
             if ($media->path) {
-                Storage::disk('public')->delete($media->path);
+                Storage::disk($media->disk)->delete($media->path);
             }
             $media->delete();
         }
