@@ -15,6 +15,8 @@ RUN npm run build
 
 FROM nginx:alpine AS final
 
+RUN apk add --no-cache curl
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
 COPY --from=build /app/dist /usr/share/nginx/html
